@@ -23,7 +23,7 @@
 
 ## GPU诊断（P0.1未完成）
 
-当前内核为`7.0.0-38-generic`。已安装`linux-modules-nvidia-595-open-7.0.0-34-generic`，当前内核目录没有NVIDIA模块，`modinfo nvidia`返回`Module nvidia not found`，`nvidia-smi`无法连接驱动。APT只读演算找到匹配`7.0.0-38`包；修复命令当前等待本机sudo认证，安装尚未开始。用户此前要求暂不重启，因此即使安装模块也不会自动重启；加载模块和GPU验收留待之后允许的维护窗口。
+当前内核为`7.0.0-38-generic`。已安装`linux-modules-nvidia-595-open-7.0.0-34-generic`，当前内核目录没有NVIDIA模块，`modinfo nvidia`返回`Module nvidia not found`，`nvidia-smi`无法连接驱动。APT只读演算找到匹配`7.0.0-38`包；再次预演显示将升级20个包、安装2个包并移除旧内核模块包。实际包状态未改变；已授权安装命令通过本机图形认证框等待用户输入。用户此前要求暂不重启，因此安装后也不会自动重启；加载模块和GPU验收留待之后维护窗口。
 
 ## 源码身份
 
