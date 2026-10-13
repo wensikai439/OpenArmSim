@@ -1,0 +1,53 @@
+{
+  "date": "2026-10-13",
+  "status": "partial",
+  "scope": "P0.4 model/API failure diagnosis and per-request tool authorization",
+  "observed_api": {
+    "probe": "text-only connectivity check; no camera or robot state",
+    "http_status": 402,
+    "motion_tool_returned": false,
+    "retry_count": 1
+  },
+  "archived_failure": {
+    "date": "2026-10-11T12:32:50",
+    "turn_id": "8eb7d143bf984c92a38d04704aa07c5f",
+    "tool_calls_before_failure": ["observe", "inspect_manipulation", "set_plan"],
+    "provider_error": "HTTP 402",
+    "motion_started": false
+  },
+  "archived_stage_violation": {
+    "turn_ids": [
+      "0340155be2fb4d45b88780b14812edf2",
+      "1722189195824c23988578e5149e2a8d"
+    ],
+    "reported_sequence": "place before pending pick",
+    "native_stage_guard_rejected_place": true,
+    "motion_started": false,
+    "historical_provider_tool_schema_known": false
+  },
+  "change": {
+    "files": ["harness/agent.py", "harness/stage_checks.py"],
+    "agent_sha256": "9968e8da93de7a6776990ad35ca6dc2f60a984740b0d8e250a65d6110dd494df",
+    "stage_checks_sha256": "31e7a3497858ec08984bbc42581a93e43331b4c20c3ba5b74ce437f57caeeb98"
+  },
+  "tests": {
+    "targeted": {"count": 66, "status": "passed"},
+    "core": {"count": 205, "status": "passed"},
+    "scope": "no external LLM or hardware task pass implied"
+  },
+  "workbench": {
+    "state": "ready",
+    "source_current": true,
+    "source_sha256": "ac78431f7432580cbff6bf55c3c1a933e8ddea770843ebb28ad337b883d2e2e7",
+    "job": null,
+    "tick": 0,
+    "act_worker": "unavailable",
+    "curobo_worker": "unavailable"
+  },
+  "limits": [
+    "HTTP 402 still prevents real model-driven execution",
+    "stage behavior tested with a deterministic mocked provider",
+    "no browser visual QA in this run",
+    "no independent physical calibration or sim-to-real claim"
+  ]
+}

@@ -620,7 +620,9 @@ class Harness:
                 if role=='execute' and not review and session.get('timing_mode')=='measured_delay' and not capture_snapshot['observation'].get('episode_finished'):
                     self.service.call('begin_decision',root=root,request_id=session['llm_calls'],observation_id=capture_snapshot['observation_id'])
                     wait_started=True
-                payload = {'model':settings['model'], 'messages':messages, 'tools':tools,
+                tool_router = getattr(self, 'tools_for_request', None)
+                request_tools = tool_router(tools)[0] if callable(tool_router) else tools
+                payload = {'model':settings['model'], 'messages':messages, 'tools':request_tools,
                            'temperature':0, 'parallel_tool_calls':False, 'max_tokens':1600}
                 request = urllib.request.Request(settings['base_url'].rstrip('/') + '/chat/completions',
                     data=json.dumps(payload).encode(), headers={'Authorization':'Bearer '+settings['api_key'], 'Content-Type':'application/json'})
@@ -683,7 +685,7 @@ class Harness:
                         failures['timed_batch']=failures.get('timed_batch',0)+1
                         if failures['timed_batch']>=2:return reply('模型重复提交批量调用，已停止本轮。',calls,'error')
                         continue
-                    allowed = {t['function']['name'] for t in tools}
+                    allowed = {t['function']['name'] for t in request_tools}
                     reads = {'observe','get_run_status','recall_memory','list_skills','get_calibration','list_experiments','get_job_status','get_execution_record'}
                     batch = [(c, c['function']['name'], json.loads(c['function']['arguments'])) for c in tool_calls]
                     if any(name not in allowed or name not in reads for _,name,_ in batch):
@@ -739,8 +741,8 @@ class Harness:
                 requested_args=args;drift=None
                 event = self.workspace.event(turn, 'tool', name, {'arguments':args})
                 try:
-                    if name not in {t['function']['name'] for t in tools}:
-                        raise ValueError('该模型未获此工具能力；请从已声明的技能中选择')
+                    if name not in {t['function']['name'] for t in request_tools}:
+                        raise ValueError('该工具未包含在本次模型请求的可用工具中；可能属于后续阶段或旧响应，本次未执行。请按当前开放阶段继续，或基于反馈报告无法继续。')
                     if not isinstance(args, dict):
                         raise ValueError('工具参数必须为合法 JSON 对象')
                     if failures.get(signature, 0):

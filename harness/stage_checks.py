@@ -1,10 +1,17 @@
 """Regressions for a real empty-arm API failure and original-pose identity."""
 import copy
 import json
+import urllib.request
 from unittest import TestCase, main
+from unittest.mock import patch
 
 from sim.environment import ROOT
-from .stages import pending_action, require_next_action, start_anchor, route_tools, adapt_context, bind_atomic_choice
+from .agent import Harness
+from .bottle import VisibleRequests
+from .checks import LocalState
+from .llm import ModelSettings
+from .stages import (StageRequests, pending_action, require_next_action,
+    start_anchor, route_tools, adapt_context, bind_atomic_choice)
 
 
 class StageChecks(TestCase):
@@ -161,6 +168,108 @@ class StageChecks(TestCase):
         ledger={'next_stage':{'skill':'set_gripper'}}
         for payload in ({'tools':[]},{'tools':self.tools(),'tool_choice':'none'}):
             self.assertEqual(bind_atomic_choice(payload,ledger),payload)
+
+    def test_provider_boundary_exposes_only_the_next_planned_motion(self):
+        class Workspace:
+            def __init__(self): self.events=[]
+            def event(self,*args): self.events.append(args)
+
+        class Owner:
+            active_session='root'
+            stage_packet_audits=[]
+            def __init__(self):
+                self.workspace=Workspace()
+                self.plan={'steps':[
+                    {'id':'pick','title':'右手抓瓶子','skill':'pick','status':'pending','occurrence':1},
+                    {'id':'place','title':'向前放置','skill':'place','status':'pending','occurrence':1}]}
+                self.ledger={'schema':'current-task-ledger/1','root':'root',
+                    'observation_id':'episode:4','completed_stages':[],
+                    'next_stage':{'id':'pick','title':'右手抓瓶子','skill':'pick','occurrence':1},
+                    'remaining_stages':copy.deepcopy(self.plan['steps']),
+                    'native_job_active':False,'failure_reporting_available':False}
+            def tools_for_request(self,tools):
+                return route_tools(tools,self.plan)
+            def current_ledger(self): return copy.deepcopy(self.ledger)
+
+        class Reply:
+            def __enter__(self): return self
+            def __exit__(self,*args): return False
+
+        class Capture:
+            def __init__(self): self.payloads=[]
+            def urlopen(self,request,*args,**kwargs):
+                self.payloads.append(json.loads(request.data))
+                return Reply()
+
+        owner=Owner();capture=Capture()
+        request_chain=VisibleRequests(StageRequests(capture,owner,focused=True,atomic=True),owner)
+        request=lambda:urllib.request.Request('https://provider.invalid/chat/completions',
+            data=json.dumps({'model':'test','messages':[{'role':'system','content':'limits'}],
+                'tools':self.tools(),'max_tokens':1600}).encode(),
+            headers={'Content-Type':'application/json'})
+
+        request_chain.urlopen(request())
+        first=capture.payloads[-1]
+        first_motion={t['function']['name'] for t in first['tools']
+            if t['function']['name'] in {'pick','handover','place','move_relative','move_to_pose','run_policy','run_tamp'}}
+        self.assertEqual(first_motion,{'pick'})
+        self.assertIn('next_stage',first['messages'][0]['content'])
+        self.assertEqual(owner.stage_packet_audits[-1]['available_tools'],
+            [t['function']['name'] for t in first['tools']])
+
+        owner.plan['steps'][0]['status']='done'
+        owner.ledger.update(completed_stages=[{'id':'pick','skill':'pick'}],
+            next_stage={'id':'place','title':'向前放置','skill':'place','occurrence':1},
+            remaining_stages=[copy.deepcopy(owner.plan['steps'][1])])
+        request_chain.urlopen(request())
+        second=capture.payloads[-1]
+        second_motion={t['function']['name'] for t in second['tools']
+            if t['function']['name'] in {'pick','handover','place','move_relative','move_to_pose','run_policy','run_tamp'}}
+        self.assertEqual(second_motion,{'place'})
+        self.assertIn('向前放置',second['messages'][0]['content'])
+
+    def test_chat_rejects_tool_omitted_from_this_requests_stage_schema(self):
+        class StageHarness(Harness):
+            def tools_for_request(self,tools):
+                return route_tools(tools,self.workspace.plan_status(self.service.snapshot()))
+
+        state=LocalState();agent=StageHarness(state,settings=ModelSettings())
+        agent.configure_model({'base_url':'http://127.0.0.1:1234/v1','model':'stage-contract-test',
+            'api_key':'private-placeholder','vision':False})
+        received=[]
+        def response(request,**kwargs):
+            payload=json.loads(request.data);received.append(payload)
+            names={t['function']['name'] for t in payload['tools']}
+            if len(received)==1:
+                self.assertIn('place',names)  # plan does not exist yet
+                call={'id':'plan','type':'function','function':{'name':'set_plan','arguments':json.dumps({
+                    'observation_id':'episode:0','steps':[
+                        {'id':'pick','title':'抓起瓶子','skill':'pick','checkpoint':'tool_completed'},
+                        {'id':'place','title':'向前放置','skill':'place','checkpoint':'tool_completed'}]})}}
+                msg={'role':'assistant','tool_calls':[call]}
+            elif len(received)==2:
+                self.assertIn('pick',names);self.assertNotIn('place',names)
+                call={'id':'wrong-stage','type':'function','function':{'name':'place','arguments':json.dumps({
+                    'observation_id':'episode:0','object_id':'bottle','arm':'right','receptacle_id':'table',
+                    'offset_xy_m':[.08,0]})}}
+                msg={'role':'assistant','tool_calls':[call]}
+            else:
+                self.assertNotIn('place',names)
+                msg={'role':'assistant','content':'当前阶段工具未执行。'}
+            class Reply:
+                def __enter__(self):return self
+                def __exit__(self,*args):return False
+                def read(self,_):return json.dumps({'choices':[{'message':msg}]}).encode()
+            return Reply()
+
+        with patch('urllib.request.urlopen',side_effect=response),patch.object(agent,'_log'):
+            result=agent.chat('先抓起瓶子，再向前放置')
+        self.assertEqual(len(received),3)
+        self.assertEqual(state.calls,[])
+        rejected=next(row['result'] for row in result['tools'] if row['name']=='place')
+        self.assertTrue(rejected.get('tool_failed'))
+        self.assertFalse(rejected.get('motion_started',True))
+        self.assertIn('本次未执行',rejected.get('error',''))
 
 
 if __name__=='__main__':main()
