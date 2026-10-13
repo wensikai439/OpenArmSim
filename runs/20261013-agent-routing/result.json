@@ -6,12 +6,25 @@
     "probe": "text-only connectivity check; no camera or robot state",
     "http_status": 402,
     "motion_tool_returned": false,
-    "retry_count": 1
+    "retry_count": 1,
+    "followup_probe": {
+      "date": "2026-10-13",
+      "purpose": "recheck model connectivity after user reported bottle-forward action unavailable",
+      "request": "single text-only connectivity prompt, max_tokens=16; no images or robot state",
+      "http_status": 402,
+      "retry_count": 1,
+      "api_key_logged": false,
+      "response_cause": "not established"
+    }
   },
   "archived_failure": {
     "date": "2026-10-11T12:32:50",
     "turn_id": "8eb7d143bf984c92a38d04704aa07c5f",
-    "tool_calls_before_failure": ["observe", "inspect_manipulation", "set_plan"],
+    "tool_calls_before_failure": [
+      "observe",
+      "inspect_manipulation",
+      "set_plan"
+    ],
     "provider_error": "HTTP 402",
     "motion_started": false
   },
@@ -26,13 +39,22 @@
     "historical_provider_tool_schema_known": false
   },
   "change": {
-    "files": ["harness/agent.py", "harness/stage_checks.py"],
+    "files": [
+      "harness/agent.py",
+      "harness/stage_checks.py"
+    ],
     "agent_sha256": "9968e8da93de7a6776990ad35ca6dc2f60a984740b0d8e250a65d6110dd494df",
     "stage_checks_sha256": "31e7a3497858ec08984bbc42581a93e43331b4c20c3ba5b74ce437f57caeeb98"
   },
   "tests": {
-    "targeted": {"count": 66, "status": "passed"},
-    "core": {"count": 205, "status": "passed"},
+    "targeted": {
+      "count": 66,
+      "status": "passed"
+    },
+    "core": {
+      "count": 205,
+      "status": "passed"
+    },
     "scope": "no external LLM or hardware task pass implied"
   },
   "workbench": {
