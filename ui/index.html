@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light"><title>OpenArm Lab</title>
+  <link rel="stylesheet" href="/ui/styles.css?v=platform-24">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="OpenArm Lab 首页"><span class="brand-mark">◈</span><strong>OpenArm Lab</strong></a>
+    <div class="header-meta"><span id="connection" class="status">连接中</span><button id="calibration-button" class="quiet">实验详情 <span>↗</span></button></div>
+  </header>
+  <main class="workspace">
+    <aside class="conversation panel">
+      <div class="panel-heading"><div><h1>和智能体对话</h1></div><button id="planner-mode" class="badge" title="查看或修改已保存的 API 配置">接入模型</button></div>
+      <div class="task-context"><span class="small-dot"></span><span>目标由你指定 · 观察 → 规划 → 执行 → 验证</span></div>
+      <div class="agent-mode"><label for="agent-role">智能体职责</label><select id="agent-role"><option value="execute">执行与观察</option><option value="research">实验与训练</option></select></div>
+
+      <div class="agent-toolbar"><span id="agent-activity">读取 API 状态…</span><button id="skills-button" class="memory-button">技能</button><button id="memory-button" class="memory-button">记忆 <span id="memory-count">0</span></button></div>
+      <section id="messages" class="messages" aria-live="polite"></section>
+      <form id="chat-form" class="composer">
+        <label class="sr-only" for="chat-input">向智能体描述任务</label>
+        <textarea id="chat-input" rows="3" placeholder="描述任务，或询问本次实验…"></textarea>
+        <div class="composer-bottom"><span>仅仿真 · 真机未连接</span><button id="send-button" class="send" type="submit" aria-label="发送消息">↑</button></div>
+      </form>
+    </aside>
+    <div class="right-column">
+      <section class="simulation panel">
+        <div class="panel-heading compact"><div class="title-row"><h2>场景视图</h2><span id="view-kind" class="muted">操作者视角</span></div><div class="actions"><label class="sr-only" for="view-select">切换观察视角</label><select id="view-select"><optgroup label="操作者视角"><option value="front">正面观察</option><option value="free">自由视角</option><option value="overview">全景</option></optgroup><optgroup label="模型相机"><option value="head">头部相机</option><option value="left">左腕相机</option><option value="right">右腕相机</option></optgroup></select><button id="scene-library-button" class="quiet scene-library-button" aria-label="选择场景物品" title="场景物品" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9Zm0 9 8-4.5M12 12 4 7.5M12 12v9"/></svg></button><button id="capture-button" class="quiet">留帧</button><button id="reset-button" class="quiet">重置</button></div></div>
+        <div class="camera-workspace">
+          <div class="main-view"><div id="scene-viewport" class="image-button" role="group" tabindex="0" aria-label="场景画面，自由视角可拖动"><img id="main-camera" alt="OpenArm 仿真相机画面"></div><div id="loading" class="loading">正在连接原生 MuJoCo…</div><div class="view-label"><span id="camera-label">正面观察</span><span id="sim-clock">0.00 s</span></div><button id="overview-button" class="overview-button" title="恢复正面观察">复位视角</button><div id="orbit-tools" class="orbit-tools" hidden><button data-orbit="left" aria-label="向左旋转视角">↶</button><button data-orbit="right" aria-label="向右旋转视角">↷</button><button data-orbit="in" aria-label="拉近视角">＋</button><button data-orbit="out" aria-label="拉远视角">−</button></div><span id="orbit-hint" class="orbit-hint" hidden>拖动旋转 · 滚轮缩放 · Shift + 拖动平移</span></div>
+          <div class="camera-rail" aria-label="模型的固定三路相机"><span class="rail-label">模型视角</span>
+            <button class="camera-card" data-camera="head"><img id="thumb-head" alt="头部相机"><span>头部 <em>固定相机</em></span></button>
+            <button class="camera-card" data-camera="left"><img id="thumb-left" alt="左腕相机"><span>左腕 <em>固定相机</em></span></button>
+            <button class="camera-card" data-camera="right"><img id="thumb-right" alt="右腕相机"><span>右腕 <em>固定相机</em></span></button>
+          </div>
+        </div>
+        <div class="view-footer"><span><i class="small-dot"></i><span id="physics-status">原生物理引擎</span></span><span class="muted">观察视角不改变模型输入</span></div>
+      </section>
+      <section class="stages panel">
+        <div class="panel-heading compact"><div class="title-row"><h2>运行阶段</h2><span id="stage-source" class="stage-source">物理检查</span><span id="stage-count" class="badge">0 / 7</span></div><div class="actions"><button id="stop-button" class="danger" disabled>停止</button><button id="experiment-button" class="quiet" aria-label="实验设置与记录">记录与设置</button></div></div>
+        <div class="progress-track"><div id="progress-bar"></div></div>
+        <ol id="stage-list" class="stage-list"></ol>
+        <div id="result-line" class="result-line" role="status">阶段由接触与稳定性证据确认，播放到某个时间点不会自动判定完成。</div>
+        <div class="frames-heading"><h3>关键帧</h3><span class="muted">点击放大 · 记录随实验自动保存</span></div>
+        <div id="keyframes" class="keyframes"><div class="empty"><span>▧</span><p>开始一轮实验，留下可核验的过程。</p></div></div>
+      </section>
+    </div>
+  </main>
+  <dialog id="details-dialog" class="details-dialog"><div class="dialog-heading"><div><p class="eyebrow">EXPERIMENT DETAILS</p><h2 id="details-title">标定与实验</h2></div><button class="close-dialog quiet" aria-label="关闭">✕</button></div><div class="details-body"><section><h3>后台实验</h3><div id="learning-card" class="learning-card" hidden><div><strong id="learning-title">训练任务</strong><span id="learning-status" class="muted"></span></div><p id="learning-detail"></p><div class="learning-bottom"><svg id="loss-chart" viewBox="0 0 400 56" role="img" aria-label="本次训练的损失曲线"></svg><a id="learning-plot" target="_blank" rel="noopener" hidden>查看曲线 ↗</a><a id="learning-result" target="_blank" rel="noopener">查看结果 ↗</a><button id="stop-learning" class="quiet">停止任务</button></div></div></section><section><h3>轨迹与真机对照</h3><div class="actions"><select id="episode-select" aria-label="选择回放轨迹"><option value="0">真机轨迹 01</option><option value="1">真机轨迹 02</option><option value="2">真机轨迹 03</option></select><button id="replay-button" class="primary">回放轨迹</button><button id="alignment-button" class="quiet">真机对照</button></div><p id="contact-status">等待观测</p></section><section><h3>迁移准备度</h3><p>当前是候选数字模型。仿真成功只说明本配置内的结果，尚未验证真机迁移。</p><ul id="calibration-gaps"></ul></section><section class="calibration-section"><div class="calibration-heading"><h3>参数证据</h3><span class="muted">候选值保留来源与缺项</span></div><p id="acquisition-summary" class="muted"></p><div id="calibration-evidence"><p>读取证据中…</p></div><div class="calibration-study"><strong>右臂控制响应</strong><p>固定协议：原始记录时钟前 4 秒，轨迹 01 / 02 拟合，轨迹 03 开发验证。每 1 ms 检查接触；候选不会自动应用。</p><div id="calibration-study-result" class="study-result"></div><button id="fit-controller" class="primary">辨识右臂响应</button><span class="muted">本机 CPU · 最多 11 分钟</span></div></section><section class="calibration-study"><strong>夹爪坐标与响应</strong><p>指令与反馈统一为电机角度。用同一场景、原始记录时钟与三条轨迹比较修正前后，保留提前终止和覆盖范围。</p><div id="gripper-study-result" class="study-result"></div></section><section class="calibration-study"><strong>腕部相机投影</strong><p>固定夹爪映射，拟合相机位姿与视场角；原生渲染检查遮挡，其他轨迹做开发验证。</p><div id="wrist-study-result" class="study-result"></div><button id="fit-wrist" class="primary">拟合腕部相机</button><p class="muted">只生成候选与对照图，不覆盖运行参数。轮廓接近不代表物理标定通过。</p></section><section class="calibration-study"><strong>推理延迟对照</strong><p>三条记录轨迹，分别在每 50 条动作前等待 0、100、300 ms。等待期间保持上一条目标，检查物体运动与接触变化。</p><button id="timing-study" class="primary">运行延迟对照</button><p class="muted">9 组固定实验 · 最多 10 分钟 · 不调用真实 VLA，不改变标定参数。</p></section><section><h3>记录选项</h3><label class="checkbox-row"><input id="record-images" type="checkbox">每个控制周期保存三路图像</label><p class="muted">用于采集训练候选数据，增加磁盘占用和渲染时间。关闭时只保存状态、动作、结果及关键帧。</p></section><section><h3>实验记录</h3><div id="run-list"></div></section></div></dialog>
+  <dialog id="scene-dialog" class="details-dialog scene-dialog" aria-labelledby="scene-title"><div class="dialog-heading"><div><h2 id="scene-title">场景物品</h2><p class="muted">选择想放在桌面的物品</p></div><button class="close-dialog quiet" aria-label="关闭物品库">关闭</button></div><div class="scene-body"><div class="scene-base"><span>基础场景</span><strong>瓶子 · 篮子 · 桌面</strong></div><div id="scene-items" class="scene-items"></div><p class="scene-note">新增物品使用简化几何。杯子、书本和短圆柱的抓取仍待验证。</p><div class="scene-bottom"><div><span id="scene-count"></span><button id="scene-none" class="quiet" type="button">清空选择</button></div><button id="scene-apply" class="primary" type="button">应用并重置场景</button></div><p class="scene-note">应用后开始新场景；已有实验记录保留。</p><p id="scene-result" role="status" aria-live="polite"></p></div></dialog>
+  <dialog id="frame-dialog" class="frame-dialog"><div class="dialog-heading"><div><strong id="frame-title">关键帧</strong><span id="frame-meta" class="muted"></span></div><div class="actions"><button id="frame-prev" class="quiet" aria-label="上一帧">←</button><button id="frame-next" class="quiet" aria-label="下一帧">→</button><button id="frame-scale" class="quiet">放大 2×</button><button class="close-dialog quiet">关闭 Esc</button></div></div><div class="large-image-wrap"><img id="frame-large" alt="放大的关键帧"></div><p class="frame-hint">← / → 切换 · 放大后可滚动查看 · Esc 关闭</p></dialog>
+  <dialog id="alignment-dialog" class="alignment-dialog" aria-labelledby="alignment-title">
+    <div class="dialog-heading"><div><p class="eyebrow">REAL · GEOMETRY · DYNAMICS</p><h2 id="alignment-title">同一记录，三种对照</h2></div><button class="close-dialog quiet" aria-label="关闭真机对照">关闭 Esc</button></div>
+    <div class="alignment-controls">
+      <label>轨迹 <select id="alignment-episode"><option value="0">01</option><option value="1">02</option><option value="2">03</option></select></label>
+      <label>相机 <select id="alignment-camera"><option value="head">头部</option><option value="left">左腕</option><option value="right">右腕</option></select></label>
+      <label>记录时刻 <select id="alignment-phase" aria-label="跳转到记录中的夹爪动作时刻"></select></label>
+      <span id="alignment-version" class="badge">读取中</span><a id="alignment-report" target="_blank" rel="noopener" hidden>数据与来源 ↗</a>
+    </div>
+    <div class="alignment-body">
+      <p id="alignment-note" class="alignment-note">读取原始帧和模型对照…</p>
+      <div id="alignment-grid" class="alignment-grid">
+        <article class="alignment-card"><div><strong>真机原始画面</strong><span class="badge">已采集</span></div><button id="alignment-real-button" class="alignment-image" aria-label="放大真机原始画面"><img id="alignment-real" alt="真机原始 JPEG，未裁剪"></button><p>按轨迹记录的图像路径读取；保留原始像素。</p></article>
+        <article class="alignment-card"><div><strong>记录关节位置</strong><span class="badge">几何对照</span></div><button id="alignment-geometry-button" class="alignment-image" aria-label="放大记录关节位置的模型"><img id="alignment-geometry" alt="相同关节位置下的模型投影"></button><p>只检查机器人投影。隐藏未重建的物体，不计任务成绩。</p></article>
+        <article class="alignment-card"><div><strong>指令动力学回放</strong><span class="badge">当前模型</span></div><button id="alignment-dynamics-button" class="alignment-image" aria-label="放大指令动力学回放"><img id="alignment-dynamics" alt="原始时钟下的指令动力学回放"></button><p id="alignment-dynamics-note">从初态积分真实指令；关节位置由物理产生。</p></article>
+      </div>
+      <p id="alignment-metrics" class="alignment-metrics"></p>
+      <p id="alignment-contact" class="alignment-metrics" role="status"></p>
+      <p class="alignment-limit">同一记录行不保证同时曝光。相机、夹爪和物体参数仍待标定；画面相似或关节误差小，均不代表可迁移。</p>
+    </div>
+    <div class="alignment-timeline"><button id="alignment-prev" class="quiet" aria-label="上一组对照">←</button><label class="sr-only" for="alignment-frame">对照帧</label><input id="alignment-frame" type="range" min="0" max="3" step="1" value="0"><button id="alignment-next" class="quiet" aria-label="下一组对照">→</button><span id="alignment-time" role="status"></span></div>
+  </dialog>
+  <dialog id="model-dialog" class="details-dialog" aria-labelledby="model-title">
+    <div class="dialog-heading"><h2 id="model-title">接入对话模型</h2><button id="model-close" class="quiet" aria-label="关闭模型设置">关闭</button></div>
+    <div class="details-body model-body">
+      <div id="model-summary" class="model-summary" hidden>
+        <div class="saved-state"><span class="small-dot"></span><strong>当前 API 配置</strong></div>
+        <dl><dt>模型</dt><dd id="model-current-name"></dd><dt>地址</dt><dd id="model-current-base"></dd><dt>输入</dt><dd id="model-current-mode"></dd></dl>
+        <p id="model-storage-note">密钥保存在本机系统密钥环，重启后自动恢复。</p>
+        <div class="actions"><button id="model-edit" class="primary">修改配置</button><button id="model-test-saved" class="quiet">测试连接</button><button id="model-clear" class="text-danger">删除配置</button></div>
+      </div>
+      <form id="model-form" class="model-form">
+        <p>支持工具调用的 Chat Completions API。发送任务时，观测会发给此处配置的模型。</p>
+        <label for="model-base">API 地址<input id="model-base" type="url" required placeholder="https://api.deepseek.com/v1" autocomplete="off"></label>
+        <label for="model-name">模型名称<input id="model-name" required placeholder="deepseek-chat" autocomplete="off"></label>
+        <label for="model-key">API Key <span id="model-key-hint" class="muted"></span><input id="model-key" type="password" autocomplete="off" spellcheck="false" placeholder="输入密钥"></label>
+        <label class="checkbox-row"><input id="model-vision" type="checkbox">模型支持图像输入</label>
+        <p class="muted">勾选后发送头部、左右腕画面；自由视角仅供你观察。</p>
+        <div class="actions"><button id="model-save" class="primary" type="submit">保存配置</button><button id="model-test" class="quiet" type="submit" data-test="1">保存并测试</button><button id="model-cancel" class="quiet" type="button" hidden>取消修改</button></div>
+      </form>
+      <p id="model-result" class="model-result" role="status" aria-live="polite"></p>
+    </div>
+  </dialog>
+  <dialog id="memory-dialog" class="details-dialog" aria-labelledby="memory-title">
+    <div class="dialog-heading"><div><h2 id="memory-title">任务记忆</h2><p id="memory-role-label" class="muted"></p></div><button class="close-dialog quiet" aria-label="关闭记忆">关闭</button></div>
+    <div class="details-body memory-body"><p class="memory-intro">只记住偏好、已验证的方法和可避免的失败。轨迹与调用日志归入实验记录，不作为长期记忆。</p><div class="memory-filters"><label class="sr-only" for="memory-search">搜索记忆</label><input id="memory-search" type="search" placeholder="搜索任务、技能或失败原因…"><label class="sr-only" for="memory-context">记忆适用对象</label><select id="memory-context"><option value="current">当前任务</option><option value="all">全部对象</option></select><label class="sr-only" for="memory-outcome">按结果筛选</label><select id="memory-outcome"><option value="all">全部记忆</option><option value="success">技能成功</option><option value="failure">执行失败</option><option value="rejected">调用被拒绝</option><option value="cancelled">已取消</option><option value="unverified">未验证</option></select></div><div id="memory-capabilities" class="memory-working"></div><div id="memory-working" class="memory-working"></div><div id="memory-list"></div>
+    <form id="memory-form"><label for="memory-note">添加或修改偏好</label><textarea id="memory-note" rows="3" maxlength="600" placeholder="例如：回答简短，失败时先解释原因。" required></textarea><div class="actions"><button class="primary" type="submit">保存记忆</button><button id="memory-clear" type="button" class="text-danger">清除当前职责记忆</button></div></form></div>
+  </dialog>
+  <dialog id="skills-dialog" class="details-dialog" aria-labelledby="skills-title">
+    <div class="dialog-heading"><div><h2 id="skills-title">技能工具</h2><p class="muted">选择目标 · 规划运动 · 新观测验证</p></div><button class="close-dialog quiet" aria-label="关闭技能">关闭</button></div>
+    <div class="details-body skills-body">
+      <div class="harness-map" aria-label="LLM 经 Harness 路由至规划器和策略，再由 MuJoCo 执行"><span>LLM API</span><i>↓</i><span>Harness · 记忆与验证</span><i>↓</i><div id="backend-list" class="backend-list" role="tablist" aria-label="选择技能后端"></div><i>↓</i><span>MuJoCo · 仿真适配器</span><i>↓</i><span>OpenArm 仿真机器人</span></div>
+      <div id="backend-panel" role="tabpanel" tabindex="0"><h3 id="backend-title">TAMP</h3><p id="skills-scope" class="muted"></p><div id="skills-list"></div>
+      <div id="tamp-demo"><details class="tool-drawer"><summary>瓶子交接演示 <span>直接测试</span></summary><div class="tool-shortcuts"><label class="sr-only" for="tamp-task">选择 TAMP 操作</label><select id="tamp-task"><option value="handover_to_basket">完整抓取 → 交接 → 入篮</option><option value="pick_bottle">右手抓起瓶子</option><option value="handover_bottle">右手递给左手</option><option value="place_bottle">左手放入篮子</option><option value="reach_bottle">右手接近瓶子</option></select><button id="tamp-button" class="primary">运行演示</button></div></details><p class="muted">固定瓶子场景的演示，不调用对话 API。</p></div>
+      <form id="motion-form" class="motion-form"><strong>末端相对移动</strong><p class="muted">保持当前朝向，重新规划路径。位移总长度最多 15 cm。</p><div class="motion-fields"><label>机械臂<select id="motion-arm"><option value="right">右手</option><option value="left">左手</option></select></label><label>X / cm<input id="motion-x" type="number" min="-15" max="15" step="0.5" value="0"></label><label>Y / cm<input id="motion-y" type="number" min="-15" max="15" step="0.5" value="0"></label><label>Z / cm<input id="motion-z" type="number" min="-15" max="15" step="0.5" value="3"></label></div><button id="motion-run" class="primary" type="submit">规划并移动</button><p id="motion-result" class="muted" role="status"></p></form></div>
+    </div>
+  </dialog>
+  <div id="toast" class="toast" role="alert" hidden></div>
+  <script type="module" src="/ui/app.js?v=platform-25"></script>
+</body>
+</html>

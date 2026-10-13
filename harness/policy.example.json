@@ -1,0 +1,20 @@
+{
+  "uri": "ws://127.0.0.1:8000",
+  "checkpoint": "REPLACE_WITH_ACTUAL_OPENARM_CHECKPOINT_AND_REVISION",
+  "state_key": "observation/state",
+  "prompt_key": "prompt",
+  "image_keys": {
+    "head": "observation/images/head",
+    "left": "observation/images/left",
+    "right": "observation/images/right"
+  },
+  "image_layout": "HWC",
+  "action_key": "actions",
+  "action_semantics": "openarm_absolute_joint16",
+  "state_semantics": "openarm_encoder16",
+  "capability": "atomic_right_to_left_handover",
+  "execute_horizon": 50,
+  "max_steps": 512,
+  "timing_mode": "paused",
+  "timeout_seconds": 30
+}

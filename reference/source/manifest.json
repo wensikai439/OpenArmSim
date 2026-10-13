@@ -1,0 +1,54 @@
+{
+  "schema": "openarm-source-audit/1",
+  "kind": "source-audit",
+  "status": "snapshot",
+  "run_id": "source",
+  "captured_at_unix": 1791430977.1713934,
+  "host": "data-cs",
+  "files": {
+    "robot.urdf": {
+      "path": "/home/sj/Documents/moqi_workspace_20251119_211400/openarm/openarm_description/urdf/robot/openarm_bimanual.urdf",
+      "sha256": "26432e84d53d33049d2e6d5d16f11fdc0b37040ee3b8e8da47355ead344d78bd",
+      "bytes": 31656
+    },
+    "robot-original.urdf": {
+      "path": "/home/sj/Documents/moqi_workspace_20251119_211400/openarm/openarm_description/urdf/robot/openarm_bimanual_origin.urdf",
+      "sha256": "9df9bf4a6fd7482af0922fe4eaf9468c52c49aff54a390d17091654b8a906691",
+      "bytes": 32919
+    },
+    "robot.yaml": {
+      "path": "/home/sj/Documents/moqi_workspace_20251119_211400/pyroki/config/robot.yaml",
+      "sha256": "edf20db3ab5d86d3885047963d54f023bf2d956141464fc291c3dcc64890aea9",
+      "bytes": 597
+    },
+    "solver.py": {
+      "path": "/home/sj/Documents/moqi_workspace_20251119_211400/pyroki/robot_ik_solver.py",
+      "sha256": "d9dd0df4ac3046f8a071e1f206aea35efa276cb63797b7dd96f3c0d3b2f2ce66",
+      "bytes": 14186
+    },
+    "controller.py": {
+      "path": "/home/sj/Documents/moqi_workspace_20251119_211400/openarm/openarm_controller.py",
+      "sha256": "40a48d0f3753781f6019d1ba484f727b1efaae105594583c23cc4a3af5926af2",
+      "bytes": 6231
+    },
+    "recording-v4.py": {
+      "path": "/home/sj/Documents/moqi_workspace_20251119_211400/pyroki/main_v4_record_velocity.py",
+      "sha256": "3bfc3f8dbbc15f1126c358882aee4a5a5a3cb881693882458654b768342572ae",
+      "bytes": 33947
+    },
+    "recording-v5.py": {
+      "path": "/home/sj/Documents/moqi_workspace_20251119_211400/pyroki/main_v5_record_velocity.py",
+      "sha256": "39e4066d2867ebcd319a5eb01c82d6aca99b1433f1de4e6d706fb35d5b461a8c",
+      "bytes": 34486
+    },
+    "camera.py": {
+      "path": "/home/sj/Documents/moqi_workspace_20251119_211400/pyroki/realsense_camera.py",
+      "sha256": "f874ea4eaf3cfe094698c876d550b2832eea0e2e78ff865551a5a8acd1d9760f",
+      "bytes": 7038
+    }
+  },
+  "importer_sha256": "acd171ebbb0f7eff2f85f84562061665066a413b85082237985d311c5a157574",
+  "scope": "current on-disk source; capture-time source revision is not established",
+  "remote_access": "read-only allowlist; no hardware modules imported or devices accessed",
+  "transfer_ready": false
+}

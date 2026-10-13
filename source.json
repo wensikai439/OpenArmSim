@@ -1,0 +1,9 @@
+{
+  "name": "OpenArmSim",
+  "upstream": "https://github.com/enactic/openarm_mujoco",
+  "license": "Apache-2.0",
+  "revision": "c69cad6e51db68296cd5ebfd482caf54dc3cc9dd",
+  "robot_model": "OpenArm v1 in candidate lab cell",
+  "dependency_loading": "Current entry uses native MuJoCo in .venv; upstream browser dependencies are legacy and not loaded by the workspace.",
+  "kinematic_evidence": "runs/20261001-161012-kinematics-340bc8/report.json"
+}

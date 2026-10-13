@@ -1,0 +1,23 @@
+{
+  "backend": "lerobot_http",
+  "uri": "http://127.0.0.1:8003",
+  "checkpoint": "5ea94de91053fbe8e39796a5fe0f8fb72b73f84ffb4ab467675b83efe6b1735e",
+  "state_key": "observation.state",
+  "prompt_key": "task",
+  "image_keys": {
+    "head": "observation.images.head",
+    "left": "observation.images.left",
+    "right": "observation.images.right"
+  },
+  "image_layout": "HWC",
+  "action_key": "actions",
+  "action_semantics": "openarm_absolute_joint16",
+  "state_semantics": "openarm_encoder16",
+  "capability": "atomic_right_to_left_handover",
+  "execute_horizon": 16,
+  "max_steps": 900,
+  "timing_mode": "paused",
+  "timeout_seconds": 60,
+  "policy_type": "act",
+  "chunk_size": 32
+}

@@ -1,0 +1,32 @@
+# Local environments and generated state.
+__pycache__/
+*.py[cod]
+.DS_Store
+.venv/
+.history/
+.runtime/
+/harness/state/
+*.sqlite
+*.sqlite3
+*.db
+*.log
+MUJOCO_LOG.TXT
+
+# Model weights and credentials never enter source history.
+models/*/checkpoint/
+*.safetensors
+*.ckpt
+*.pt
+.env
+.env.*
+*.pem
+*.key
+
+# Keep historical experiment output out of the source repository.
+/runs/*
+!/runs/20261013-runtime-lifecycle/
+!/runs/20261013-runtime-lifecycle/**
+
+# Keep the handoff instructions; generated packages duplicate the source tree.
+/handoff/*
+!/handoff/README.md

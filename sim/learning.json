@@ -1,0 +1,7 @@
+{
+  "python": "/home/wsk/xunlian/LeberoAct/spatial/env/lerobot/bin/python",
+  "source": "/home/wsk/xunlian/LeberoAct/spatial/repos/lerobot/src",
+  "source_revision": "2774d9bddcbbda50e697e162e89e7eaada8d7105",
+  "plot_python": "/home/wsk/xunlian/LeberoPai0.5/openpi/.venv/bin/python",
+  "note": "Reuse the installed official LeRobot runtime read-only; job outputs and caches stay in OpenArmSim. No packages are installed into the training environment."
+}

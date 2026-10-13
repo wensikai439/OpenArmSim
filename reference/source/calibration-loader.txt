@@ -1,0 +1,34 @@
+/home/sj/Documents/moqi_workspace_20251119_211400/pyroki/vr.py-69-        self._broadcast_msg = config_udp["broadcast_msg"].encode()
+/home/sj/Documents/moqi_workspace_20251119_211400/pyroki/vr.py-70-        self._max_retries = config_udp["max_retries"]
+/home/sj/Documents/moqi_workspace_20251119_211400/pyroki/vr.py-71-        self._load_reset_config(config["reset"])
+/home/sj/Documents/moqi_workspace_20251119_211400/pyroki/vr.py:72:        self._load_calib_data(config["calib_data_path"], reference_path)
+/home/sj/Documents/moqi_workspace_20251119_211400/pyroki/vr.py-73-        self._load_bounding(config["bounding"])
+/home/sj/Documents/moqi_workspace_20251119_211400/pyroki/vr.py-74-        self._gripper_cmd_limit = config["gripper_command_limit"]
+/home/sj/Documents/moqi_workspace_20251119_211400/pyroki/vr.py-75-
+--
+/home/sj/Documents/moqi_workspace_20251119_211400/pyroki/vr.py-86-        self._reset_start_time: float | None = None
+/home/sj/Documents/moqi_workspace_20251119_211400/pyroki/vr.py-87-
+/home/sj/Documents/moqi_workspace_20251119_211400/pyroki/vr.py-88-    def _load_calib_data(
+/home/sj/Documents/moqi_workspace_20251119_211400/pyroki/vr.py:89:        self, calib_data_path: str, reference_path: str | None = None
+/home/sj/Documents/moqi_workspace_20251119_211400/pyroki/vr.py-90-    ) -> None:
+/home/sj/Documents/moqi_workspace_20251119_211400/pyroki/vr.py-91-        self._tf_ctrl_ee_calib = []
+/home/sj/Documents/moqi_workspace_20251119_211400/pyroki/vr.py:92:        if not calib_data_path.startswith("/"):
+/home/sj/Documents/moqi_workspace_20251119_211400/pyroki/vr.py-93-            assert reference_path is not None, (
+/home/sj/Documents/moqi_workspace_20251119_211400/pyroki/vr.py-94-                "reference_path must be provided when use relative path for calibration data"
+/home/sj/Documents/moqi_workspace_20251119_211400/pyroki/vr.py-95-            )
+/home/sj/Documents/moqi_workspace_20251119_211400/pyroki/vr.py-96-            if not reference_path.endswith("/"):
+/home/sj/Documents/moqi_workspace_20251119_211400/pyroki/vr.py-97-                reference_path += "/"
+/home/sj/Documents/moqi_workspace_20251119_211400/pyroki/vr.py:98:            calib_data_path = reference_path + calib_data_path
+/home/sj/Documents/moqi_workspace_20251119_211400/pyroki/vr.py-99-        for name in self.SEQUENCE:
+/home/sj/Documents/moqi_workspace_20251119_211400/pyroki/vr.py:100:            calib_path = Path(calib_data_path) / f"{name}.yaml"
+/home/sj/Documents/moqi_workspace_20251119_211400/pyroki/vr.py-101-            if not calib_path.exists():
+/home/sj/Documents/moqi_workspace_20251119_211400/pyroki/vr.py-102-                raise FileNotFoundError(
+/home/sj/Documents/moqi_workspace_20251119_211400/pyroki/vr.py-103-                    f"Calibration file {calib_path} does not exist."
+--
+/home/sj/Documents/moqi_workspace_20251119_211400/pyroki/config/vr.yaml-32-  samples: 50
+/home/sj/Documents/moqi_workspace_20251119_211400/pyroki/config/vr.yaml-33-
+/home/sj/Documents/moqi_workspace_20251119_211400/pyroki/config/vr.yaml-34-# calibration between VR controller and wrist
+/home/sj/Documents/moqi_workspace_20251119_211400/pyroki/config/vr.yaml:35:calib_data_path: ../config/calib
+/home/sj/Documents/moqi_workspace_20251119_211400/pyroki/config/vr.yaml-36-
+/home/sj/Documents/moqi_workspace_20251119_211400/pyroki/config/vr.yaml-37-# safety bounds
+/home/sj/Documents/moqi_workspace_20251119_211400/pyroki/config/vr.yaml-38-# Todo: adjust these bounds according to environment

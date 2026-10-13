@@ -1,0 +1,55 @@
+{
+  "name": "openarm-v1-lab-candidate",
+  "control_hz": 30,
+  "image_width": 640,
+  "image_height": 480,
+  "camera_sizes": {
+    "head": [
+      1280,
+      960
+    ],
+    "left": [
+      640,
+      480
+    ],
+    "right": [
+      640,
+      480
+    ],
+    "overview": [
+      960,
+      540
+    ]
+  },
+  "background_style": "neutral",
+  "mount_height": 0.15,
+  "gravity_compensation": "bias",
+  "gripper_force_limit_frame": "actuated_finger_joint",
+  "gripper_mapping": "shared_motor_angle_v1",
+  "state_gripper_open": -1.26,
+  "state_gripper_closed": 0.07,
+  "action_gripper_open": -0.9,
+  "action_gripper_closed": 0.05,
+  "max_action_delta_rad": 1.0,
+  "episode_seconds": 40,
+  "camera_map": {
+    "head": "camera_head_left",
+    "left": "camera_wrist_left",
+    "right": "camera_wrist_right"
+  },
+  "transfer_ready": false,
+  "uncertainties": [
+    "官方 v1 的软件关节链匹配当前采集 URDF；采集时版本、实物尺寸和 TCP 仍需独立核验。",
+    "基座到桌面的完整变换缺失；0.15 m 安装高度沿用旧场景候选值，尚未在 v1 上标定。",
+    "头部相机仍为透视候选；v1 腕部相机采用未标定的安装猜测，三路内外参与鱼眼畸变待测。",
+    "旧 calib/left.yaml 与 right.yaml 已查明用于 VR 控制器到手腕标定，不能当作相机外参。",
+    "夹爪指令与反馈统一为电机角度坐标；传动端点仍取数据极值，比例、零位和实际开口待独立标定。",
+    "瓶子与篮子尺寸、质量、摩擦和初始位姿尚非独立实测值。",
+    "控制增益来自另一条部署日志；当前 bias 补偿、时延和摩擦还未与采集控制器对齐。",
+    "v1 夹指为直线滑动；333 N 是上游指关节力上限，不能视为实测电机限矩。",
+    "三条轨迹已恢复并对齐记录时钟；相机曝光、CAN 时间戳和成功标注尚未独立核验。"
+  ],
+  "robot_version": "v1",
+  "gripper_force_limit_value": 333.0,
+  "gripper_force_limit_unit": "N"
+}

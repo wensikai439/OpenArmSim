@@ -1,0 +1,32 @@
+#!/bin/sh
+set -eu
+cd -- "$(dirname -- "$0")"
+export PYTHONDONTWRITEBYTECODE=1
+export MUJOCO_GL="${MUJOCO_GL:-egl}"
+if [ ! -x .venv/bin/python ]; then
+  echo '缺少本地环境 .venv，请先按 README 安装依赖。' >&2
+  exit 1
+fi
+if [ "$#" -eq 0 ]; then
+  set -- start
+fi
+case "$1" in
+  start|stop|status|logs)
+    exec .venv/bin/python -B tools/platform_service.py "$@"
+    ;;
+  serve)
+    shift
+    exec .venv/bin/python -B server.py "$@"
+    ;;
+  contact)
+    shift
+    exec .venv/bin/python -B -m tools.contact_workbench "$@"
+    ;;
+  objects)
+    shift
+    exec .venv/bin/python -B -m tools.object_workbench "$@"
+    ;;
+  *)
+    exec .venv/bin/python -B -m sim.cli "$@"
+    ;;
+esac

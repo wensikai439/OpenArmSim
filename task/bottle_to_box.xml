@@ -1,0 +1,82 @@
+<!--
+  OpenArm Lab task scene.
+
+  It attaches the upstream OpenArm v2 Cell model unchanged and adds the two
+  objects of the real task recorded on the lab robot (data-cs), whose task
+  string is:
+
+      "Pass the black bottle from the right hand to the left, then place it
+       into the white box."
+
+  So the bottle starts on the robot's own right (negative y) and the white box
+  on its own left (positive y). Colors follow the real cell: matte black
+  bottle on the off-white cell table, white open-top box.
+
+  The <option> block repeats the cell's settings on purpose: cone and impratio
+  do not carry across <attach>, and the elliptic cone with raised impratio is
+  what keeps a pinched object from creeping out of the jaws under load.
+-->
+<mujoco model="openarm_cell_bottle_to_box">
+  <compiler angle="radian"/>
+  <option timestep="0.001" integrator="implicitfast" cone="elliptic" impratio="10"/>
+  <statistic center="0.46 -0.02 1.13" extent="1.1" meansize="0.05"/>
+  <visual>
+    <headlight diffuse="0.6 0.6 0.6" ambient="0.3 0.3 0.3" specular="0 0 0"/>
+    <rgba haze="0.15 0.25 0.35 1"/>
+    <global azimuth="0" elevation="-20"/>
+    <quality shadowsize="8192"/>
+  </visual>
+  <asset>
+    <model name="cell" file="cell.xml"/>
+  </asset>
+  <!-- Legacy browser-only auxiliary actuators. The native backend deletes both.
+       The observed 0.2466 N.m log peak does not establish a hardware force limit.
+       Native runtime uses sim/profile.json; that limit is still unverified. -->
+  <actuator>
+    <position name="left_finger_limit" joint="openarm_left_finger_joint1"
+              kp="2" kv="0" forcelimited="true" forcerange="-0.2466 0.2466"
+              ctrllimited="true" ctrlrange="-0.4 0.7854"/>
+    <position name="right_finger_limit" joint="openarm_right_finger_joint1"
+              kp="2" kv="0" forcelimited="true" forcerange="-0.2466 0.2466"
+              ctrllimited="true" ctrlrange="-0.7854 0.4"/>
+  </actuator>
+
+  <worldbody>
+    <attach model="cell" prefix=""/>
+
+    <!-- Candidate bottle: 56 mm body, 208 mm height, 0.55 kg total.
+         Size, mass, friction and pose are not independently measured. This pose
+         was inferred from grasp timing and assumed finger geometry for ep0;
+         it does not establish the initial object pose for other episodes.
+         Geometry fitting by replay resemblance is not a transfer validation. -->
+    <body name="task_bottle" pos="0.503 -0.173 1.005">
+      <freejoint name="bottle_free"/>
+      <geom name="bottle_body" type="cylinder" size="0.028 0.080"
+            pos="0 0 0.080" mass="0.500" rgba="0.10 0.10 0.11 1"
+            friction="1.0 0.01 0.01" condim="4" contype="1" conaffinity="1"/>
+      <geom name="bottle_neck" type="cylinder" size="0.013 0.016"
+            pos="0 0 0.176" mass="0.030" rgba="0.10 0.10 0.11 1"
+            friction="1.0 0.01 0.01" contype="1" conaffinity="1"/>
+      <geom name="bottle_cap" type="cylinder" size="0.016 0.008"
+            pos="0 0 0.200" mass="0.020" rgba="0.62 0.62 0.60 1"
+            friction="1.0 0.01 0.01" contype="1" conaffinity="1"/>
+    </body>
+
+    <!-- Candidate basket: 200 x 168 mm inner footprint, fixed to the world.
+         Whether the real basket is fixed must be measured before transfer. -->
+    <body name="target_box" pos="0.474 0.357 1.005">
+      <geom name="box_floor" type="box" pos="0 0 0.008" size="0.108 0.092 0.008"
+            rgba="0.94 0.94 0.92 1" friction="1 0.01 0.001" contype="1" conaffinity="1"/>
+      <geom name="box_front" type="box" pos="0.108 0 0.058" size="0.008 0.092 0.042"
+            rgba="0.94 0.94 0.92 1" friction="1 0.01 0.001" contype="1" conaffinity="1"/>
+      <geom name="box_back" type="box" pos="-0.108 0 0.058" size="0.008 0.092 0.042"
+            rgba="0.94 0.94 0.92 1" friction="1 0.01 0.001" contype="1" conaffinity="1"/>
+      <geom name="box_left" type="box" pos="0 0.092 0.058" size="0.100 0.008 0.042"
+            rgba="0.94 0.94 0.92 1" friction="1 0.01 0.001" contype="1" conaffinity="1"/>
+      <geom name="box_right" type="box" pos="0 -0.092 0.058" size="0.100 0.008 0.042"
+            rgba="0.94 0.94 0.92 1" friction="1 0.01 0.001" contype="1" conaffinity="1"/>
+      <site name="box_goal" type="cylinder" pos="0 0 0.02" size="0.080 0.001"
+            rgba="0.2 0.8 0.35 0.35"/>
+    </body>
+  </worldbody>
+</mujoco>

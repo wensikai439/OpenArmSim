@@ -1,0 +1,506 @@
+{
+  "_readme": "历史标定记录。当前证据等级与缺项以 sim/calibration.json 为准，实际运行值以 sim/profile.json 和原生模型为准；旧候选或拟合结论不等同独立测量。",
+  "table": {
+    "top_z": {
+      "value": 1.005,
+      "unit": "m",
+      "source": "upstream",
+      "note": "cell.xml 的 sheet 台面高度；真机同样高度待测"
+    }
+  },
+  "perception_camera": {
+    "name": "perception",
+    "_note": "harness 用来观察的固定相机。真机对应头上的固定相机。",
+    "pose": {
+      "lookFrom": [
+        0.47,
+        0.1,
+        2.2
+      ],
+      "lookAt": [
+        0.47,
+        -0.08,
+        1.04
+      ],
+      "up": [
+        0,
+        0,
+        1
+      ],
+      "source": "assumed",
+      "note": "俯角约 81 度。旧机位在 y=-0.30 一侧已经出画（实测瓶轴投到第 1 行、瓶顶投到画面外），解算变成外插，y 方向偏 3 到 5 厘米，比夹爪横向 7 毫米的余量还大。陡俯视的视差按 cot(俯角) 缩，瓶身半径 28 毫米只带来约 4 毫米落点偏差。真机相机外参待标定。"
+    },
+    "intrinsics": {
+      "width": 640,
+      "height": 480,
+      "fx": 415.7,
+      "fy": 415.7,
+      "cx": 320.0,
+      "cy": 240.0,
+      "source": "assumed",
+      "note": "仿真里取 60° 垂直视场角；真机的 RealSense 内参需要实测"
+    },
+    "_why_not_the_robots_own_cameras": {
+      "note": "机器人自带的相机做不了固定立体对，这是量出来的，不是设计偏好。",
+      "head_pair": {
+        "baseline_m": 0.063,
+        "note": "camera_head_left/right 相距 63 mm。在 1.2 m 处每像素视差对应约 55 mm 深度误差（z^2/(f*b)），没法用来定位。"
+      },
+      "head_plus_ceiling": {
+        "note": "baseline 够，但两台几乎同向看，交会角太小，深度方向仍然是病态的。"
+      },
+      "wrist_cameras": {
+        "note": "腕部相机装在 link7 上，跟着手走，物体被夹住时只能看到瓶面贴脸的一块（见 reference/real_right_t14.png）。真机上它们是用来做接近和抓取确认的，不是用来定位的。"
+      },
+      "chosen_pair": {
+        "baseline_m": 0.79,
+        "convergence_deg": 38,
+        "depth_error_mm_per_px": 4.4,
+        "note": "所以用台面外一俯一侧的一对固定相机。真机对应的是工位相机；要把它换成真机相机，需要先标定头部鱼眼的外参（上游 chest.yaml 现在还是空的）。"
+      }
+    },
+    "agent_observation": {
+      "self_mask_robot": true,
+      "source": "engineering-choice",
+      "why_masked": "感知阶段把机器人本体从画面里遮掉（模型分组 2/3）。黑色夹爪和黑色瓶子的反照率只差约一倍，全画面阈值分割分不开（实测手臂在阈值 0.12 以上就并进同一块）。真实系统也做自遮蔽——它知道自己的几何。",
+      "why_not_the_real_cameras": "真机的三路相机（左右腕 + 头部鱼眼）现在都不能用作策略输入：腕部相机装在 link7 上、物体被夹住时只能看到贴脸的一块；头部鱼眼的外参在上游 chest.yaml 里还是全零 Todo，而且没有内参。要用它们，先得标定。",
+      "what_the_model_receives": "标定表里 perception_camera / perception_camera_b 这一对固定相机，自遮蔽，用于定位。界面上标着「感知相机」的那两路就是模型收到的图。",
+      "what_the_operator_sees": "界面里其余视角（头部左/右、左右腕、顶部、自由视角）是调试视图，模型看不到。",
+      "to_switch": "把相机内外参标出来之后，把 perception_camera / perception_camera_b 换成头部相机与腕部相机的实测参数，并把 self_mask_robot 关掉，就能让策略输入与真机一致。"
+    }
+  },
+  "grasp": {
+    "_note": "抓取姿态和指垫距离都是实测值。最初用竖直向下的姿态和 92 mm 的指垫偏置，两个都错：竖直姿态在抓取点解不出来（残差 21.6°），指垫实际在腕点前 114 mm。",
+    "orientation": {
+      "value": [
+        0.8660254,
+        0,
+        -0.5,
+        0
+      ],
+      "source": "measured",
+      "note": "绕世界 y 轴 -60°。按真实腕点逐点测过：右手（抓取点/预抓取点/交接点）和左手（交接点/盒内/盒底）IK 残差全部为 0。竖直姿态 21.6° 到不了；-50° 虽然 IK 残差是 0，但位置作动器在那个位姿跟不动（实测差 24 mm / 9.1°）。手指闭合方向仍是世界 y，横夹躺着的瓶子。"
+    },
+    "pad_reach": {
+      "value": 0.114,
+      "unit": "m",
+      "source": "measured",
+      "note": "腕点到两指垫中点的距离，沿接近轴量得 0.083–0.145，取中点"
+    },
+    "gripper_geometry": {
+      "_note": "两指之间的开口随深度的变化，直接从模型的手指网格顶点量出来的（mjModel.mesh_vert + 逐 geom 的世界变换），不是公式。原来的 gripWidth() 用的是 2*(0.018+0.024*sin(角度))，那只是念动关节的间距，两片指垫其实是收敛的。",
+      "source": "measured",
+      "how": "把 openarm_<side>_ee_inner_finger / _outer_finger 两个 body 下的 finger_*_collision_* 网格顶点变换到世界系，按沿手指方向每 6 mm 分带，每带内取两爪在闭合轴上的极值之差。左右两臂在各自的开/闭角度下互为镜像，数值一致。",
+      "gap_mm_by_depth_below_jaw_pivot": {
+        "0": {
+          "open": 49.0,
+          "closed": 20.0
+        },
+        "18": {
+          "open": 78.4,
+          "closed": 13.8
+        },
+        "30": {
+          "open": 67.6,
+          "closed": 24.6
+        },
+        "42": {
+          "open": 57.9,
+          "closed": 18.1
+        },
+        "48": {
+          "open": 57.5,
+          "closed": 13.3
+        },
+        "54": {
+          "open": 58.4,
+          "closed": 11.9
+        }
+      },
+      "grasp_depth": {
+        "value": 0.116,
+        "unit": "m",
+        "note": "瓶身落座的那个深度：56 mm 的瓶子在全开时刚好卡在 42–54 mm 那一带（开口 57.5–58.4 mm）。所以抓握点在腕点沿手轴 116 mm 处，和上面 pad_reach 的 114 mm 是同一个量，两次量法一致。"
+      },
+      "consequence": {
+        "value": "56 mm 的瓶子和全开的爪子只差约 1.5 mm 单边余量",
+        "note": "这不是一个小注脚，它决定了整条 episode 有多脆：抓握点差 2 mm 以上就夹空。真机夹爪闭合到瓶子时编码器停在 -0.58，只有行程的 45%，看起来夹的是一个比 56 mm 窄的东西（腕部相机里瓶盖与瓶身的宽度比约 1.5，按 28 mm 标准瓶盖算瓶身约 43 mm）。**瓶身直径必须卡尺实测**，不能用现在这个 assumed 值。"
+      }
+    },
+    "handover_xy": {
+      "value": [
+        0.545,
+        0.02
+      ],
+      "unit": "m",
+      "source": "measured",
+      "note": "扫过 5x3 个候选点后选定的：只有 x >= 0.54 时两只手的 IK 残差同时为 0。x=0.42 处左手差 21-24 度，x=0.46 处差 14-16 度，都够不到。"
+    }
+  },
+  "perception_camera_b": {
+    "_note": "第二路感知相机。单视角只能给出一个方向，深度要靠假设平面来补，瓶子一站高就差得远。两路做立体三角定位才拿到真正的三维点——真机本来就有左右两个腕部相机加一个头部相机，这里对应其中两路。",
+    "name": "perception_b",
+    "pose": {
+      "lookFrom": [
+        0.15,
+        -0.43,
+        1.7
+      ],
+      "lookAt": [
+        0.45,
+        -0.17,
+        1.08
+      ],
+      "up": [
+        0,
+        0,
+        1
+      ],
+      "source": "assumed"
+    },
+    "intrinsics": {
+      "width": 640,
+      "height": 480,
+      "fx": 415.7,
+      "fy": 415.7,
+      "cx": 320.0,
+      "cy": 240.0,
+      "source": "assumed",
+      "note": "仿真里取 60 度垂直视场角；真机 RealSense 内参需要实测"
+    }
+  },
+  "object_region": {
+    "_note": "感知只在这个台面区域里找物体。黑色瓶子和黑色夹爪的反照率只差约一倍，整幅画面用阈值分不开（实测：手臂在阈值 0.12 以上就并进同一块）；真实工位也是把物体放在指定工位。区域外的深色像素一律不看。",
+    "x": [
+      0.28,
+      0.66
+    ],
+    "y": [
+      -0.46,
+      -0.06
+    ],
+    "source": "assumed",
+    "note": "真机对应的工作区范围要现场量"
+  },
+  "objects": {
+    "bottle": {
+      "body_radius": {
+        "value": 0.028,
+        "unit": "m",
+        "source": "assumed",
+        "note": "瓶身直径 56 mm；真机瓶子要卡尺量"
+      },
+      "height": {
+        "value": 0.208,
+        "unit": "m",
+        "source": "assumed"
+      },
+      "mass": {
+        "value": 0.55,
+        "unit": "kg",
+        "source": "assumed",
+        "note": "500 ml 瓶约半满。原来填 0.32 kg。真机要上秤——这个量直接决定轻碰时瓶子动不动。"
+      },
+      "axis": {
+        "value": [
+          0,
+          0,
+          1
+        ],
+        "source": "assumed",
+        "note": "瓶子立着，瓶轴竖直。两只手在瓶身上取两个不同的高度（rightBand / leftBand），不是上下叠在同一处。"
+      },
+      "pose": {
+        "value": [
+          0.503,
+          -0.173,
+          1.005
+        ],
+        "unit": "m",
+        "source": "real-data",
+        "note": "夹爪闭合是一个接触事件：真机在 t=9.33 s 下合爪指令，编码器停在 -0.58（没合到底，被瓶子挡住），所以瓶子只可能在两指中间。取那个抓握点——由记录的关节角做正运动学得到（真机姿态过模型运动学，不碰动力学、不碰仿真自己的伺服误差），再沿手自己的轴往指尖方向量 0.116 m（见 gripper_geometry.grasp_depth），落在 (0.503,-0.173)。",
+        "source_file": "reference/real_trajectory.json episode 0 第 288 帧。同一时刻模型 TCP 与记录的 right_ee_xyz 逐位相等 (0.4462,-0.2435,1.218)——模型的控制点就是记录里的 link7 原点，两者之间没有需要额外拟合的偏移。",
+        "rejected": "曾经改成两指根部中点 (0.480,-0.202)。那是 68 mm 之前的铰链位置，不是碰瓶子的地方：改过去之后右手提前一步扫到瓶子，把整段 episode 变成另一个故事（t≈6 s 就把瓶子拍平，之后再也没夹起来）。指垫才是接触面。",
+        "caveat": "只定死了瓶轴在 xy 上的位置和那一刻的高度（1.148 m，台面之上 143 mm）。瓶子当时是立着、是倒了还是被端起来了，这个量测给不出来。"
+      },
+      "color": {
+        "value": "matte black",
+        "source": "real-data",
+        "source_file": "/home/sj/Documents/moqi_workspace_20251119_211400/lerobot_data (observation.images.right, episode 0)"
+      },
+      "posture": {
+        "value": "standing",
+        "source": "assumed",
+        "note": "立姿稳定已实测；真机上瓶子是立着还是躺着需要你确认"
+      }
+    },
+    "box": {
+      "inner_size": {
+        "value": [
+          0.2,
+          0.17
+        ],
+        "unit": "m",
+        "source": "assumed",
+        "note": "小篮子，内径 200x170 mm、壁高 90 mm；真机那个白盒要量内径和壁高"
+      },
+      "wall_height": {
+        "value": 0.09,
+        "unit": "m",
+        "source": "assumed"
+      },
+      "color": {
+        "value": "white",
+        "source": "real-data",
+        "source_file": "tasks.parquet: \"place it into the white box\""
+      },
+      "pose": {
+        "value": [
+          0.474,
+          0.357,
+          1.005
+        ],
+        "unit": "m",
+        "source": "debug-derived",
+        "source_file": "回放反标定（升降柱 0.15）：真机左手释放时刻第 756 帧，左手指垫落在 (0.474,0.357,1.275)",
+        "note": "从真机轨迹反推，不是手填的。之前放在 (0.49,0.15) 时，回放中左手的手爪直接撞在盒壁上，左臂跟踪误差 0.19-0.76 rad。",
+        "caveat": "这不是真机物体位置的标定。它是让调试回放能跑起来的一个摆位——把瓶子放在仿真自己的手去到的位置，会把控制器误差和坐标系误差吸收进物体位置里。物体位置必须独立测量（真机坐标系下的实际摆位），然后检查机械臂能不能到达，而不是反过来。"
+      }
+    }
+  },
+  "real_reference": {
+    "_note": "只读引用，本机不复制那台电脑上的数据。",
+    "host": "data-cs",
+    "dataset": "/home/sj/Documents/moqi_workspace_20251119_211400/lerobot_data",
+    "robot_type": "moqi_openarm",
+    "episodes": 148,
+    "frames": 107821,
+    "fps": 30.0,
+    "task": "Pass the black bottle from the right hand to the left, then place it into the white box.",
+    "state_layout": "qpos_0_0..6 + gripper_0 + qpos_1_0..6 + gripper_1 + epos_0(quat,xyz) + epos_1(quat,xyz) + body_pose(quat,xyz)",
+    "cameras": {
+      "left": "640x480 wrist",
+      "right": "640x480 wrist",
+      "head": "1280x960 fisheye, chest mounted"
+    },
+    "calibration_found": "VR-to-wrist calibration files found; verified camera calibration not yet found",
+    "calibration_status": {
+      "left": "camera extrinsic UNKNOWN; calib/left.yaml is configured for VR controller-to-wrist calibration",
+      "right": "camera extrinsic UNKNOWN; calib/right.yaml is configured for VR controller-to-wrist calibration",
+      "chest": "camera extrinsic UNKNOWN; calib/chest.yaml belongs to the same VR calibration directory and is TODO"
+    },
+    "still_missing": [
+      "相机内参 fx/fy/cx/cy + 畸变系数（三路相机都没有）",
+      "三路相机外参（旧 calib 文件为 VR 标定，不能作为相机证据）",
+      "机器人底座在世界系里的位姿（移动底盘）",
+      "台面绝对高度（robot.yaml 只有 height_offset 0.01）",
+      "瓶子/盒子的实测尺寸、质量、摆位（真机坐标系下）",
+      "哪几个 episode 属于这条任务，以及每条的成功标注"
+    ],
+    "base_to_cell": {
+      "value": [
+        0.185,
+        0.0,
+        0.642
+      ],
+      "unit": "m",
+      "source": "measured",
+      "how": "把真机记录的关节角直接写进模型、跑纯正运动学（不经过物理），逐帧比较仿真末端和真机记录的末端；去掉常数偏移后残差 RMS = 0.0000 m。这个常数就是基座变换，而且是精确的。",
+      "residual": "0 mm，849 帧全部为零",
+      "upstream_value": [
+        0.185,
+        0.0,
+        0.605
+      ],
+      "note": "x 与上游的 0.185 一致；z 是 0.642 而不是 0.605，差 37 mm，其中还包含‘真机记的是 link7、模型的控制点在腕上’这一口径差。先前从一次作动器没跟上的回放里拟合出的 (0.192,-0.05,0.690) 是错的，被控制误差污染了。",
+      "kinematics_match": "这一步同时证明 MuJoCo 模型的连杆几何与真机 URDF 一致，误差在数值精度以内。"
+    },
+    "vr_controller_wrist_calibration": {
+      "_note": "2026-09-30 更正：此前被误认作相机外参。两个部署副本的 pyroki_/config/vr.yaml 第34-35行明确写 calibration between VR controller and wrist，并以 calib_data_path 指向该目录。保留原数值追溯；不得用于相机投影。",
+      "right": {
+        "position": [
+          -0.08238143520608354,
+          -0.03990346127623851,
+          -0.037379679576967396
+        ],
+        "quaternion_wxyz": [
+          0.9852279990694115,
+          -0.03606778227577441,
+          -0.09900560106558928,
+          0.13499183637921428
+        ]
+      },
+      "left": {
+        "position": [
+          -0.08509585789641119,
+          0.033316270898601834,
+          -0.036466880027134274
+        ],
+        "quaternion_wxyz": [
+          0.9744293921604402,
+          0.01985842914280248,
+          -0.076685649388141,
+          -0.21026724343971034
+        ]
+      }
+    },
+    "camera_calibration_correction": {
+      "date": "2026-09-30",
+      "access": "SSH read only; no remote changes or device initialization",
+      "evidence": [
+        "/home/sj/Desktop/lerobot/openarm_deploy/pyroki_/config/vr.yaml:34-35",
+        "/home/sj/Desktop/wuji/lerobot_20260116/openarm_deploy/pyroki_/config/vr.yaml:34-35"
+      ],
+      "finding": "These files cannot serve as verified camera extrinsics; the explicit consumer configuration describes VR controller/wrist calibration."
+    }
+  },
+  "scene": {
+    "_note": "仿真用的场景里有哪些东西是不属于真机的。真机是一台移动双臂，没有上游 cell 场景里那套机壳。",
+    "keep_cell_collisions": [
+      "cell_table_col"
+    ],
+    "disable_cell_collisions": [
+      "cell_left_wall_col",
+      "cell_right_wall_col",
+      "cell_front_wall_col",
+      "cell_roof_col",
+      "cell_rail_col1",
+      "cell_rail_col2"
+    ],
+    "source": "visual-source-plus-simulation-hypothesis",
+    "why": "真机参考画面与上游 cell 外壳不同；关闭外壳碰撞后的跟踪变化只支持候选场景解释，仍须独立测量安装位置。",
+    "lifter_height": {
+      "value": 0.15,
+      "unit": "m",
+      "source": "partial",
+      "how": "扫描升降柱高度，量回放真机指令时右手手指与台面的接触次数和逐关节跟踪误差。",
+      "table_of_results": [
+        {
+          "h": 0.0,
+          "table_contacts": 6817,
+          "left_rms": "0.19-0.77",
+          "right_rms": "0.83-0.90"
+        },
+        {
+          "h": 0.1,
+          "table_contacts": 2820,
+          "left_rms": "0.0007-0.011",
+          "right_rms": "仍被卡住"
+        },
+        {
+          "h": 0.15,
+          "table_contacts": 0,
+          "left_rms": "0.0004-0.011",
+          "right_rms": "0.0011-0.009"
+        },
+        {
+          "h": 0.2,
+          "table_contacts": 0,
+          "left_rms": "同上",
+          "right_rms": "同上"
+        }
+      ],
+      "note": "0.15 m 是消除候选台面碰撞的下界；0.20 m 也可，不能由此确定真实安装高度。",
+      "caveat": "0.15 和 0.20 都让台面接触归零，所以「没有碰撞」不能唯一确定这个高度——它只给了一个下界。真实高度要靠独立测量：台面到臂基座的实际距离。"
+    }
+  },
+  "actuators": {
+    "_note": "另一条 FastWAM 部署日志的控制器参数。数值来源可追溯，但与示范采集控制器的等价性尚未确认。",
+    "source": "real-data",
+    "source_file": "/home/sj/Desktop/wuji/lerobot_20260116/openarm_deploy/deployment_records/20260921_170607_fastwam_391b94f5/control.csv （919 行，列名 <side>_<joint>_kp / _kd / _torque）",
+    "kp": {
+      "j1": 60,
+      "j2": 50,
+      "j3": 50,
+      "j4": 50,
+      "j5": 30,
+      "j6": 30,
+      "j7": 30,
+      "gripper": 2.0
+    },
+    "kd": {
+      "j1": 6.0,
+      "j2": 6.0,
+      "j3": 6.0,
+      "j4": 6.0,
+      "j5": 1.5,
+      "j6": 1.5,
+      "j7": 1.5,
+      "gripper": 0.0
+    },
+    "sim_default_kp": {
+      "j1": 230,
+      "j2": 230,
+      "j3": 190,
+      "j4": 190,
+      "j5": 30,
+      "j6": 30,
+      "j7": 30,
+      "gripper": 10
+    },
+    "grip_stall_torque_Nm": {
+      "value": 0.2466,
+      "source": "observed-peak-not-limit",
+      "note": "日志观测峰值，不能据此确定堵转能力、夹持力或硬件力矩上限。"
+    },
+    "why": "记录中的增益与上游模型不同；仅凭这个差异不能确定抓取失败的原因。",
+    "force_limit": {
+      "value": 0.2466,
+      "unit": "N·m",
+      "source": "superseded-hypothesis",
+      "how": "历史浏览器模型曾把日志观测峰值设为上限；该推断已撤销。原生后端删除辅助作动器，实际使用 profile 中待核验的上游上限。",
+      "source_file": "deployment_records/20260921_170607_fastwam_*/control.csv 的 right_gripper_torque 列"
+    }
+  },
+  "servo_identification": {
+    "_note": "把记录的 action 序列喂给仿真的位置作动器，比较两个系统各自的「指令 − 实际」误差信号。在修好 gainprm 跨度、修好夹爪通道、修好升降柱之后第一次真正跑出结果。",
+    "source": "historical-exploratory",
+    "how": "harness/sysid.js identifyServos；界面按钮对 3 条 episode 一起评分；6x5 粗搜 + 3 轮细化，共 54 次评估；maxFrames 360。单位说明：这里所有数都是**关节角的毫弧度**，不是毫米——折到末端约乘臂展 0.4 m，15 mrad 约合手的位置差 6 mm。",
+    "result": {
+      "best_scale": {
+        "kp": 3.63,
+        "kv": 2.63
+      },
+      "residual_gap_mrad_per_joint_left": [
+        6.3,
+        23.3,
+        15.1,
+        13.2,
+        3.6,
+        2.2,
+        4.2
+      ],
+      "residual_gap_mrad_per_joint_right": [
+        34.3,
+        21.7,
+        24.1,
+        32.7,
+        6.3,
+        4.9,
+        6.4
+      ],
+      "real_robot_own_error_mrad_per_joint_right": [
+        30.5,
+        21.7,
+        25.8,
+        32.4,
+        8.4,
+        6.9,
+        5.3
+      ]
+    },
+    "interpretation": "旧增益搜索在边界取得较小残差，不能证明误差不可辨识，也不能把边界值当成已辨识参数。必须核对同步、控制语义和模型结构，并使用独立轨迹验证。",
+    "consequence": "在相同指令 u 下，(u-q_sim)-(u-q_real)=q_real-q_sim；两种残差平方等价。真机跟踪误差不是仿真拟合误差的数学下界。148 条记录的成功标签未独立核验。",
+    "not_used": "标定表**不改**控制器增益。部署日志里的 60/50/30 和夹爪 2.0 仍然是场景里实际施加的值；缩放只是诊断用的探针，把 3.63 写进去等于用一个装不下真机动力学的模型去凑一个残差。",
+    "two_objectives_rejected": [
+      "只比较 RMS(指令−状态) 会丢失时序，不能替代逐时刻轨迹残差。",
+      "逐时刻 q_sim−q_real 是可用的辨识目标，前提是处理时间对齐、激励、模型误差和独立验证。"
+    ]
+  },
+  "known_lifter_sag": {
+    "value": 0.045,
+    "unit": "m",
+    "source": "historical-simulation-diagnostic",
+    "note": "旧浏览器模型的升降柱下沉现象，不是真机测量。当前原生模型把安装高度编译为固定变换，不再逐帧覆盖关节。"
+  }
+}

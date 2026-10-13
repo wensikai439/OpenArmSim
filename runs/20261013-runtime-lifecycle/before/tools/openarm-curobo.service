@@ -1,0 +1,18 @@
+[Unit]
+Description=OpenArm local cuRobo planning
+PartOf=openarm-sim.service
+ConditionPathExists=%h/gpt+vla/OpenArmSim/.runtime/curobo/bin/python
+StartLimitIntervalSec=60
+StartLimitBurst=3
+
+[Service]
+Type=simple
+WorkingDirectory=%h/gpt+vla/OpenArmSim
+ExecStart=%h/gpt+vla/OpenArmSim/.runtime/curobo/bin/python -B -m sim.curobo_server
+Environment=PYTHONDONTWRITEBYTECODE=1
+Restart=on-failure
+RestartSec=3
+KillSignal=SIGINT
+TimeoutStopSec=15
+UMask=0077
+NoNewPrivileges=true

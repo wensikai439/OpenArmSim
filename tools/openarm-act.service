@@ -1,0 +1,18 @@
+[Unit]
+Description=OpenArm local ACT inference
+PartOf=openarm-sim.service
+ConditionPathExists=%h/gpt+vla/OpenArmSim/models/act/checkpoint/model.safetensors
+StartLimitIntervalSec=60
+StartLimitBurst=3
+
+[Service]
+Type=simple
+WorkingDirectory=%h/gpt+vla/OpenArmSim
+ExecStart=%h/xunlian/LeberoAct/spatial/env/lerobot/bin/python -B -m sim.act_server
+Environment=PYTHONPATH=%h/xunlian/LeberoAct/spatial/repos/lerobot/src
+Environment=PYTHONDONTWRITEBYTECODE=1
+Restart=no
+KillSignal=SIGINT
+TimeoutStopSec=15
+UMask=0077
+NoNewPrivileges=true

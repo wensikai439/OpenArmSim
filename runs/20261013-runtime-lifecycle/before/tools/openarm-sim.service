@@ -1,0 +1,19 @@
+[Unit]
+Description=OpenArm Lab local simulation
+StartLimitIntervalSec=60
+StartLimitBurst=3
+Wants=openarm-act.service openarm-curobo.service
+
+[Service]
+Type=simple
+WorkingDirectory=%h/gpt+vla/OpenArmSim
+ExecStart=/usr/bin/systemd-inhibit --what=sleep --mode=block --who=OpenArmSim "--why=OpenArm simulation and experiments are running" %h/gpt+vla/OpenArmSim/.venv/bin/python -B server.py
+Environment=MUJOCO_GL=egl
+Environment=PYTHONDONTWRITEBYTECODE=1
+Environment=OPENARM_POLICY_CONFIG=%h/gpt+vla/OpenArmSim/harness/policy.json
+Restart=on-failure
+RestartSec=3
+KillSignal=SIGINT
+TimeoutStopSec=20
+UMask=0077
+NoNewPrivileges=true

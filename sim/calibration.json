@@ -1,0 +1,112 @@
+{
+  "schema": "openarm-calibration-evidence/1",
+  "title": "标定证据",
+  "status": "candidate",
+  "parameters": [
+    {
+      "id": "robot",
+      "label": "机器人版本",
+      "status": "software_match",
+      "profile_key": "robot_version",
+      "evidence": "官方 v1 与当前采集 URDF 的 joint1 子坐标系到 joint7 子坐标系，在 12 组记录位置下软件运动学吻合；旧 v2 未吻合，运行模型已切换到 v1。数值证据：runs/20261001-161012-kinematics-340bc8/report.json。",
+      "needed": "采集版本绑定、实物尺寸、基座变换及 TCP 实测；该比对不是实测空间精度。"
+    },
+    {
+      "id": "base",
+      "label": "基座与桌面",
+      "status": "candidate",
+      "profile_key": "mount_height",
+      "unit": "m",
+      "evidence": "0.15 m 由旧 v2 碰撞扫描得到，目前仅作为 v1 场景初始候选，不能继续当作 v1 标定证据。",
+      "needed": "独立测量桌面到双臂基座的完整变换；核验关节零位与 TCP。"
+    },
+    {
+      "id": "cameras",
+      "label": "三路相机",
+      "status": "missing",
+      "value": null,
+      "evidence": "头部实际视频、原始 JPEG 与检查点均为 1280×960；数据集元数据中的 720 高度由转换脚本写死。像素尺寸已对齐，但内参、畸变、外参仍缺实测。旧 left/right.yaml 是 VR 到腕部变换。 2026-10-08 只读导出的 camera.py 未提供 K、畸变、外参或曝光时间绑定；现有 RGB/深度读取不能替代这些标定。",
+      "needed": "相机型号、K、畸变、外参、采集与裁剪约定、同步误差。"
+    },
+    {
+      "id": "kp",
+      "label": "关节位置增益",
+      "status": "ported",
+      "calibration_key": "kp",
+      "evidence": "来自另一条 FastWAM control.csv 的参数，未证实适用于这些示范。 新导出的采集控制器源码具有相同数值，但包含额外 dq 与力矩输入，且仍未绑定采集时版本。",
+      "needed": "确认采集示范时的控制器版本、模式和逐关节增益。"
+    },
+    {
+      "id": "kd",
+      "label": "关节速度增益",
+      "status": "ported",
+      "calibration_key": "kd",
+      "evidence": "来自另一条 FastWAM control.csv；数值相同也不保证控制器语义等价。 新导出的采集控制器源码具有相同数值，但包含额外 dq 与力矩输入，且仍未绑定采集时版本。",
+      "needed": "匹配控制器与速度反馈滤波，独立轨迹检验。"
+    },
+    {
+      "id": "controller_semantics",
+      "label": "采集控制器语义",
+      "status": "unverified",
+      "value": null,
+      "evidence": "2026-10-08 只读源码快照：controller.py:82–121 将 clip(q_target-q,-0.3,0.3) 的逐调用差分作为 MIT dq，累计误差（±10）作为 MIT tau。recording-v4/v5.py 调用该控制器。当前仿真是位置 PD + MuJoCo bias 补偿，两者不等价。源码为当前磁盘版本，不证明采集时版本。 隔离数值候选已与源码逐调用比对，包含总执行器限力；九个固定响应案例见 runs/20261008-control/controller-final/summary.json。零初始累加状态误差更大，重力初值代理仅改善两条右臂轨迹、第三条变差；候选未用于平台。",
+      "needed": "绑定采集代码/电机固件版本；记录开始前的控制器内部状态、实际 kp/kd/q/dq/tau 与发送时间；补齐实测惯性、摩擦、夹爪限力与独立轨迹验证。"
+    },
+    {
+      "id": "gravity",
+      "label": "动力学补偿",
+      "status": "candidate",
+      "profile_key": "gravity_compensation",
+      "evidence": "当前施加 MuJoCo qfrc_bias，包含重力及速度相关项。 新导出的采集 controller.py 将逐调用的误差差分作为 dq，并将夹限后的累计误差作为 tau；当前仿真的纯位置 PD + qfrc_bias 尚未复现该控制语义。",
+      "needed": "核对真机补偿算法、摩擦与负载。"
+    },
+    {
+      "id": "gripper",
+      "label": "夹爪映射",
+      "status": "candidate",
+      "value": null,
+      "evidence": "目标和反馈都按电机角度（rad）解释，使用同一变换进入指关节；目标范围 -0.9…0.05 与已观测反馈范围 -1.26…0.07 不等于两套单位。当前传动比例、零位仍由数据极值给出，未实测。",
+      "needed": "采集版本绑定；独立测量电机角度、实际开口宽度、回差和左右差异，核对真实夹爪几何。"
+    },
+    {
+      "id": "gripper_force",
+      "label": "夹爪驱动力上限",
+      "status": "unverified",
+      "profile_key": "gripper_force_limit_value",
+      "unit": "N",
+      "evidence": "v1 两个手指为直线滑动关节，保留上游 333 N 指关节上限；电机角度增益按候选传动换算为 N/m。真实传动和电机限矩待测。",
+      "needed": "采集时控制器限力设置及电机到指垫的传动约定。"
+    },
+    {
+      "id": "objects",
+      "label": "瓶子与篮子",
+      "status": "candidate",
+      "value": null,
+      "evidence": "瓶径 56 mm、高 208 mm、总质量 0.55 kg 和摩擦均未独立实测；篮子当前固定。",
+      "needed": "尺寸、质量、重心、接触材料、篮子是否固定、每条 episode 的初始位姿。"
+    },
+    {
+      "id": "timing",
+      "label": "时间与延迟",
+      "status": "candidate",
+      "value": null,
+      "evidence": "已恢复前三条原始 trajectory.json 的记录时钟，逐帧核对全部 16 维状态/动作；平均 27.06–27.75 Hz。转换器原先将 timestamp 写成 frame/30。",
+      "needed": "逐相机曝光、反馈采集和 CAN 下发时间戳；采集版本、时钟同步与看门狗行为。record() 时间不能直接视为这些时间。"
+    },
+    {
+      "id": "validation",
+      "label": "独立验收",
+      "status": "missing",
+      "value": null,
+      "evidence": "三条局部参考；任务成功标签和跨场景迁移尚未核验。",
+      "needed": "固定标定集、未参与拟合的验证集、任务与扰动测试。"
+    }
+  ],
+  "rules": [
+    "参数拟合结果单独保存，不自动覆盖运行配置。",
+    "拟合集选模型，独立 episode 只评估；不能根据验证结果反复选参数后仍称独立测试。",
+    "URDF 正运动学一致只验证软件约定，不验证物理坐标。",
+    "q_real 与 q_sim 的轨迹残差可以辨识；先检查同步、控制语义、激励和模型误差。",
+    "运动学轨迹显示、控制响应辨识、接触任务验收分别报告。"
+  ]
+}

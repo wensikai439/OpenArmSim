@@ -1,0 +1,16 @@
+{
+  "run": "e2be9b289d0e90c5875b49bb41f4de6ab2ac535b900a04800b5dd84fb5839cb9",
+  "server.py": "cd9b7d85e2857988bed935294dc3660fd29dc2310168b393377e9346f0e7bec9",
+  "tools/platform_service.py": "3289b389c41b864112bb60edbbda5c468665848b8e398fc6469b717be1ae4a24",
+  "tools/openarm-sim.service": "1891796916c88749ae1ecb23074f3a47bf89a2e7d796ec36e16b42ee1e7b9b0c",
+  "tools/object_workbench.py": "9608c2e6f98385c103ec77c25b1db85300b1d6eb47405b0393ed5daad27fa895",
+  "tools/openarm-act.service": {
+    "sha256": "24f7e913757b20191344d8202efe59e5259b74f879c24b282241f6b62efce5a5",
+    "source": "2026-10-11 colleague ZIP snapshot"
+  },
+  "tools/openarm-curobo.service": {
+    "sha256": "10c38bc921a283805897913a5501d4af071f984b47b4826781097cae15ffa78b",
+    "source": "2026-10-11 colleague ZIP snapshot"
+  },
+  ".gitignore": "cc0f368adfd86ae2a0da500794c5ba793c7f2971157f8c13c818d680990249f6"
+}

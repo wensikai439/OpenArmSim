@@ -1,0 +1,38 @@
+{
+  "host_alias": "data-cs",
+  "path": "/home/sj/Desktop/wuji/lerobot_20260116/openarm_deploy/checkpoints/act_latest/pretrained_model",
+  "remote_hash_verified": true,
+  "local_copy_complete": true,
+  "at_unix": 1791380891.7384298,
+  "scope": "read-only SSH model copy; no remote modifications or hardware operation",
+  "files": {
+    "config.json": {
+      "bytes": 1842,
+      "sha256": "81997be1b4d235de70c93400c69e97d96c58d583eb28e4cab0faa1846de5d1ef"
+    },
+    "train_config.json": {
+      "bytes": 5908,
+      "sha256": "17eefe6cfe86c8219479606b79c1d241342a72757d45d1d1838c7c8f497911f4"
+    },
+    "model.safetensors": {
+      "bytes": 206503168,
+      "sha256": "fa4b187501740877c55c18838fbf50a440f30beacc1143de7ae1fff360c13441"
+    },
+    "policy_preprocessor.json": {
+      "bytes": 1502,
+      "sha256": "621eec716098c5cb9513c93c5e2b333a09e55cb4256e5c711d5f2a4c1869ddf4"
+    },
+    "policy_postprocessor.json": {
+      "bytes": 661,
+      "sha256": "c1e9e8e62f40b36f4e214a693f1adbd83563aa5e423161c98dac78cefcd6ec16"
+    },
+    "policy_preprocessor_step_3_normalizer_processor.safetensors": {
+      "bytes": 4592,
+      "sha256": "2214e8be73849cccd7baffeb2e109c14bd550009c05664d20908f91a1163fdf9"
+    },
+    "policy_postprocessor_step_0_unnormalizer_processor.safetensors": {
+      "bytes": 4584,
+      "sha256": "35893220e33072da7ba50c75d63d503edb674ddcbc613f4dc6cbce3d64db4a9c"
+    }
+  }
+}
