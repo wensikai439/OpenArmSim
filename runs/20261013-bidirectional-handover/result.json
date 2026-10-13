@@ -1,0 +1,1239 @@
+{
+  "experiment_id": "20261013-bidirectional-handover",
+  "status": "completed",
+  "scope": "two native MuJoCo TAMP primitives in one fresh oracle episode; no LLM/API/cuRobo/VLA/hardware",
+  "seed": 0,
+  "robot_version": "v1",
+  "coordinate_contract": {
+    "frame": "robot world",
+    "units": "m",
+    "x": "forward",
+    "y": "left"
+  },
+  "initial_bottle_xyz_m": [
+    0.503,
+    -0.173,
+    1.005
+  ],
+  "final_bottle_xyz_m": [
+    0.4889677090575197,
+    0.04944123589736216,
+    1.168989601798307
+  ],
+  "simulated_seconds": 24.767000000007286,
+  "wall_seconds": 1.7720644169985462,
+  "steps": [
+    {
+      "task": "pick_bottle",
+      "parameters": {
+        "arm": "left"
+      },
+      "actions": 319,
+      "result": {
+        "task": "pick_bottle",
+        "status": "completed",
+        "planner": "MuJoCo Jacobian IK + joint-space collision search",
+        "scene_source": "simulator_ground_truth",
+        "scope": "oracle manipulation baseline, not visual perception or calibrated transfer",
+        "physics": "native actuator targets and contact; no weld, teleport or qpos overwrite",
+        "native_finger_range": true,
+        "action_bounds": "official simulated finger slide range through candidate motor map; broader than recorded/VLA command range",
+        "hardware_access": false,
+        "transfer_ready": false,
+        "ik_proposals": "audited real left-close poses as IK seeds; receiver orientation from ep0 FK",
+        "task_termination": "skill",
+        "grasp_search": {
+          "arm": "left",
+          "height_m": 0.195,
+          "rotation": [
+            [
+              0.0,
+              -0.7071067811865475,
+              0.7071067811865476
+            ],
+            [
+              0.0,
+              -0.7071067811865476,
+              -0.7071067811865475
+            ],
+            [
+              1.0,
+              0.0,
+              0.0
+            ]
+          ],
+          "rejected": [
+            {
+              "height_m": 0.195,
+              "code": "ik_unreachable",
+              "diagnostics": {
+                "arm": "left",
+                "phase": "approach",
+                "best_ik": {
+                  "cost": 0.013588809268625105,
+                  "position_error_m": 0.009589452433127695,
+                  "rotation_error_rad": 0.026662378903316065
+                },
+                "blocked_pairs": []
+              }
+            },
+            {
+              "height_m": 0.195,
+              "code": "ik_unreachable",
+              "diagnostics": {
+                "arm": "left",
+                "phase": "approach",
+                "best_ik": {
+                  "cost": 0.005233258788618746,
+                  "position_error_m": 0.001316378707364784,
+                  "rotation_error_rad": 0.026112533875026416
+                },
+                "blocked_pairs": []
+              }
+            }
+          ]
+        },
+        "tracking_feedback": {
+          "position_error_m": 0.0025760691855092584,
+          "rotation_error_rad": 0.10827300085385455,
+          "corrections": 1
+        },
+        "arm": "left",
+        "verification_source": "native_two_finger_contact_and_lift",
+        "held_by": "left",
+        "lift_height_m": 0.11773801467454881,
+        "primitive_success": true,
+        "stats": {
+          "ik_attempts": 33,
+          "collision_checks": 99,
+          "rrt_nodes": 0
+        }
+      },
+      "stats": {
+        "ik_attempts": 33,
+        "collision_checks": 99,
+        "rrt_nodes": 0
+      }
+    },
+    {
+      "task": "handover_bottle",
+      "parameters": {
+        "from_arm": "left",
+        "to_arm": "right"
+      },
+      "actions": 424,
+      "result": {
+        "task": "handover_bottle",
+        "status": "completed",
+        "planner": "MuJoCo Jacobian IK + joint-space collision search",
+        "scene_source": "simulator_ground_truth",
+        "scope": "oracle manipulation baseline, not visual perception or calibrated transfer",
+        "physics": "native actuator targets and contact; no weld, teleport or qpos overwrite",
+        "native_finger_range": true,
+        "action_bounds": "official simulated finger slide range through candidate motor map; broader than recorded/VLA command range",
+        "hardware_access": false,
+        "transfer_ready": false,
+        "ik_proposals": "audited real left-close poses as IK seeds; receiver orientation from ep0 FK",
+        "task_termination": "skill",
+        "handover_search": {
+          "from_arm": "left",
+          "to_arm": "right",
+          "selected_bottle_world": [
+            0.46,
+            0.02,
+            1.195
+          ],
+          "receiver_height_m": 0.095,
+          "rejected": []
+        },
+        "tracking_feedback": {
+          "position_error_m": 0.0023913067389411693,
+          "rotation_error_rad": 0.0,
+          "corrections": 0
+        },
+        "receiver_replan": {
+          "bottle_world": [
+            0.458231643405831,
+            0.01776098387568448,
+            1.1916867945188556
+          ],
+          "bottle_axis": [
+            0.002464658817710826,
+            0.026694302346659468,
+            0.9996406052572799
+          ],
+          "rotation": [
+            [
+              0.0024646588177108216,
+              0.706991676275229,
+              0.7072175726991334
+            ],
+            [
+              0.02669430234665942,
+              -0.7070142118519975,
+              0.7066953505305691
+            ],
+            [
+              0.9996406052572782,
+              0.017136916783380852,
+              -0.020615198374550416
+            ]
+          ],
+          "rejected": []
+        },
+        "from_arm": "left",
+        "to_arm": "right",
+        "held_by": "right",
+        "verification_source": "native_receiver_contact_then_donor_release",
+        "primitive_success": true,
+        "stats": {
+          "ik_attempts": 10,
+          "collision_checks": 158,
+          "rrt_nodes": 0
+        }
+      },
+      "stats": {
+        "ik_attempts": 10,
+        "collision_checks": 158,
+        "rrt_nodes": 0
+      }
+    }
+  ],
+  "native_evaluation": {
+    "held": {
+      "left": false,
+      "right": true
+    },
+    "touching": {
+      "left": false,
+      "right": true
+    },
+    "placement": {
+      "stable_seconds": 0.0,
+      "confirmed": false
+    },
+    "invalid": false,
+    "legacy_task_success": false
+  },
+  "source_sha256": {
+    "sim/tamp.py": "826f1ea045550703f75cdfeb16e9a2ace6bcffc3d03a0c7181bc8ce5011c6627",
+    "sim/environment.py": "e4f40db7852362f2c0c32c1e58cf775b5e6b16b227fadeb46cb0d4297b363065",
+    "sim/profile.json": "3094df0ccc4275d286c85b4f065875618e7967fd4b260c1f47eebc51ba75fe30",
+    "harness/skills.py": "c4383e12a5ab5714ca472089ec1582392f6209e15e33ccc5a48cba24e12e9052",
+    "harness/agent.py": "5f48e0060610e00fa8f4c7ea23706ae795ce601ef606cfc81fc64c670e84c155"
+  },
+  "environment_manifest": {
+    "schema": "openarm-sim/1",
+    "engine": "mujoco-3.14.0",
+    "task_window": {
+      "start_sim_seconds": 0.0,
+      "requested_seconds": 60.0,
+      "active_seconds": 60.0,
+      "remaining_seconds": 35.232999999992714,
+      "legacy_benchmark_seconds": 40.0
+    },
+    "source": {
+      "name": "OpenArmSim",
+      "upstream": "https://github.com/enactic/openarm_mujoco",
+      "license": "Apache-2.0",
+      "revision": "c69cad6e51db68296cd5ebfd482caf54dc3cc9dd",
+      "robot_model": "OpenArm v1",
+      "dependency_loading": "Current entry uses native MuJoCo in .venv; upstream browser dependencies are legacy and not loaded by the workspace.",
+      "kinematic_evidence": "runs/20261001-161012-kinematics-340bc8/report.json"
+    },
+    "profile": {
+      "name": "openarm-v1-lab-candidate",
+      "control_hz": 30,
+      "image_width": 640,
+      "image_height": 480,
+      "camera_sizes": {
+        "head": [
+          1280,
+          960
+        ],
+        "left": [
+          640,
+          480
+        ],
+        "right": [
+          640,
+          480
+        ],
+        "overview": [
+          960,
+          540
+        ]
+      },
+      "background_style": "neutral",
+      "mount_height": 0.15,
+      "gravity_compensation": "bias",
+      "gripper_force_limit_frame": "actuated_finger_joint",
+      "gripper_mapping": "shared_motor_angle_v1",
+      "state_gripper_open": -1.26,
+      "state_gripper_closed": 0.07,
+      "action_gripper_open": -0.9,
+      "action_gripper_closed": 0.05,
+      "max_action_delta_rad": 1.0,
+      "episode_seconds": 40,
+      "camera_map": {
+        "head": "camera_head_left",
+        "left": "camera_wrist_left",
+        "right": "camera_wrist_right"
+      },
+      "transfer_ready": false,
+      "uncertainties": [
+        "官方 v1 的软件关节链匹配当前采集 URDF；采集时版本、实物尺寸和 TCP 仍需独立核验。",
+        "基座到桌面的完整变换缺失；0.15 m 安装高度沿用旧场景候选值，尚未在 v1 上标定。",
+        "头部相机仍为透视候选；v1 腕部相机采用未标定的安装猜测，三路内外参与鱼眼畸变待测。",
+        "旧 calib/left.yaml 与 right.yaml 已查明用于 VR 控制器到手腕标定，不能当作相机外参。",
+        "夹爪指令与反馈统一为电机角度坐标；传动端点仍取数据极值，比例、零位和实际开口待独立标定。",
+        "瓶子与篮子尺寸、质量、摩擦和初始位姿尚非独立实测值。",
+        "控制增益来自另一条部署日志；当前 bias 补偿、时延和摩擦还未与采集控制器对齐。",
+        "v1 夹指为直线滑动；333 N 是上游指关节力上限，不能视为实测电机限矩。",
+        "三条轨迹已恢复并对齐记录时钟；相机曝光、CAN 时间戳和成功标注尚未独立核验。"
+      ],
+      "robot_version": "v1",
+      "gripper_force_limit_value": 333.0,
+      "gripper_force_limit_unit": "N"
+    },
+    "physics_dt": 0.001,
+    "contract": {
+      "state": "left q1..q7(rad), measured gripper motor angle(rad), right q1..q7(rad), measured gripper motor angle(rad)",
+      "controller_semantics": {
+        "mode": "position_pd_bias",
+        "scope": "candidate position PD plus selected compensation; not source-MIT equivalent"
+      },
+      "action": "left q1..q7(rad), target gripper motor angle(rad), right q1..q7(rad), target gripper motor angle(rad)",
+      "policy_controller": "per-arm 7-D L2 step cap, then joint-limit clipping; requested and applied actions logged separately",
+      "controller_source": "/home/sj/Desktop/wuji/lerobot_20260116/openarm_deploy/model_launchers/models/dp/deploy_dp_dual_joint.py:614-651 (read-only audit 2026-09-30)",
+      "state_gripper_mapping": "shared motor-angle affine transmission for target and feedback; not physically calibrated",
+      "gripper_transmissions": {
+        "left": {
+          "schema": "shared-motor-angle/1",
+          "motor_unit": "rad",
+          "open_motor_rad": -1.26,
+          "closed_motor_rad": 0.07,
+          "open_joint_value": 0.044,
+          "joint_unit": "m",
+          "joint_per_motor": -0.03308270676691729,
+          "physically_calibrated": false,
+          "note": "Same affine map for motor target and feedback; endpoints remain data-derived candidates."
+        },
+        "right": {
+          "schema": "shared-motor-angle/1",
+          "motor_unit": "rad",
+          "open_motor_rad": -1.26,
+          "closed_motor_rad": 0.07,
+          "open_joint_value": 0.044,
+          "joint_unit": "m",
+          "joint_per_motor": -0.03308270676691729,
+          "physically_calibrated": false,
+          "note": "Same affine map for motor target and feedback; endpoints remain data-derived candidates."
+        }
+      },
+      "gripper_force_limit_frame": "actuated finger joint; hardware motor limit remains unverified",
+      "gripper_force_limit_unit": "N",
+      "images": "RGB HWC uint8, head/left/right; no robot masking",
+      "step": "obs(t), action(t), obs(t+dt); policy defaults to 30 Hz; reference replay/calibration use audited logger intervals; actual per-run clock is declared in details",
+      "contact_sampling": "1 ms solved physics substeps; continuous dwell at this resolution",
+      "inference_timing": "per-run details.timing declares paused or measured-delay discrete-event integration; not a validated wall-clock real-time controller",
+      "capabilities": [
+        "atomic_vla_requires_matching_checkpoint",
+        "tamp_oracle_pick_handover_place"
+      ],
+      "hardware_access": false
+    },
+    "model_evidence": {
+      "inputs": {
+        "schema": "model-inputs/1",
+        "loading": "frozen MJCF and resource bytes through MuJoCo VFS",
+        "files": {
+          "task/bottle_to_box.xml": {
+            "kind": "mjcf",
+            "bytes": 4321,
+            "sha256": "54da5a8cb8ee1af6ce28f49994bef5fe61d2e4ac7c5704ff24d9fa9d75c405b1"
+          },
+          "task/cell-v1.xml": {
+            "kind": "mjcf",
+            "bytes": 5211,
+            "sha256": "285d0af8b2884efc20bf3d45ea7b354648033a46f35e41500e56953e181844ba"
+          },
+          "openarm_mujoco/v1/openarm_bimanual.xml": {
+            "kind": "mjcf",
+            "bytes": 43183,
+            "sha256": "52c9fc8f314ac1e296e7affc63dd9116ab7b24174ccce92bf4cb5bf492599d0e"
+          },
+          "openarm_mujoco/v1/meshes/collision/body/body_link0.stl": {
+            "kind": "mesh",
+            "bytes": 293284,
+            "sha256": "6c18bbf7e86b03e3faf802e61e8eb438b38dcbcf146d97cffe6e808c65e9a72a"
+          },
+          "openarm_mujoco/v1/meshes/collision/arm/link0.stl": {
+            "kind": "mesh",
+            "bytes": 40284,
+            "sha256": "baf52578e1d9e6225f3818cae82b6074a0b948d3cef8e9a3e6dfafca78507590"
+          },
+          "openarm_mujoco/v1/meshes/collision/arm/link1.stl": {
+            "kind": "mesh",
+            "bytes": 17784,
+            "sha256": "066113d13d5cc85098609003bc7ebb73c570015350877f5ed7162ef1b6601852"
+          },
+          "openarm_mujoco/v1/meshes/collision/arm/link2.stl": {
+            "kind": "mesh",
+            "bytes": 13384,
+            "sha256": "382ab32e4ae0880e8a1512e7a6ca6ce1f478a6c125db4efa977429ffb1d6b02a"
+          },
+          "openarm_mujoco/v1/meshes/collision/arm/link3.stl": {
+            "kind": "mesh",
+            "bytes": 156984,
+            "sha256": "00c908cefab152c00416a570a48bf9aafed1549085f19ff2d882dc3f355d9f59"
+          },
+          "openarm_mujoco/v1/meshes/collision/arm/link4.stl": {
+            "kind": "mesh",
+            "bytes": 1139984,
+            "sha256": "b54883b8c7c96268a68a5879f95998a53ad0b0c4fe74325fad63a6caef669c73"
+          },
+          "openarm_mujoco/v1/meshes/collision/arm/link5.stl": {
+            "kind": "mesh",
+            "bytes": 751484,
+            "sha256": "678a2802906eff7b45a836d2f34a2d8e51def50b6599376968f888e05c72739e"
+          },
+          "openarm_mujoco/v1/meshes/collision/arm/link6.stl": {
+            "kind": "mesh",
+            "bytes": 30084,
+            "sha256": "95529bec23733476dfdbbb266c7db0d25a473a568de73c8337a82440fe4a9ac3"
+          },
+          "openarm_mujoco/v1/meshes/collision/arm/link7.stl": {
+            "kind": "mesh",
+            "bytes": 23884,
+            "sha256": "434f207f21f75f5f0bd604e390b8e5bc7b62b619265222846770e06b3f9b5cfb"
+          },
+          "openarm_mujoco/v1/meshes/collision/gripper/hand.stl": {
+            "kind": "mesh",
+            "bytes": 18284,
+            "sha256": "8e5d373ebbd3fd001b506058644062ad71a68f1ced5ca5d5ed0f6de20137956b"
+          },
+          "openarm_mujoco/v1/meshes/collision/gripper/finger.stl": {
+            "kind": "mesh",
+            "bytes": 13284,
+            "sha256": "8e96e1314618cf434908f70df78f68dd2b049c03538964e8d41fc99abe41564d"
+          },
+          "openarm_mujoco/v1/meshes/visual/body/body_link0_0.obj": {
+            "kind": "mesh",
+            "bytes": 149068,
+            "sha256": "45840dce38427a8ce956b715cdedce7ba703905ce61e07d744abfe7475ab61f1"
+          },
+          "openarm_mujoco/v1/meshes/visual/body/body_link0_1.obj": {
+            "kind": "mesh",
+            "bytes": 594211,
+            "sha256": "099191959a5f0e96507208b24acd381cfec8fd6f5f4c5f37e11d935dd3a12033"
+          },
+          "openarm_mujoco/v1/meshes/visual/body/body_link0_2.obj": {
+            "kind": "mesh",
+            "bytes": 1635237,
+            "sha256": "0c939eb6c9273cef3974acb9cd1046d75916e1af2c7d4ce8787e0fd956250574"
+          },
+          "openarm_mujoco/v1/meshes/visual/body/body_link0_3.obj": {
+            "kind": "mesh",
+            "bytes": 76700,
+            "sha256": "92b88899de906441350a8e6be5a1592e9ffc041711478251fc42954b62bc1b59"
+          },
+          "openarm_mujoco/v1/meshes/visual/body/body_link0_4.obj": {
+            "kind": "mesh",
+            "bytes": 1225635,
+            "sha256": "4771a1f44a1fae27de8551cc4527a498d79ef64dbec1e426a8d67b99135087e1"
+          },
+          "openarm_mujoco/v1/meshes/visual/body/body_link0_5.obj": {
+            "kind": "mesh",
+            "bytes": 2363667,
+            "sha256": "eb4fc4bb41c9497d59c14fbaa306e47a7037f0a3524a2dc4c0a6f2755bb65d20"
+          },
+          "openarm_mujoco/v1/meshes/visual/arm/link0_0.obj": {
+            "kind": "mesh",
+            "bytes": 1146425,
+            "sha256": "c7f642d10a75a61864bfb39f8376997dedc320cec9320934a8511e7ad118a29c"
+          },
+          "openarm_mujoco/v1/meshes/visual/arm/link0_1.obj": {
+            "kind": "mesh",
+            "bytes": 2196482,
+            "sha256": "efe36fab669e3819dc301c7e4c432fb5c63014488a607fcb73cfc7b29b7e0a06"
+          },
+          "openarm_mujoco/v1/meshes/visual/arm/link1_0.obj": {
+            "kind": "mesh",
+            "bytes": 53788,
+            "sha256": "e08c981dbef223934361c0458ef2fa7fecde3c5c4479faf200a0572c16149c04"
+          },
+          "openarm_mujoco/v1/meshes/visual/arm/link1_1.obj": {
+            "kind": "mesh",
+            "bytes": 688010,
+            "sha256": "1a92be9336e391075b63ce8e37aa0af21a877993afba7a6773170691f485216e"
+          },
+          "openarm_mujoco/v1/meshes/visual/arm/link1_2.obj": {
+            "kind": "mesh",
+            "bytes": 1986337,
+            "sha256": "719a6d848b139ccf38948e9418ccf2690bf3390ebc47a3544df52152d4192a6a"
+          },
+          "openarm_mujoco/v1/meshes/visual/arm/link1_3.obj": {
+            "kind": "mesh",
+            "bytes": 1871352,
+            "sha256": "23b6fc806909bf2c0b066cc5907027a54f9b639612264bcdcc1b5e6bf97e7fca"
+          },
+          "openarm_mujoco/v1/meshes/visual/arm/link2_0.obj": {
+            "kind": "mesh",
+            "bytes": 7574,
+            "sha256": "b20d52bcd8a1f10e595f0782d2a827854771d38c1a25f6321a275a8f960ef10d"
+          },
+          "openarm_mujoco/v1/meshes/visual/arm/link2_1.obj": {
+            "kind": "mesh",
+            "bytes": 1480804,
+            "sha256": "08bdbed44bf04d207fe1310f69d0aa7769b502acb4c4e31ea9e2f36ba1364e9d"
+          },
+          "openarm_mujoco/v1/meshes/visual/arm/link2_2.obj": {
+            "kind": "mesh",
+            "bytes": 2218417,
+            "sha256": "520b5ac006c7cca7e5d29ca6232733ce78ec888200b2fc43d884ad8f86b890fb"
+          },
+          "openarm_mujoco/v1/meshes/visual/arm/link3_0.obj": {
+            "kind": "mesh",
+            "bytes": 833448,
+            "sha256": "bc399d66dd303390b5ed9c770b9b90e618faf4b823ff7ba45381c3d0c36900c8"
+          },
+          "openarm_mujoco/v1/meshes/visual/arm/link3_1.obj": {
+            "kind": "mesh",
+            "bytes": 1246735,
+            "sha256": "c06e0ec58ee687ebcff4253469aa7ae7be3d1640d3f6036f4f848a099e7bf1e7"
+          },
+          "openarm_mujoco/v1/meshes/visual/arm/link3_2.obj": {
+            "kind": "mesh",
+            "bytes": 2152213,
+            "sha256": "a7e7827a7279d74b5eb7b4c66404fa50b346e45c9da9ef228c61e02da57296d1"
+          },
+          "openarm_mujoco/v1/meshes/visual/arm/link4_0.obj": {
+            "kind": "mesh",
+            "bytes": 297755,
+            "sha256": "d6c70b73c9112170b00773e8d0ba00e421a00c95d95ec1ffaca29c4421cfa88d"
+          },
+          "openarm_mujoco/v1/meshes/visual/arm/link4_1.obj": {
+            "kind": "mesh",
+            "bytes": 2442001,
+            "sha256": "076c1569313d1b146cf870ba865a09605cdbf2a07ebe164be30787440cb7ba69"
+          },
+          "openarm_mujoco/v1/meshes/visual/arm/link4_2.obj": {
+            "kind": "mesh",
+            "bytes": 1350606,
+            "sha256": "23b9e23a42b3e760b30d101c720641fe18f21ec82e938156806d21ca1cce2f67"
+          },
+          "openarm_mujoco/v1/meshes/visual/arm/link5_0.obj": {
+            "kind": "mesh",
+            "bytes": 122652,
+            "sha256": "53a5aaf252739b16afb0caeceff3770b61e9c28d0bf8e4b3c007cf725addd896"
+          },
+          "openarm_mujoco/v1/meshes/visual/arm/link5_1.obj": {
+            "kind": "mesh",
+            "bytes": 2050664,
+            "sha256": "fb4dbfc63ca2f91e33728aab542c0dd4aa368cf13be55062b5b4f0089629452a"
+          },
+          "openarm_mujoco/v1/meshes/visual/arm/link5_2.obj": {
+            "kind": "mesh",
+            "bytes": 3039332,
+            "sha256": "807d29516fd2d8fc74c4764f5048385780123ca58f2058f59738aa7214ab26f0"
+          },
+          "openarm_mujoco/v1/meshes/visual/arm/link6_0.obj": {
+            "kind": "mesh",
+            "bytes": 1486757,
+            "sha256": "d089539cdcb06a40bb0ab4a184f523980a3fb130bba283ff425c2e4cf655dfd3"
+          },
+          "openarm_mujoco/v1/meshes/visual/arm/link6_1.obj": {
+            "kind": "mesh",
+            "bytes": 2525964,
+            "sha256": "6e17ec2c8348cdcd9bfff84c253ae63401301ccfa55f87f13b408f54b8f7d419"
+          },
+          "openarm_mujoco/v1/meshes/visual/arm/link7_0.obj": {
+            "kind": "mesh",
+            "bytes": 2289899,
+            "sha256": "e81e422fd6db8e6bc527a499eb4d81c4cdbc74cdcb2b154111e2a00003916e20"
+          },
+          "openarm_mujoco/v1/meshes/visual/arm/link7_1.obj": {
+            "kind": "mesh",
+            "bytes": 701753,
+            "sha256": "0a291f8f82eeb20641889571e579f30a191947948a148ade1fe54dc03dd7c269"
+          },
+          "openarm_mujoco/v1/meshes/visual/gripper/hand_0.obj": {
+            "kind": "mesh",
+            "bytes": 299512,
+            "sha256": "bc7861f38307909c4f06d264e94a5f5ed78017179d1729fa5e01757850bfe4b9"
+          },
+          "openarm_mujoco/v1/meshes/visual/gripper/hand_1.obj": {
+            "kind": "mesh",
+            "bytes": 848567,
+            "sha256": "8c764345d91c14ebe83fb50bcc225bdf664e7ac48d545a6e599905b946c17fc4"
+          },
+          "openarm_mujoco/v1/meshes/visual/gripper/finger_0.obj": {
+            "kind": "mesh",
+            "bytes": 496074,
+            "sha256": "4aff253863db205211e151c8065a8614a56c629b90ca17807c83b0dcf603abc8"
+          },
+          "openarm_mujoco/v1/meshes/visual/gripper/finger_1.obj": {
+            "kind": "mesh",
+            "bytes": 2708908,
+            "sha256": "3aab3095bd7848659dbaebe79b0d52fd1e921d5060f24cabfc6fdbc94b0eee57"
+          },
+          "openarm_mujoco/v2/assets/visual/cell/cell.obj": {
+            "kind": "mesh",
+            "bytes": 228801,
+            "sha256": "607e1109ada00d3a536cc7cbe27b939f7b57d6b4e69747bfe23bb45216e24782"
+          },
+          "openarm_mujoco/v2/assets/visual/cell/sheet.obj": {
+            "kind": "mesh",
+            "bytes": 25683,
+            "sha256": "e7a12b4b5cac629424578286e9331896365ab695be722ba03b7d245f1551dcfd"
+          }
+        },
+        "compiled_resources": [
+          {
+            "kind": "mesh",
+            "id": 0,
+            "name": "cell_mesh",
+            "source": "openarm_mujoco/v2/assets/visual/cell/cell.obj",
+            "compiled_path": "visual/cell/cell.obj"
+          },
+          {
+            "kind": "mesh",
+            "id": 1,
+            "name": "sheet_mesh",
+            "source": "openarm_mujoco/v2/assets/visual/cell/sheet.obj",
+            "compiled_path": "visual/cell/sheet.obj"
+          },
+          {
+            "kind": "mesh",
+            "id": 2,
+            "name": "body_collision",
+            "source": "openarm_mujoco/v1/meshes/collision/body/body_link0.stl",
+            "compiled_path": "collision/body/body_link0.stl"
+          },
+          {
+            "kind": "mesh",
+            "id": 3,
+            "name": "link0_collision",
+            "source": "openarm_mujoco/v1/meshes/collision/arm/link0.stl",
+            "compiled_path": "collision/arm/link0.stl"
+          },
+          {
+            "kind": "mesh",
+            "id": 4,
+            "name": "link0_collision_left",
+            "source": "openarm_mujoco/v1/meshes/collision/arm/link0.stl",
+            "compiled_path": "collision/arm/link0.stl"
+          },
+          {
+            "kind": "mesh",
+            "id": 5,
+            "name": "link1_collision",
+            "source": "openarm_mujoco/v1/meshes/collision/arm/link1.stl",
+            "compiled_path": "collision/arm/link1.stl"
+          },
+          {
+            "kind": "mesh",
+            "id": 6,
+            "name": "link1_collision_left",
+            "source": "openarm_mujoco/v1/meshes/collision/arm/link1.stl",
+            "compiled_path": "collision/arm/link1.stl"
+          },
+          {
+            "kind": "mesh",
+            "id": 7,
+            "name": "link2_collision",
+            "source": "openarm_mujoco/v1/meshes/collision/arm/link2.stl",
+            "compiled_path": "collision/arm/link2.stl"
+          },
+          {
+            "kind": "mesh",
+            "id": 8,
+            "name": "link2_collision_left",
+            "source": "openarm_mujoco/v1/meshes/collision/arm/link2.stl",
+            "compiled_path": "collision/arm/link2.stl"
+          },
+          {
+            "kind": "mesh",
+            "id": 9,
+            "name": "link3_collision",
+            "source": "openarm_mujoco/v1/meshes/collision/arm/link3.stl",
+            "compiled_path": "collision/arm/link3.stl"
+          },
+          {
+            "kind": "mesh",
+            "id": 10,
+            "name": "link3_collision_left",
+            "source": "openarm_mujoco/v1/meshes/collision/arm/link3.stl",
+            "compiled_path": "collision/arm/link3.stl"
+          },
+          {
+            "kind": "mesh",
+            "id": 11,
+            "name": "link4_collision",
+            "source": "openarm_mujoco/v1/meshes/collision/arm/link4.stl",
+            "compiled_path": "collision/arm/link4.stl"
+          },
+          {
+            "kind": "mesh",
+            "id": 12,
+            "name": "link5_collision",
+            "source": "openarm_mujoco/v1/meshes/collision/arm/link5.stl",
+            "compiled_path": "collision/arm/link5.stl"
+          },
+          {
+            "kind": "mesh",
+            "id": 13,
+            "name": "link5_collision_left",
+            "source": "openarm_mujoco/v1/meshes/collision/arm/link5.stl",
+            "compiled_path": "collision/arm/link5.stl"
+          },
+          {
+            "kind": "mesh",
+            "id": 14,
+            "name": "link6_collision",
+            "source": "openarm_mujoco/v1/meshes/collision/arm/link6.stl",
+            "compiled_path": "collision/arm/link6.stl"
+          },
+          {
+            "kind": "mesh",
+            "id": 15,
+            "name": "link6_collision_left",
+            "source": "openarm_mujoco/v1/meshes/collision/arm/link6.stl",
+            "compiled_path": "collision/arm/link6.stl"
+          },
+          {
+            "kind": "mesh",
+            "id": 16,
+            "name": "link7_collision",
+            "source": "openarm_mujoco/v1/meshes/collision/arm/link7.stl",
+            "compiled_path": "collision/arm/link7.stl"
+          },
+          {
+            "kind": "mesh",
+            "id": 17,
+            "name": "link7_collision_left",
+            "source": "openarm_mujoco/v1/meshes/collision/arm/link7.stl",
+            "compiled_path": "collision/arm/link7.stl"
+          },
+          {
+            "kind": "mesh",
+            "id": 18,
+            "name": "hand_collision",
+            "source": "openarm_mujoco/v1/meshes/collision/gripper/hand.stl",
+            "compiled_path": "collision/gripper/hand.stl"
+          },
+          {
+            "kind": "mesh",
+            "id": 19,
+            "name": "finger_collision",
+            "source": "openarm_mujoco/v1/meshes/collision/gripper/finger.stl",
+            "compiled_path": "collision/gripper/finger.stl"
+          },
+          {
+            "kind": "mesh",
+            "id": 20,
+            "name": "finger_collision_left",
+            "source": "openarm_mujoco/v1/meshes/collision/gripper/finger.stl",
+            "compiled_path": "collision/gripper/finger.stl"
+          },
+          {
+            "kind": "mesh",
+            "id": 21,
+            "name": "body_link0_0.obj",
+            "source": "openarm_mujoco/v1/meshes/visual/body/body_link0_0.obj",
+            "compiled_path": "visual/body/body_link0_0.obj"
+          },
+          {
+            "kind": "mesh",
+            "id": 22,
+            "name": "body_link0_1.obj",
+            "source": "openarm_mujoco/v1/meshes/visual/body/body_link0_1.obj",
+            "compiled_path": "visual/body/body_link0_1.obj"
+          },
+          {
+            "kind": "mesh",
+            "id": 23,
+            "name": "body_link0_2.obj",
+            "source": "openarm_mujoco/v1/meshes/visual/body/body_link0_2.obj",
+            "compiled_path": "visual/body/body_link0_2.obj"
+          },
+          {
+            "kind": "mesh",
+            "id": 24,
+            "name": "body_link0_3.obj",
+            "source": "openarm_mujoco/v1/meshes/visual/body/body_link0_3.obj",
+            "compiled_path": "visual/body/body_link0_3.obj"
+          },
+          {
+            "kind": "mesh",
+            "id": 25,
+            "name": "body_link0_4.obj",
+            "source": "openarm_mujoco/v1/meshes/visual/body/body_link0_4.obj",
+            "compiled_path": "visual/body/body_link0_4.obj"
+          },
+          {
+            "kind": "mesh",
+            "id": 26,
+            "name": "body_link0_5.obj",
+            "source": "openarm_mujoco/v1/meshes/visual/body/body_link0_5.obj",
+            "compiled_path": "visual/body/body_link0_5.obj"
+          },
+          {
+            "kind": "mesh",
+            "id": 27,
+            "name": "link0_0.obj",
+            "source": "openarm_mujoco/v1/meshes/visual/arm/link0_0.obj",
+            "compiled_path": "visual/arm/link0_0.obj"
+          },
+          {
+            "kind": "mesh",
+            "id": 28,
+            "name": "link0_1.obj",
+            "source": "openarm_mujoco/v1/meshes/visual/arm/link0_1.obj",
+            "compiled_path": "visual/arm/link0_1.obj"
+          },
+          {
+            "kind": "mesh",
+            "id": 29,
+            "name": "link1_0.obj",
+            "source": "openarm_mujoco/v1/meshes/visual/arm/link1_0.obj",
+            "compiled_path": "visual/arm/link1_0.obj"
+          },
+          {
+            "kind": "mesh",
+            "id": 30,
+            "name": "link1_1.obj",
+            "source": "openarm_mujoco/v1/meshes/visual/arm/link1_1.obj",
+            "compiled_path": "visual/arm/link1_1.obj"
+          },
+          {
+            "kind": "mesh",
+            "id": 31,
+            "name": "link1_2.obj",
+            "source": "openarm_mujoco/v1/meshes/visual/arm/link1_2.obj",
+            "compiled_path": "visual/arm/link1_2.obj"
+          },
+          {
+            "kind": "mesh",
+            "id": 32,
+            "name": "link1_3.obj",
+            "source": "openarm_mujoco/v1/meshes/visual/arm/link1_3.obj",
+            "compiled_path": "visual/arm/link1_3.obj"
+          },
+          {
+            "kind": "mesh",
+            "id": 33,
+            "name": "link2_0.obj",
+            "source": "openarm_mujoco/v1/meshes/visual/arm/link2_0.obj",
+            "compiled_path": "visual/arm/link2_0.obj"
+          },
+          {
+            "kind": "mesh",
+            "id": 34,
+            "name": "link2_1.obj",
+            "source": "openarm_mujoco/v1/meshes/visual/arm/link2_1.obj",
+            "compiled_path": "visual/arm/link2_1.obj"
+          },
+          {
+            "kind": "mesh",
+            "id": 35,
+            "name": "link2_2.obj",
+            "source": "openarm_mujoco/v1/meshes/visual/arm/link2_2.obj",
+            "compiled_path": "visual/arm/link2_2.obj"
+          },
+          {
+            "kind": "mesh",
+            "id": 36,
+            "name": "link3_0.obj",
+            "source": "openarm_mujoco/v1/meshes/visual/arm/link3_0.obj",
+            "compiled_path": "visual/arm/link3_0.obj"
+          },
+          {
+            "kind": "mesh",
+            "id": 37,
+            "name": "link3_1.obj",
+            "source": "openarm_mujoco/v1/meshes/visual/arm/link3_1.obj",
+            "compiled_path": "visual/arm/link3_1.obj"
+          },
+          {
+            "kind": "mesh",
+            "id": 38,
+            "name": "link3_2.obj",
+            "source": "openarm_mujoco/v1/meshes/visual/arm/link3_2.obj",
+            "compiled_path": "visual/arm/link3_2.obj"
+          },
+          {
+            "kind": "mesh",
+            "id": 39,
+            "name": "link4_0.obj",
+            "source": "openarm_mujoco/v1/meshes/visual/arm/link4_0.obj",
+            "compiled_path": "visual/arm/link4_0.obj"
+          },
+          {
+            "kind": "mesh",
+            "id": 40,
+            "name": "link4_1.obj",
+            "source": "openarm_mujoco/v1/meshes/visual/arm/link4_1.obj",
+            "compiled_path": "visual/arm/link4_1.obj"
+          },
+          {
+            "kind": "mesh",
+            "id": 41,
+            "name": "link4_2.obj",
+            "source": "openarm_mujoco/v1/meshes/visual/arm/link4_2.obj",
+            "compiled_path": "visual/arm/link4_2.obj"
+          },
+          {
+            "kind": "mesh",
+            "id": 42,
+            "name": "link5_0.obj",
+            "source": "openarm_mujoco/v1/meshes/visual/arm/link5_0.obj",
+            "compiled_path": "visual/arm/link5_0.obj"
+          },
+          {
+            "kind": "mesh",
+            "id": 43,
+            "name": "link5_1.obj",
+            "source": "openarm_mujoco/v1/meshes/visual/arm/link5_1.obj",
+            "compiled_path": "visual/arm/link5_1.obj"
+          },
+          {
+            "kind": "mesh",
+            "id": 44,
+            "name": "link5_2.obj",
+            "source": "openarm_mujoco/v1/meshes/visual/arm/link5_2.obj",
+            "compiled_path": "visual/arm/link5_2.obj"
+          },
+          {
+            "kind": "mesh",
+            "id": 45,
+            "name": "link6_0.obj",
+            "source": "openarm_mujoco/v1/meshes/visual/arm/link6_0.obj",
+            "compiled_path": "visual/arm/link6_0.obj"
+          },
+          {
+            "kind": "mesh",
+            "id": 46,
+            "name": "link6_1.obj",
+            "source": "openarm_mujoco/v1/meshes/visual/arm/link6_1.obj",
+            "compiled_path": "visual/arm/link6_1.obj"
+          },
+          {
+            "kind": "mesh",
+            "id": 47,
+            "name": "link6_0_left.obj",
+            "source": "openarm_mujoco/v1/meshes/visual/arm/link6_0.obj",
+            "compiled_path": "visual/arm/link6_0.obj"
+          },
+          {
+            "kind": "mesh",
+            "id": 48,
+            "name": "link6_1_left.obj",
+            "source": "openarm_mujoco/v1/meshes/visual/arm/link6_1.obj",
+            "compiled_path": "visual/arm/link6_1.obj"
+          },
+          {
+            "kind": "mesh",
+            "id": 49,
+            "name": "link7_0.obj",
+            "source": "openarm_mujoco/v1/meshes/visual/arm/link7_0.obj",
+            "compiled_path": "visual/arm/link7_0.obj"
+          },
+          {
+            "kind": "mesh",
+            "id": 50,
+            "name": "link7_1.obj",
+            "source": "openarm_mujoco/v1/meshes/visual/arm/link7_1.obj",
+            "compiled_path": "visual/arm/link7_1.obj"
+          },
+          {
+            "kind": "mesh",
+            "id": 51,
+            "name": "link7_0_left.obj",
+            "source": "openarm_mujoco/v1/meshes/visual/arm/link7_0.obj",
+            "compiled_path": "visual/arm/link7_0.obj"
+          },
+          {
+            "kind": "mesh",
+            "id": 52,
+            "name": "link7_1_left.obj",
+            "source": "openarm_mujoco/v1/meshes/visual/arm/link7_1.obj",
+            "compiled_path": "visual/arm/link7_1.obj"
+          },
+          {
+            "kind": "mesh",
+            "id": 53,
+            "name": "hand_0.obj",
+            "source": "openarm_mujoco/v1/meshes/visual/gripper/hand_0.obj",
+            "compiled_path": "visual/gripper/hand_0.obj"
+          },
+          {
+            "kind": "mesh",
+            "id": 54,
+            "name": "hand_1.obj",
+            "source": "openarm_mujoco/v1/meshes/visual/gripper/hand_1.obj",
+            "compiled_path": "visual/gripper/hand_1.obj"
+          },
+          {
+            "kind": "mesh",
+            "id": 55,
+            "name": "finger_0.obj",
+            "source": "openarm_mujoco/v1/meshes/visual/gripper/finger_0.obj",
+            "compiled_path": "visual/gripper/finger_0.obj"
+          },
+          {
+            "kind": "mesh",
+            "id": 56,
+            "name": "finger_0_flip.obj",
+            "source": "openarm_mujoco/v1/meshes/visual/gripper/finger_0.obj",
+            "compiled_path": "visual/gripper/finger_0.obj"
+          },
+          {
+            "kind": "mesh",
+            "id": 57,
+            "name": "finger_1.obj",
+            "source": "openarm_mujoco/v1/meshes/visual/gripper/finger_1.obj",
+            "compiled_path": "visual/gripper/finger_1.obj"
+          },
+          {
+            "kind": "mesh",
+            "id": 58,
+            "name": "finger_1_flip.obj",
+            "source": "openarm_mujoco/v1/meshes/visual/gripper/finger_1.obj",
+            "compiled_path": "visual/gripper/finger_1.obj"
+          }
+        ],
+        "content_sha256": "54f9047d67492df0611bc6b5aea1cda3375c0dc878855672cfe578d2956de17d",
+        "coverage": "active MJCF dependency tree and all file-backed mesh/texture/hfield resources; procedural resources covered by compiled model",
+        "disk_check": "content SHA256 cached by device/inode/size/mtime_ns/ctime_ns; cache is not a physical measurement",
+        "physically_calibrated": false,
+        "transfer_ready": false
+      },
+      "compiled": {
+        "schema": "compiled-model/1",
+        "engine": "mujoco-3.14.0",
+        "format": "MuJoCo MJB",
+        "bytes": 257986387,
+        "sha256": "3f82ee0029404c39f4e3ad4a3cec67078a98fb877358643462ab935df6f6ac2b",
+        "capture": "after local compile/controller/render overrides, before reset or step",
+        "counts": {
+          "bodies": 31,
+          "joints": 19,
+          "geoms": 96,
+          "meshes": 59,
+          "actuators": 16,
+          "cameras": 7
+        },
+        "runtime_mutation": "controller feedforward bias column and experiment-specific camera/render settings are not this initial snapshot; applied actions and controller semantics logged separately",
+        "physically_calibrated": false,
+        "transfer_ready": false
+      },
+      "runtime_parameters": {
+        "schema": "runtime-parameters/1",
+        "sha256": "fe3bfe5ba8cb459f0746b9ce541f191c646adea9be63baed03cdd0fae20561cd",
+        "changed_fields": [],
+        "fields": 249,
+        "scope": "mutable body/joint/dof/geom/actuator/equality/camera/site/pair/tendon/sensor parameters and all numeric options; initial MJB identifies bulk assets",
+        "excluded": "actuator_biasprm[:,0] dynamic feedforward; bulk compiled mesh/texture buffers are not continuously rehashed",
+        "physically_calibrated": false
+      }
+    },
+    "source_status": {
+      "matches_disk": true,
+      "restart_required": false,
+      "changed_files": []
+    },
+    "hashes": {
+      "sim/__init__.py": "41f55ee38a5878dfc027379467712251f5117dcaa673e48bc38fbd0cd2245a7b",
+      "sim/act_server.py": "a3a1a72e92551b1bf26498772cdce03b0fe37db5bd23dbb06554c3cae50863c4",
+      "sim/adaptive_grasp.py": "2ba348b65a0f29ca26ff0235d6cf31844c76009a797510ef884fbcfe16596238",
+      "sim/alignment.py": "e3e708109523df2659e3d2d622847f3017354ed33cfc2b8eca3bb87fc3a4f826",
+      "sim/alignment_checks.py": "b375595be1ca27af73727bf886d0ff8bbfdb95af724d1b1ee6cecf4638911ba6",
+      "sim/backend_checks.py": "7081dfc7ec694a700acc2656f560d1796dd28f25f594d26e6f5103b33aa73105",
+      "sim/bottle_routing.py": "fcd0f604da6d870be4a569df04152650bf386a4808ac304508ac7df6332f0796",
+      "sim/cache_checks.py": "44860f61c9d0d8fa9b65260be6adf1b7e2817306057f23ec04bf33ba9e67f865",
+      "sim/cache_curobo.py": "a502ca2b3e3e1adadcbe06e49b6219893c326aa0d0e7ab6cc3d213c2e52188a4",
+      "sim/calibration.py": "836dea47ac5c0d2ea4b4333c705adfbad8f3f8f629fddc4a69c0ed4a7f246495",
+      "sim/calibration_checks.py": "5ac61ed4df5b9c935c900330d3cc7170a2cae6d189a1a62f148f07e9d24d1dae",
+      "sim/cartesian_place.py": "04da5b027c85055eec57e3aff4baa35050b3408813b81abb415ecb3dec915e0b",
+      "sim/checks.py": "134fc6b4085041518743adcf5aed11eb0d9890942cf5c0eabac5597f126b84fa",
+      "sim/cli.py": "c140087a89d5f9b3691d231e260f2906345fbe9e2406ccd0daecab5b4d19e0c5",
+      "sim/connected_place.py": "d87aac712cc37a71c215b5ac9a264e04e0874a129fa1fd92158f36dceff6b62f",
+      "sim/constrained_place.py": "9b1afb0fdc16e81522f549303cbaf4dbc9b5b76e51cfb60b22d8734fb6fa7c5a",
+      "sim/contact_checks.py": "a7005df13bf76e213dfeda404b2407eca7b0b4c4046836253a327f16cbbd336e",
+      "sim/contacts.py": "d26e98e460e46b916d18faf0a38eea92ddd43102b7934be2aac3df56ae7a93c1",
+      "sim/controller.py": "a2e6d6771bc6f25e1809b1720071bc11ee5ceb1b04284ca2f035cd042c4522fd",
+      "sim/controller_checks.py": "c337f7421bf923bfc0a6ea7f883ede8b74929b01b23baee704ef897df10d8e99",
+      "sim/curobo.py": "1fb39a420e7e8c5297ba523a8b91210155442e568163599c3634ed8f10172a6e",
+      "sim/curobo_cache.py": "7ec4dc710fd3d2be0e5221b5bfe6c801e1fed9f34e9534706feaa4b002c44a42",
+      "sim/curobo_server.py": "ed808421dd001056731e77f3eb04843c836aa979f2ca1d129c4d28de2065c6d5",
+      "sim/dataset.py": "4779466b691858ff0197d6c88770e6855a76d9c9e0969976357bba1b2e3943be",
+      "sim/decision_checks.py": "1cd3d425d9ddaac57de6c48c15f86ca15bb1d7dd9362430b4e5228bd02851a4f",
+      "sim/decision_timing.py": "7a39408406cef7e7e9310f5582417a9e6d94697a3c82636040900263b6e6058a",
+      "sim/environment.py": "e4f40db7852362f2c0c32c1e58cf775b5e6b16b227fadeb46cb0d4297b363065",
+      "sim/evaluate.py": "fd52bb1626957f2ec0c4bc7c6b8efd04054e3c90ffb5b942fdbe6063a28b2173",
+      "sim/fast_handover.py": "0d54adce8e6d45d6154f5eb822575f9c2e5215fa71ef5d7dce72bf384d269cc7",
+      "sim/free_transport.py": "4207161b48d05d859baf1ee968642e6b788d908b0d7be2a1583d188b02b41327",
+      "sim/generalization_checks.py": "972185c2124541b23e00f9a1173f554c8a6400644550f20a5cd4c90a6595dce7",
+      "sim/grasp.py": "49b8800fb24a4dac898294aa0e5e20a6c2a5d73c7b265b7a08996b4a0faaac7a",
+      "sim/grasp_feedback.py": "24e6cf1aa2f58e8d67b8b1aaffe0b0dc85391f613795962715b57f276b804939",
+      "sim/grasp_feedback_checks.py": "1b5af76caba6d54028a8c1faacfc18f4c9c53b026fa7fe2c08c610fe6da1819d",
+      "sim/gripper.py": "d2dd58f61a62fd74384c595b79fcdf9459ff4ac12f1962bafe3bdb19deaf9020",
+      "sim/gripper_checks.py": "98c600333bea626ae6f1acb8682a47aeb1dde0bbe84377c14dfd389a0af10d39",
+      "sim/gripper_study.py": "f7a6264019b1fd9fc32079cc3143807135eda94669b5859ce613e5827ccf1f8b",
+      "sim/hold_settling.py": "bde200a65034c590499b789e706debb2ba37f71928f74962e3784cba9704299e",
+      "sim/ik.py": "b60999d2615daff46fa8902300590be3b7dbd736ceb6554e32fc5785d2a027cf",
+      "sim/learning.py": "2250cf153875282310287acc319a0a908f4ed39d25063d2ac7a0a7a8215ee159",
+      "sim/margin_grasp.py": "dd3fe04650f4c2f97061f88ba0ccb7f579271ebc26762ec06605fa68dd03e036",
+      "sim/model_checks.py": "268aebf005bb6c5a670559c9c4b85b3b1519507f36eae6d47447f1211816b1da",
+      "sim/model_evidence.py": "35d1729fada40defc43dad40335af604568543aa63a9d4c1b595988ff2bb886e",
+      "sim/object_curobo.py": "c8c22b5f9ab07d83a525c455af40e737b532966819e93de5d4c770a13d11ac7f",
+      "sim/object_handover.py": "8c5e6759d443c376110985e147efbbb01919f1af0f65d52f0ecdbe099fc7b0f7",
+      "sim/object_planner.py": "16a765dde5644234cf62ad55691cb07ab441348d6683af00fb95404df21d8d24",
+      "sim/objects.py": "665e2d71e022a06c18b16106f2f92dadea46574712bbc5ec7896ee361fc46f8c",
+      "sim/oriented_grasp.py": "450acf0c31cd13a0b17100d9932b2f70c2319addbaaf1a9339800ca6bfe2eed9",
+      "sim/pi05_server.py": "dda7bdb1222442e4fc29497548a40792e4c010ee8ececadffa3cac731b8e2290",
+      "sim/pitch_grasp.py": "d96beefb2363704b91f769210140d62e380a5d33b62f0ca046c4f0c388b89ab3",
+      "sim/placement.py": "5acf895df0ef14793b7d0d0c30f164a431701011c27afc64fe8855d40808cbaf",
+      "sim/placement_checks.py": "b59cf869a27710905c2e65eeea0f7b9d4b54a8a9e4dc79e7395a6e5c27a26eda",
+      "sim/planning_checks.py": "dc72dd7cadef694932afc135a4edc0b22bdcd2b0c725a42a1636c406f3603510",
+      "sim/planning_timing.py": "cb691ecb4c49cd3cdeff2334ca9d90bb2689a9f04d4a7fef5ccb2b2cc1e589d0",
+      "sim/policy.py": "f06993106cfe7183628a764a7d6659a2f2d16d9b77cb55c28795f40304f16257",
+      "sim/policy_checks.py": "feddd9c28a1ab42aa047665776ecaf3eb5c5f0a4caf518de44098892338f5d73",
+      "sim/policy_wire.py": "eabe5f515f1e11933a565cc35db8dafb75c26ae2c69e751e8bedf013ea5bb2ba",
+      "sim/predictive_checks.py": "35b3eb23f01d17f60a314e7532bca06e6b8c51d3639d607511f0759a6d295ac2",
+      "sim/predictive_place.py": "ecd8a1fae6ae3e0819f858f7c81ad9787d31073b9949a3db81b96ee5000405eb",
+      "sim/recording.py": "c55fb8413e767e6ad55bc6ed7892ff0956bc746830e9d01eafe6e71c144e6582",
+      "sim/reference_clock.py": "8df123b60eb3c68668542f797eec0734413ee7060e69494d576064755af801ae",
+      "sim/reference_phases.py": "2880663339be5a2e1005fbf517b209db8990cd52dc9fe9a28cc68580eee623d1",
+      "sim/relocation.py": "4866cecc20256f19339b342506da465b2d81e856a8325a4a5c0f39e91720b4b6",
+      "sim/relocation_checks.py": "3b775b3457752dab20a514335d92522725f6bc62a4840fbcaef8deb7b49a3f0d",
+      "sim/replay.py": "9674e9ce2c04ab2608075d39111d92e99d0aa4263346c7ef5a39347a3084d4fb",
+      "sim/robust_grasp.py": "70c40433106d7cfc8459c24d51b6ccfa3c5cf57ee6438c9ae0d1eec62018843f",
+      "sim/scene.py": "32d7539b6eedd9de08c3b91901dabff1a4ebe706c39f5dfbf07a60f174e128a8",
+      "sim/scene_cache.py": "61ad2b8020b690df253167c95580255a6f3bfcc73acdc5bc2968fa1e902927fa",
+      "sim/scene_curobo.py": "93f7b244726f33b616ef6a73c88fdc792e4ec31fafe64c188fcc5806df0046dd",
+      "sim/scene_library.py": "4621e820781ba051dc96ea0a34e5ee64ce40510d05d57d5eaf365389ff65ef30",
+      "sim/service.py": "43056b0fb5a77e299fb45b9a6b229ec03f2a6bded86c8f535902bdd3db0b0d5b",
+      "sim/source_preview.py": "ed12bfe90c48001a03310c9eb395df2d5f43a9ed657679b82800f90944676d38",
+      "sim/tamp.py": "826f1ea045550703f75cdfeb16e9a2ace6bcffc3d03a0c7181bc8ce5011c6627",
+      "sim/tamp_checks.py": "2c080114a926aea9dccbcfdde651b00232f969e69113b231a6eb4511f2c95515",
+      "sim/task_grasp.py": "49c5bd44b12ec1d291212e5313147fbf6af93170f5a74aeb0c6a4caa7dc38e9c",
+      "sim/task_scene.py": "6871616ed806b72bffec489d5f111f483da72fd0b676190b61b4dea8f3a52e41",
+      "sim/timing.py": "d5c1effa947cf5d4c5027fe9bbbed03e691b1853399237a5453369d678365e16",
+      "sim/timing_checks.py": "1bdfa02c64848af42eed412ed691f286b1b33fbdf4c88409b908c35000e218ed",
+      "sim/timing_study.py": "2b8bbfdb419eace2b8da6974e619744e46d2d9e4f9a18fee11d46aa227522ffc",
+      "sim/train.py": "54ca7182fd47472361ed783231aa6699b59d6403d49787536623f409669ea6be",
+      "sim/transit_hint.py": "4d38f21fc222a337efa2856bb1d04f9aa01beb8a65837f1a35b146449d767e67",
+      "sim/view.py": "3b8f0b4b0107e0e9e1cbcddb264907842a54ac8601aa9c7aaf5de7c0d7a45e76",
+      "sim/view_checks.py": "2346e351fe22cd9c1c77436efe83d749c82fb9c37fc20597fd11603ca78db712",
+      "sim/waypoint_admission.py": "1ccc7f17ec3c8ea2e5244fdc20ccd65ea151a541cac256513635a2b8a63fbd13",
+      "sim/waypoint_control.py": "99cd0cbd6ce853011c81dc08caaac98b4f74f19d8d22a34d2fed298b94e8f360",
+      "sim/waypoint_ik.py": "43507e15d859462423fefed4b1cc0db4b7d6fb91ea8df34e63c2abde6ea6bd34",
+      "sim/waypoint_preview.py": "94579417948c9763428cdaf6765103659c6fd9b761b482fc2cfe26e4004fdcf1",
+      "sim/waypoint_service.py": "7a7bd68d2322e0f0ae020f69bfb4abc8d0d5cb1208488e4cda6e940c47ae57fe",
+      "sim/wrist.py": "fb6dedf86d9bbfa5fe2926cb05b870b5148c288b50c5e87a621a67cc8785885b",
+      "sim/wrist_checks.py": "97d3425560881fd928874cb40829d4c54408110af14dfb576d5024c1f5dd6ba9",
+      "harness/act_adapter.py": "a1501aba56a0041befd5fb4f826fc79ee67d236e5bc1708f4684ab3ad8ee7b55",
+      "harness/agent.py": "5f48e0060610e00fa8f4c7ea23706ae795ce601ef606cfc81fc64c670e84c155",
+      "harness/bottle.py": "ed27890bd001e7185d386a574f1f4e6afdc3c7ce259c2e1c4e8ec32e516df13c",
+      "harness/candidate.py": "a056b58848264af2468b2407fdb69eab26feeccac251c71b65b04f184590b68a",
+      "harness/checks.py": "7ce579baec2f67d5be5894f122033696f6ee58c6d93e068ac2f3cdaf1d415610",
+      "harness/compact.py": "e499b3e7bc60a48c495554174e3f28ed488878b50d142486d0255e2a54c531e9",
+      "harness/compact_checks.py": "c9164ebb111b083654ede81b88441943cb88ae561ea7e19ba1954f14cdd03106",
+      "harness/composite.py": "5feab159a91feb87c8a937cddd7c54043c52f454300c386ade857b10c981d23f",
+      "harness/connected_placement.py": "53ab109630cfa1158b7f1cd938a0b7a55fe0602b435b0dbc2314757eee556089",
+      "harness/failures.py": "6d8943d05acd18a85efe3182953d8189b1206fbded055d07883b59c3474efb18",
+      "harness/fast_grasp.py": "eb4093ae3563cd91165cce18a881a7c7deec89a02e984df7bf2a27d56c40db7a",
+      "harness/free_transport.py": "eeebb9359cac8c0f065ec9b489b06543d5dd1d154095d589feac8fac00ebb2f1",
+      "harness/goal_checks.py": "6b6cd49e86f52cf14af0d849e597f4980a1e88d46af4d3813a4f2a12c1c84ee8",
+      "harness/goals.py": "005b36b80dc6560dfc47f48567a2b7230d560a9c557e373411d7f5133eb09279",
+      "harness/intent.py": "0a92cb137b3125095e5a22a80bb170de959a9efd44890419443d750733730710",
+      "harness/knowledge.py": "bc96d52b19fab48023f9913ac44f6781e1e9fe889683351e280f5c6759a28bcd",
+      "harness/knowledge_checks.py": "ea8e210fd4fe066c94ab4786ad6172bfd7635bc758c6dc20cd552eb3d6f9902c",
+      "harness/llm.py": "bfc65ffbbea21e77aaf8afc163917e4cc8db7ecf158b9d2c4e999f69e2307823",
+      "harness/margin_grasp.py": "27fa8335bd5e838bcc16a37b2835d4fd65c63d2513f3a4679132090388f2ad6f",
+      "harness/memory_checks.py": "f2565a85684258eb363393c73dbfcd381f06ca87b403d0b2712dfd0ba247f488",
+      "harness/model_checks.py": "82880c5ef74161439c39d8862146bec6fffb0ea90e339037b03e4a1e069573af",
+      "harness/object_gpu.py": "06d411dbb2429f8b950b2f4d739fadecf3d52c1b603709f526eefac245abf3ae",
+      "harness/object_handover.py": "3431d147a86573b6402e6174033dcabba182963ad68784a3ad5cd5d786a060ea",
+      "harness/object_memory.py": "5d5da02b3364245bb59582922011f04a86b14c91085df11c19d40119d654770c",
+      "harness/object_transport.py": "9586ddb7b7ed6ab8d1a5d2a8581fe33c3a81aded0cb4a906b103fc27c5f4be0e",
+      "harness/objects.py": "cea7d93827b4824128ee7d68b798c7a2a997d38c66be9063213da0e3790782e0",
+      "harness/policy_route.py": "4e1b6a04a1019b4c1703e85ae3ed3a64cc059251466990e6617441faf03869b1",
+      "harness/policy_route_checks.py": "01be173fba8f333b7b4e9bf5d29281aeba0d961802ef097e6078b22823fe962e",
+      "harness/policy_trace.py": "f6447d9b958494b5e50fd84b475a4e8e74dfd592f1b29680534565b0528e54cc",
+      "harness/policy_trace_checks.py": "5ac197566596fb4be59a12f651c35bdb1351541c90f4da3517fca7417b52dd12",
+      "harness/poses.py": "b0d8b0f66d2ee2d5bc59ae39de1e6eebcb50cb5b8afbe94c971a8c5d8a077796",
+      "harness/provider.py": "9b9ffc25a295cc36109d419b16fd15b66820b4769802ba4927f149dab11744a5",
+      "harness/scene.py": "bcfb150980cc2e2974e00399012c45a126e07e07d2a63309beddf1a4fd3a1834",
+      "harness/settled_hold.py": "7fdcf0816ca83c111753ce2e4263c990c28afd0669b4c5650f6610e4d599e7a9",
+      "harness/skill_checks.py": "9f9e215beb5e5291901976b795789321b94c068db403a2c85b52766c3fd54aef",
+      "harness/skills.py": "c4383e12a5ab5714ca472089ec1582392f6209e15e33ccc5a48cba24e12e9052",
+      "harness/stage_checks.py": "aaa7bc737504137b33729170e1e4e3c29997e3b97642bc424fd7c0a3230f3620",
+      "harness/stages.py": "6b5bbad8a349a4f43560bead4d211ccc1e47b09a10f1125111bc783442a35b1b",
+      "harness/task_placement.py": "e79a1e72b70d202a834fa6002f5988d55798c7dcc067b7066e8ded9ce0276645",
+      "harness/task_placement_checks.py": "cdf041eefbd6d2086b6addeee5d700568540fd356b2dbc64e6ea732f9a6f32d6",
+      "harness/task_queue.py": "adb1a4aed2d82cb4178d2d7ebdd26564f777bc0f0f33586a1b0c4bd6b1b58997",
+      "harness/transit_hint.py": "c7ae50e14b09bba7a028a271a39aff4fd0a08ad41bd83f234f24f9ac9c770789",
+      "harness/vault.py": "7fd3813c1cafcb53a5347eba7666a6246e68257499a538e65992a4d944fc7302",
+      "harness/workspace.py": "15943acbeef78f29a36c460f8258a2a1a9653927fc8e81c13ca02112301aba51",
+      "harness/workspace_checks.py": "532345acbb17beb906e7529ec365d60243a002191232470c74792bc254c5b0f1",
+      "server.py": "e4a545682aa1e3658a46a3314a5b37b00d79f9ff4578e014a97c7b13c5d177d0",
+      "sim/profile.json": "3094df0ccc4275d286c85b4f065875618e7967fd4b260c1f47eebc51ba75fe30",
+      "source.json": "7033e1f29113b7da7ef3b2a9e27d61cdb5a8401854a5d5246ba5100c27fee959",
+      "calibrate.json": "4b679f6218cbaf16c461e046d01c249e890338ed751648c815b63c89e8243dea",
+      "task/bottle_to_box.xml": "54da5a8cb8ee1af6ce28f49994bef5fe61d2e4ac7c5704ff24d9fa9d75c405b1",
+      "reference/real_trajectory.json": "52ad65992a285d41690bd72a0dded86ac0e293c91cfa56493019a14d9356b987",
+      "reference/acquisition.json": "2b342e4b7cb2467ab17d936652811c171f09e42b507d6cfb01e6270ecdf144a6",
+      "task/cell-v1.xml": "285d0af8b2884efc20bf3d45ea7b354648033a46f35e41500e56953e181844ba",
+      "openarm_mujoco/v1/openarm_bimanual.xml": "52c9fc8f314ac1e296e7affc63dd9116ab7b24174ccce92bf4cb5bf492599d0e",
+      "openarm_mujoco/v1/meshes/collision/body/body_link0.stl": "6c18bbf7e86b03e3faf802e61e8eb438b38dcbcf146d97cffe6e808c65e9a72a",
+      "openarm_mujoco/v1/meshes/collision/arm/link0.stl": "baf52578e1d9e6225f3818cae82b6074a0b948d3cef8e9a3e6dfafca78507590",
+      "openarm_mujoco/v1/meshes/collision/arm/link1.stl": "066113d13d5cc85098609003bc7ebb73c570015350877f5ed7162ef1b6601852",
+      "openarm_mujoco/v1/meshes/collision/arm/link2.stl": "382ab32e4ae0880e8a1512e7a6ca6ce1f478a6c125db4efa977429ffb1d6b02a",
+      "openarm_mujoco/v1/meshes/collision/arm/link3.stl": "00c908cefab152c00416a570a48bf9aafed1549085f19ff2d882dc3f355d9f59",
+      "openarm_mujoco/v1/meshes/collision/arm/link4.stl": "b54883b8c7c96268a68a5879f95998a53ad0b0c4fe74325fad63a6caef669c73",
+      "openarm_mujoco/v1/meshes/collision/arm/link5.stl": "678a2802906eff7b45a836d2f34a2d8e51def50b6599376968f888e05c72739e",
+      "openarm_mujoco/v1/meshes/collision/arm/link6.stl": "95529bec23733476dfdbbb266c7db0d25a473a568de73c8337a82440fe4a9ac3",
+      "openarm_mujoco/v1/meshes/collision/arm/link7.stl": "434f207f21f75f5f0bd604e390b8e5bc7b62b619265222846770e06b3f9b5cfb",
+      "openarm_mujoco/v1/meshes/collision/gripper/hand.stl": "8e5d373ebbd3fd001b506058644062ad71a68f1ced5ca5d5ed0f6de20137956b",
+      "openarm_mujoco/v1/meshes/collision/gripper/finger.stl": "8e96e1314618cf434908f70df78f68dd2b049c03538964e8d41fc99abe41564d",
+      "openarm_mujoco/v1/meshes/visual/body/body_link0_0.obj": "45840dce38427a8ce956b715cdedce7ba703905ce61e07d744abfe7475ab61f1",
+      "openarm_mujoco/v1/meshes/visual/body/body_link0_1.obj": "099191959a5f0e96507208b24acd381cfec8fd6f5f4c5f37e11d935dd3a12033",
+      "openarm_mujoco/v1/meshes/visual/body/body_link0_2.obj": "0c939eb6c9273cef3974acb9cd1046d75916e1af2c7d4ce8787e0fd956250574",
+      "openarm_mujoco/v1/meshes/visual/body/body_link0_3.obj": "92b88899de906441350a8e6be5a1592e9ffc041711478251fc42954b62bc1b59",
+      "openarm_mujoco/v1/meshes/visual/body/body_link0_4.obj": "4771a1f44a1fae27de8551cc4527a498d79ef64dbec1e426a8d67b99135087e1",
+      "openarm_mujoco/v1/meshes/visual/body/body_link0_5.obj": "eb4fc4bb41c9497d59c14fbaa306e47a7037f0a3524a2dc4c0a6f2755bb65d20",
+      "openarm_mujoco/v1/meshes/visual/arm/link0_0.obj": "c7f642d10a75a61864bfb39f8376997dedc320cec9320934a8511e7ad118a29c",
+      "openarm_mujoco/v1/meshes/visual/arm/link0_1.obj": "efe36fab669e3819dc301c7e4c432fb5c63014488a607fcb73cfc7b29b7e0a06",
+      "openarm_mujoco/v1/meshes/visual/arm/link1_0.obj": "e08c981dbef223934361c0458ef2fa7fecde3c5c4479faf200a0572c16149c04",
+      "openarm_mujoco/v1/meshes/visual/arm/link1_1.obj": "1a92be9336e391075b63ce8e37aa0af21a877993afba7a6773170691f485216e",
+      "openarm_mujoco/v1/meshes/visual/arm/link1_2.obj": "719a6d848b139ccf38948e9418ccf2690bf3390ebc47a3544df52152d4192a6a",
+      "openarm_mujoco/v1/meshes/visual/arm/link1_3.obj": "23b6fc806909bf2c0b066cc5907027a54f9b639612264bcdcc1b5e6bf97e7fca",
+      "openarm_mujoco/v1/meshes/visual/arm/link2_0.obj": "b20d52bcd8a1f10e595f0782d2a827854771d38c1a25f6321a275a8f960ef10d",
+      "openarm_mujoco/v1/meshes/visual/arm/link2_1.obj": "08bdbed44bf04d207fe1310f69d0aa7769b502acb4c4e31ea9e2f36ba1364e9d",
+      "openarm_mujoco/v1/meshes/visual/arm/link2_2.obj": "520b5ac006c7cca7e5d29ca6232733ce78ec888200b2fc43d884ad8f86b890fb",
+      "openarm_mujoco/v1/meshes/visual/arm/link3_0.obj": "bc399d66dd303390b5ed9c770b9b90e618faf4b823ff7ba45381c3d0c36900c8",
+      "openarm_mujoco/v1/meshes/visual/arm/link3_1.obj": "c06e0ec58ee687ebcff4253469aa7ae7be3d1640d3f6036f4f848a099e7bf1e7",
+      "openarm_mujoco/v1/meshes/visual/arm/link3_2.obj": "a7e7827a7279d74b5eb7b4c66404fa50b346e45c9da9ef228c61e02da57296d1",
+      "openarm_mujoco/v1/meshes/visual/arm/link4_0.obj": "d6c70b73c9112170b00773e8d0ba00e421a00c95d95ec1ffaca29c4421cfa88d",
+      "openarm_mujoco/v1/meshes/visual/arm/link4_1.obj": "076c1569313d1b146cf870ba865a09605cdbf2a07ebe164be30787440cb7ba69",
+      "openarm_mujoco/v1/meshes/visual/arm/link4_2.obj": "23b9e23a42b3e760b30d101c720641fe18f21ec82e938156806d21ca1cce2f67",
+      "openarm_mujoco/v1/meshes/visual/arm/link5_0.obj": "53a5aaf252739b16afb0caeceff3770b61e9c28d0bf8e4b3c007cf725addd896",
+      "openarm_mujoco/v1/meshes/visual/arm/link5_1.obj": "fb4dbfc63ca2f91e33728aab542c0dd4aa368cf13be55062b5b4f0089629452a",
+      "openarm_mujoco/v1/meshes/visual/arm/link5_2.obj": "807d29516fd2d8fc74c4764f5048385780123ca58f2058f59738aa7214ab26f0",
+      "openarm_mujoco/v1/meshes/visual/arm/link6_0.obj": "d089539cdcb06a40bb0ab4a184f523980a3fb130bba283ff425c2e4cf655dfd3",
+      "openarm_mujoco/v1/meshes/visual/arm/link6_1.obj": "6e17ec2c8348cdcd9bfff84c253ae63401301ccfa55f87f13b408f54b8f7d419",
+      "openarm_mujoco/v1/meshes/visual/arm/link7_0.obj": "e81e422fd6db8e6bc527a499eb4d81c4cdbc74cdcb2b154111e2a00003916e20",
+      "openarm_mujoco/v1/meshes/visual/arm/link7_1.obj": "0a291f8f82eeb20641889571e579f30a191947948a148ade1fe54dc03dd7c269",
+      "openarm_mujoco/v1/meshes/visual/gripper/hand_0.obj": "bc7861f38307909c4f06d264e94a5f5ed78017179d1729fa5e01757850bfe4b9",
+      "openarm_mujoco/v1/meshes/visual/gripper/hand_1.obj": "8c764345d91c14ebe83fb50bcc225bdf664e7ac48d545a6e599905b946c17fc4",
+      "openarm_mujoco/v1/meshes/visual/gripper/finger_0.obj": "4aff253863db205211e151c8065a8614a56c629b90ca17807c83b0dcf603abc8",
+      "openarm_mujoco/v1/meshes/visual/gripper/finger_1.obj": "3aab3095bd7848659dbaebe79b0d52fd1e921d5060f24cabfc6fdbc94b0eee57",
+      "openarm_mujoco/v2/assets/visual/cell/cell.obj": "607e1109ada00d3a536cc7cbe27b939f7b57d6b4e69747bfe23bb45216e24782",
+      "openarm_mujoco/v2/assets/visual/cell/sheet.obj": "e7a12b4b5cac629424578286e9331896365ab695be722ba03b7d245f1551dcfd"
+    }
+  }
+}
