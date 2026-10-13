@@ -14,7 +14,7 @@ python3.11 -m venv .venv
 ./run start
 ```
 
-浏览器访问 http://127.0.0.1:8767/ 。`./run start` 会把当前解压位置写入用户级 systemd 服务配置；以后用 `./run status` 查看、`./run logs` 查日志、`./run stop` 停止。若只想前台运行，可用 `./run objects --foreground`，按 Ctrl+C 退出。EGL 初始化失败时，在有桌面会话的机器上试 `MUJOCO_GL=glfw ./run objects --foreground`。
+浏览器访问 http://127.0.0.1:8767/ 。`./run start` 会把当前解压位置写入用户级 systemd 服务配置；以后用 `./run status` 查看、`./run logs` 查日志、`./run stop` 停止。若只想前台运行，可用 `./run objects --foreground`，按 Ctrl+C 退出；可用 `OPENARM_PORT=18765 ./run objects --foreground` 启动独立开发实例。EGL 初始化失败时，在有桌面会话的机器上试 `MUJOCO_GL=glfw ./run objects --foreground`。
 
 页面不配置 API 也可启动和查看仿真。需要模型 API 时，在页面里填入团队自己的兼容 API 配置；此包不含密钥。不要把密钥提交进 Git 或交接包。
 

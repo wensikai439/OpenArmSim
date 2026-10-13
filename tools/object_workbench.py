@@ -118,7 +118,13 @@ def main():
     source_identity = SourceIdentity(ROOT)
     import server as web
     from tools.contact_workbench import ExperimentArchive
-    web.PORT = 8767
+    try:
+        port = int(os.environ.get('OPENARM_PORT', '8767'))
+    except ValueError as error:
+        raise RuntimeError('OPENARM_PORT must be an integer from 1 to 65535') from error
+    if not 1 <= port <= 65535:
+        raise RuntimeError('OPENARM_PORT must be an integer from 1 to 65535')
+    web.PORT = port
     class Handler(web.Handler):
         def do_POST(self):
             from urllib.parse import urlsplit
@@ -151,7 +157,7 @@ def main():
         def chat(self, prompt, *, role='execute', **kwargs):
             if role != 'execute': raise ValueError('multi-object cell is execution-only')
             return super().chat(prompt, role=role, **kwargs)
-    server = ThreadingHTTPServer(('127.0.0.1', 8767), Handler)
+    server = ThreadingHTTPServer(('127.0.0.1', port), Handler)
     owned_gpu = None
     try:
         owned_gpu = start_gpu(ROOT)
@@ -170,7 +176,7 @@ def main():
             settings=web.ModelSettings(store=web.SecretStore()), workspace=PoseWorkspace(ROOT/'harness/state/objects.sqlite3'))
         from harness.provider import install_isolated as provider
         provider(server.harness)
-        print('OpenArm · http://127.0.0.1:8767/ · 按需启动 · 真机未连接', flush=True)
+        print(f'OpenArm · http://127.0.0.1:{port}/ · 按需启动 · 真机未连接', flush=True)
         server.serve_forever()
     except KeyboardInterrupt: pass
     finally:
