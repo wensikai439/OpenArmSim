@@ -158,7 +158,6 @@ def stop_gpu(process):
 def build_backend(*, harness_context=True, stable_hold=True, transit_hints=True):
     _claim_backend_build()
     import sim.service as native_service
-    default_tamp_planner=native_service.TampPlanner
     default_relocation_planner=native_service.RelocationPlanner
     default_curobo_planner=native_service.CuRoboPlanner
     composed_tamp_planner=None
@@ -185,7 +184,9 @@ def build_backend(*, harness_context=True, stable_hold=True, transit_hints=True)
     composed_relocation_planner=_run_layer('planner_layers','sim.grasp',geometric_relocation,
         native_service.RelocationPlanner)
     factory = _run_layer('factory_layers','harness.bottle.service_factory',service_factory)
-    composed_tamp_planner=native_service.TampPlanner
+    composed_tamp_planner=getattr(factory,'_tamp_planner_factory_default',None)
+    if composed_tamp_planner is None:
+        raise RuntimeError('service factory chain did not provide a local TAMP planner')
     from harness.connected_placement import compose_planner as connected
     composed_tamp_planner=_run_layer('planner_layers','harness.connected_placement',connected,composed_tamp_planner)
     from harness.margin_grasp import compose_planner as margin
@@ -235,7 +236,6 @@ def build_backend(*, harness_context=True, stable_hold=True, transit_hints=True)
         composed_tamp_planner=_run_layer('planner_layers','harness.settled_hold',settling,composed_tamp_planner)
     factory=_run_layer('factory_layers','sim.service.TampPlanner+RelocationPlanner+CuRoboPlanner',bind_tamp_planner,
         factory,composed_tamp_planner,composed_relocation_planner,composed_curobo_planner,cache_metadata)
-    native_service.TampPlanner=default_tamp_planner
     native_service.RelocationPlanner=default_relocation_planner
     native_service.CuRoboPlanner=default_curobo_planner
     _RUNTIME_TRACE['complete']=True

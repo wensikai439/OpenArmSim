@@ -185,21 +185,27 @@ def service_factory():
     from .task_queue import service_factory as tasks
     from .object_handover import RelayPlanner
     from sim.oriented_grasp import OrientedPlanner, HoldAudit, initial_conflicts
-    import sim.service as service
     base=tasks()
+    previous=getattr(base,'_tamp_planner_factory_default',None)
+    if previous is None:
+        raise RuntimeError('pose service requires an explicit base TAMP planner factory')
     class Router:
-        CONTRACT={**RelayPlanner.CONTRACT,'oriented_grasp':'optional known native box/cylinder geometry; original executor/physics'}
+        CONTRACT={**previous.CONTRACT,'oriented_grasp':'optional known native box/cylinder geometry; original executor/physics'}
         def __new__(cls,env,task,**kwargs):
             parameters=kwargs.get('parameters') or {}
             if task in ('pick_bottle','reach_bottle') and parameters and env.data.xmat[env.bottle_id].reshape(3,3)[2,2]<.98:
                 planner = OrientedPlanner(env,task,**kwargs)
-            else: planner = RelayPlanner(env,task,**kwargs)
+            else: planner = previous(env,task,**kwargs)
             if 'hold_seconds' in parameters:
                 if task != 'pick_bottle': raise ValueError('hold_seconds belongs only to pick')
                 return HoldAudit(planner, parameters['hold_seconds'])
             return planner
-    service.TampPlanner=Router
     class PoseService(base):
+        _tamp_planner_factory_default=Router
+        def __init__(self,*args,**kwargs):
+            kwargs.setdefault('tamp_planner_factory',Router)
+            super().__init__(*args,**kwargs)
+
         def _publish(self):
             super()._publish()
             checked = not any(self.env.evaluation['held'].values()) and not any(self.env.evaluation['touching'].values())

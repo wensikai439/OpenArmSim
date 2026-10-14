@@ -185,8 +185,9 @@ def service_factory():
     from .poses import service_factory as poses
     from sim.bottle_routing import BottlePickPlanner,BottleHandoverPlanner,BottlePlacementPlanner,ContinuousHoldAudit
     from sim.oriented_grasp import HoldAudit
-    import sim.service as service
-    base=poses();previous=service.TampPlanner
+    base=poses();previous=getattr(base,'_tamp_planner_factory_default',None)
+    if previous is None:
+        raise RuntimeError('bottle service requires an explicit base TAMP planner factory')
     class Router:
         CONTRACT={**previous.CONTRACT,'bottle_left_right':'optional current-geometry relay and native donor parking'}
         def __new__(cls,env,task,**kwargs):
@@ -204,8 +205,12 @@ def service_factory():
                 planner=BottlePickPlanner(env,task,**kwargs)
                 return HoldAudit(planner,params['hold_seconds']) if 'hold_seconds' in params else planner
             return previous(env,task,**kwargs)
-    service.TampPlanner=Router
     class BottleService(base):
+        _tamp_planner_factory_default=Router
+        def __init__(self,*args,**kwargs):
+            kwargs.setdefault('tamp_planner_factory',Router)
+            super().__init__(*args,**kwargs)
+
         def call(self,command,**arguments):
             if (command=='tamp' and arguments.get('task')=='pick_bottle'
                 and (arguments.get('initiator') or {}).get('bottle_single_arm_placement') is True):

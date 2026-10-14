@@ -11,10 +11,12 @@ from sim.object_planner import ObjectPlanner
 from sim.object_handover import ObjectHandoverPlanner, ObjectRelayPickPlanner
 
 
-def relay_environment_dependencies(kwargs, environment_factory):
+def relay_environment_dependencies(kwargs, environment_factory, planner_factory=None):
     """Keep the protected-object fallback local and honor outer scene adapters."""
     result=dict(kwargs)
     result.setdefault('environment_factory',environment_factory)
+    if planner_factory is not None:
+        result.setdefault('tamp_planner_factory',planner_factory)
     return result
 
 
@@ -134,11 +136,12 @@ def install_isolated():
 
 def service_factory():
     from .object_gpu import service_factory as gpu
-    import sim.service as service
-    base = gpu(); service.TampPlanner = RelayPlanner
+    base = gpu()
     class RelayService(base):
+        _tamp_planner_factory_default=RelayPlanner
         def __init__(self,*args,**kwargs):
-            super().__init__(*args,**relay_environment_dependencies(kwargs,ProtectedObjectEnv))
+            super().__init__(*args,relay_environment_dependencies(
+                kwargs,ProtectedObjectEnv,RelayPlanner))
 
         def call(self, command, **arguments):
             if command == 'tamp' and arguments.get('task') == 'handover_bottle':

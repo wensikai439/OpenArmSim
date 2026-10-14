@@ -26,9 +26,11 @@ def object_environment_dependencies(kwargs, environment_factory):
     return result
 
 
-def object_service_dependencies(kwargs, environment_factory, recorder_class):
+def object_service_dependencies(kwargs, environment_factory, recorder_class, planner_factory=None):
     result=object_environment_dependencies(kwargs,environment_factory)
     result.setdefault('recorder_class',recorder_class)
+    if planner_factory is not None:
+        result.setdefault('tamp_planner_factory',planner_factory)
     return result
 
 
@@ -191,7 +193,6 @@ def service_factory():
     import sim.service as service
     from sim.objects import ObjectEnv
     from sim.object_planner import ObjectPlanner
-    service.TampPlanner = ObjectPlanner
     class ObjectRecorder(service.Recorder):
         def __init__(self, env, *args, **kwargs):
             super().__init__(env, *args, **kwargs)
@@ -218,8 +219,10 @@ def service_factory():
                         'physical_state_preserved': True, 'fresh_observation_required': True})
                 except Exception as exc: future.set_exception(exc)
     class ObjectService(service.SimulationService):
+        _tamp_planner_factory_default=ObjectPlanner
         def __init__(self,*args,**kwargs):
-            super().__init__(*args,**object_service_dependencies(kwargs,ObjectEnv,ObjectRecorder))
+            super().__init__(*args,**object_service_dependencies(
+                kwargs,ObjectEnv,ObjectRecorder,ObjectPlanner))
 
         def call(self, command, **arguments):
             if command in {'policy', 'replay'}: raise ValueError('multi-object cell has no matching VLA/replay evaluation contract')

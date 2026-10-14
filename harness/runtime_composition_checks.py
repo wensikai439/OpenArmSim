@@ -234,21 +234,38 @@ class RuntimeCompositionChecks(unittest.TestCase):
 
     def test_protected_object_default_is_scoped_and_task_scene_override_wins(self):
         from harness.object_handover import relay_environment_dependencies
-        protected=object();task_scene=object()
-        self.assertIs(relay_environment_dependencies({},protected)['environment_factory'],protected)
+        protected=object();task_scene=object();planner=object();outer_planner=object()
+        defaults=relay_environment_dependencies({},protected,planner)
+        self.assertIs(defaults['environment_factory'],protected)
+        self.assertIs(defaults['tamp_planner_factory'],planner)
         selected=relay_environment_dependencies({'environment_factory':task_scene},protected)
         self.assertIs(selected['environment_factory'],task_scene)
+        selected=relay_environment_dependencies({'tamp_planner_factory':outer_planner},protected,planner)
+        self.assertIs(selected['tamp_planner_factory'],outer_planner)
 
     def test_registered_object_default_is_scoped_and_protected_scene_override_wins(self):
         from harness.objects import object_service_dependencies
         object_env=object();protected=object();recorder=object();selected_recorder=object()
-        defaults=object_service_dependencies({},object_env,recorder)
+        planner=object();outer_planner=object()
+        defaults=object_service_dependencies({},object_env,recorder,planner)
         self.assertIs(defaults['environment_factory'],object_env)
         self.assertIs(defaults['recorder_class'],recorder)
+        self.assertIs(defaults['tamp_planner_factory'],planner)
         selected=object_service_dependencies({'environment_factory':protected,
-            'recorder_class':selected_recorder},object_env,recorder)
+            'recorder_class':selected_recorder,'tamp_planner_factory':outer_planner},
+            object_env,recorder,planner)
         self.assertIs(selected['environment_factory'],protected)
         self.assertIs(selected['recorder_class'],selected_recorder)
+        self.assertIs(selected['tamp_planner_factory'],outer_planner)
+
+    def test_nested_service_factories_carry_tamp_router_without_mutating_module_default(self):
+        from sim import service
+        original=service.TampPlanner
+        from harness.bottle import service_factory
+        base=service_factory()
+        self.assertIs(service.TampPlanner,original)
+        self.assertTrue(callable(base._tamp_planner_factory_default))
+        self.assertIsNot(base._tamp_planner_factory_default,original)
 
     def test_request_middleware_is_instance_scoped_and_composes_in_order(self):
         class Workspace:
