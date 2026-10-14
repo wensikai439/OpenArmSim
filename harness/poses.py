@@ -153,7 +153,6 @@ def install_isolated():
         '当前抓取候选只覆盖已注册盒子与圆柱外形；未知网格需独立抓取候选与外形检查，不能套用已有成功经验。')
     knowledge.RECOVERY['initial_object_overlap'] = (
         '物体起点与其它碰撞体相交，不是有效规划样本。保留原场景和任务，停止运动；不能自动移动物体、重置或改目标制造成功。')
-    agent.Harness = PoseHarness
     previous_catalogue=agent.catalogue
     def catalogue(snapshot,policy_type='pi05'):
         result=previous_catalogue(snapshot,policy_type)

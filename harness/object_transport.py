@@ -142,7 +142,7 @@ class ObjectTransportHarness(ObjectRelayHarness):
 
 def install_isolated():
     import harness.agent as agent
-    previous = agent.catalogue; agent.Harness = ObjectTransportHarness
+    previous = agent.catalogue
     agent.SKILL_TOOLS = agent.SKILL_TOOLS + [copy.deepcopy(TOOL)]
     def catalogue(snapshot, policy_type='pi05'):
         value = previous(snapshot, policy_type)

@@ -167,7 +167,7 @@ def install_isolated():
                 'A locked table goal adds scratch-only placement lookahead; predictions are not execution or success. '
                 'Optional hold_seconds2–10 requests actual independent receiver hold, not wall-clock waiting. '
                 'Full contact, unselected-object and original placement gates remain required; not visual localization or real calibration.')
-    agent.SKILL_TOOLS=tools;agent.Harness=BottleHarness
+    agent.SKILL_TOOLS=tools
     def catalogue(snapshot,policy_type='pi05'):
         value=previous(snapshot,policy_type)
         value['bottle_directed_scope']={'provider':'optional native bottle left→right search',

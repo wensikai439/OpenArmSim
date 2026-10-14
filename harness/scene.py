@@ -145,7 +145,6 @@ def catalogue(snapshot, policy_type='pi05'):
 
 def install_isolated():
     import harness.agent as agent
-    agent.Harness = SceneHarness
     tools = copy.deepcopy(agent.SKILL_TOOLS)
     motion = next(tool['function'] for tool in tools if tool['function']['name'] == 'move_to_pose')
     motion['parameters']['properties']['scene_target_id'] = {'type': 'string', 'minLength': 20, 'maxLength': 20,

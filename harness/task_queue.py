@@ -277,7 +277,7 @@ class TaskHarness(ObjectTransportHarness):
 
 def install_isolated():
     import harness.agent as agent
-    agent.Harness = TaskHarness; tools = copy.deepcopy(agent.EXECUTION_TOOLS)
+    tools = copy.deepcopy(agent.EXECUTION_TOOLS)
     plan = next(tool['function'] for tool in tools if tool['function']['name'] == 'set_plan')
     goal = copy.deepcopy(plan['parameters']['properties']['placement_goal'])
     plan['parameters']['properties']['object_goals'] = {'type': 'array', 'minItems': 2, 'maxItems': 3, 'items': goal}

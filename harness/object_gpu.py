@@ -59,7 +59,6 @@ def install_isolated():
     from .objects import install_isolated as objects
     objects(); previous = agent.catalogue
     knowledge.consolidate = consolidate_gpu
-    agent.Harness = ObjectGPUHarness
     tools = copy.deepcopy(agent.SKILL_TOOLS)
     for tool in tools:
         value = tool['function']; name = value['name']

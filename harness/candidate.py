@@ -71,7 +71,6 @@ def install_isolated():
     import harness.agent as agent
     import harness.workspace as workspace
     from .knowledge import RECOVERY
-    agent.Harness = CandidateHarness
     workspace.Workspace = CandidateWorkspace
     workspace.validate_plan = agent.validate_plan = validate_candidate_plan
     tools = copy.deepcopy(agent.EXECUTION_TOOLS)

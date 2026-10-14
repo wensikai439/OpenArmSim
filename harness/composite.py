@@ -153,7 +153,6 @@ def install_isolated():
     import harness.agent as agent
     workspace.validate_plan=agent.validate_plan=validate_composite_plan
     workspace.Workspace=CompositeWorkspace
-    agent.Harness=CompositeHarness
     tools=copy.deepcopy(agent.EXECUTION_TOOLS)
     plan=next(t['function'] for t in tools if t['function']['name']=='set_plan')
     plan['description']+=' A relocate stage can bind verified pick/handover/move child receipts; sub_occurrence disambiguates repeated children. All stages with the same outer occurrence bind the same relocate invocation (default first); retries need an explicit occurrence. Placement uses the whole relocate result.'
