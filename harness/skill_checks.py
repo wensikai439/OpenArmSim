@@ -46,6 +46,28 @@ class SkillChecks(unittest.TestCase):
             agent.sessions['root']['actions']=0
             with self.assertRaisesRegex(ValueError,'新的用户任务'):agent.invoke('place',args,context=context)
 
+    def test_identical_motion_is_idempotent_within_task_but_changed_target_is_allowed(self):
+        state=LocalState();agent=Harness(state)
+        context={'type':'llm','turn_id':'root','plan_turn_id':'root','model':'test'}
+        agent.sessions['root']={'goal':'前移','actions':0,'failed':[],'prepared':True}
+        agent.workspace.active_plan={'turn_id':'root','epoch':'episode','steps':[],'placement_goal':None}
+        with patch.object(agent,'_log'):
+            observation=agent.invoke('observe',{})
+            args={'observation_id':observation['observation_id'],'arm':'right',
+                  'delta_m':[.03,0,0],'frame':'world'}
+            first=agent.invoke('move_relative',args,context=context)
+            self.assertEqual(first['execution_id'],'call-1')
+            state.cache['observation_id']='episode:1'
+            state.cache['observation']['tick']=1
+            observation=agent.invoke('observe',{})
+            args['observation_id']=observation['observation_id']
+            with self.assertRaisesRegex(ValueError,'相同技能与目标'):
+                agent.invoke('move_relative',args,context=context)
+            self.assertEqual(len(state.calls),1)
+            args['delta_m']=[.04,0,0]
+            second=agent.invoke('move_relative',args,context=context)
+            self.assertEqual(second['execution_id'],'call-2')
+
     def test_nested_pose_arguments_reject_nan_bool_shape_and_extra_fields(self):
         spec = next(t['function']['parameters'] for t in SKILL_TOOLS if t['function']['name']=='move_to_pose')
         base = {'arm':'right', 'frame':'world', 'position_m':[.4, -.2, 1.2], 'quaternion_xyzw':[0,0,0,1], 'observation_id':'e:0'}

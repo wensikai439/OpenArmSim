@@ -6,6 +6,7 @@ not an untrained chain of pickup/handover/place language instructions.
 from __future__ import annotations
 
 import base64
+import copy
 import hashlib
 import json
 import os
@@ -177,7 +178,16 @@ class Harness:
         with self.tool_lock:
             if context is None and name in MOTION_TOOLS | LEGACY_MOTION_TOOLS and self.chat_lock.locked():
                 raise ValueError('模型正在处理任务，请等待后再启动手动工具')
-            return self._invoke(name, args, role, context)
+            result = self._invoke(name, args, role, context)
+            if (context and context.get('type') == 'llm'
+                    and name in MOTION_TOOLS | LEGACY_MOTION_TOOLS
+                    and isinstance(result, dict) and result.get('execution_id')):
+                root = context.get('plan_turn_id', context.get('turn_id'))
+                session = self.sessions.get(root)
+                if session is not None:
+                    key = self._motion_command_key(name, args)
+                    session.setdefault('dispatched_commands', []).append(key)
+            return result
 
     def delete_memory(self, role, ident=None):
         if not self.chat_lock.acquire(blocking=False):
@@ -404,6 +414,9 @@ class Harness:
             if not session.get('prepared') and 'decision_started_at' not in session and not session.get('actions',0) and snapshot.get('observation',{}).get('sim_time',0)>0:
                 raise ValueError('这是新的用户任务：先 prepare_simulation(mode=preserve) 保留当前物理状态并开启新的有界任务时间窗，然后 observe 和 set_plan；不能沿用上一目标的时钟或阶段')
             signature = self._motion_signature(name, args, snapshot)
+            command_key = self._motion_command_key(name, args)
+            if command_key in session.get('dispatched_commands', []):
+                raise ValueError('相同技能与目标已在本任务派发过；为避免重复运动，请先改变目标/参数或结束任务')
             if session.get('actions', 0) >= 8 or signature in session.get('failed', []):
                 raise ValueError('任务动作预算已用尽，或完全相同的失败动作已尝试；请改方案或结束')
         if name in MOTION_TOOLS | LEGACY_MOTION_TOOLS:
@@ -438,13 +451,14 @@ class Harness:
         elif name == "get_run_status":
             job, last = snapshot.get("job"), snapshot.get("last_run")
             result = {"state": "running" if job else "completed" if last else "ready",
+                      "lifecycle_status": (job or last or {}).get('status') if job else (last or {}).get('lifecycle_status'),
                       "run_id": (job or last or {}).get("run_id"),
                       "progress": (job or {}).get("progress"), "observation_id": obs_id,
+                      "phase": (job or {}).get('phase'),
                       "contains_privileged_object_state": False,'decision_timing':snapshot.get('decision_timing')}
             if (job or last or {}).get('kind')=='tamp':
                 self.privileged_epoch = obs_id.split(':')[0]
-                result.update(phase=(job or {}).get('phase'),
-                    tool_feedback=(last or {}).get('metrics',{}).get('tamp') if not job else None,
+                result.update(tool_feedback=(last or {}).get('metrics',{}).get('tamp') if not job else None,
                     contains_privileged_primitive_feedback=True,
                     contains_privileged_object_state=True,
                     feedback_scope='TAMP oracle baseline; simulator-derived primitive feedback, not visual evidence')
@@ -740,7 +754,7 @@ class Harness:
                 except (ValueError, TypeError):
                     args = None
                 signature = name + json.dumps(args,sort_keys=True)
-                requested_args=args;drift=None
+                requested_args=args;drift=None;request_contract=None
                 event = self.workspace.event(turn, 'tool', name, {'arguments':args})
                 try:
                     if name not in {t['function']['name'] for t in request_tools}:
@@ -760,6 +774,9 @@ class Harness:
                         raise ValueError('模型等待期间物理失败或任务预算结束，不能提交成功')
                     start_signature = self._motion_signature(name, args, self.service.snapshot()) if name in MOTION_TOOLS | LEGACY_MOTION_TOOLS else None
                     before_observation = self._robot_observation(self.service.snapshot()) if start_signature else None
+                    if start_signature:
+                        request_contract = self._request_contract(name, args, self.service.snapshot(), root,
+                            self.sessions.get(root, {}))
                     result = self.invoke(name, args, role=role, context={
                         'type':'llm','model':settings['model'],'base_url':settings['base_url'],'turn_id':turn,
                         'vision':vision,'plan_turn_id':root,'prompt_sha256':hashlib.sha256(prompt.encode()).hexdigest(),
@@ -769,13 +786,17 @@ class Harness:
                     failures[signature] = failures.get(signature,0) + 1
                     if name in MOTION_TOOLS and isinstance(args, dict):
                         snapshot = self.service.snapshot()
+                        contract = request_contract or self._request_contract(name, args, snapshot, root,
+                            self.sessions.get(root, {}))
+                        contract['status'] = 'rejected'
                         self.workspace.record_feedback('rejected-'+uuid.uuid4().hex, role,
                             snapshot.get('observation_id','').split(':')[0], session['goal'], name,
                             {k:v for k,v in args.items() if k != 'observation_id'},
                             {'status':'rejected','failure_code':result['failure_kind'],'message':str(exc),
                              'motion_started':result['motion_started'],'revalidation':result.get('revalidation')},
                             snapshot.get('memory_context'), evidence_kind='contract_guard',
-                            evidence={'before':self._robot_observation(snapshot), 'motion_started':False})
+                            evidence={'before':self._robot_observation(snapshot), 'motion_started':False,
+                                      'request_contract':contract})
                 fresh_images = result.pop('images', None)
                 self.workspace.end_event(event, {'arguments':requested_args,
                     'dispatch_arguments':args,'decision_timing':wait_receipt,'result':result}, 'error' if result.get('tool_failed') else 'completed')
@@ -804,12 +825,14 @@ class Harness:
                     session['actions'] += 1
                     params = {k:v for k,v in args.items() if k != 'observation_id'}
                     session['sequence'].append({'skill': name, 'arguments': params})
+                    request_contract = request_contract or self._request_contract(name, args, self.service.snapshot(), root, session)
+                    request_contract.update({'execution_id':result['execution_id'],'status':'accepted'})
                     self.workspace.bind(root, result['execution_id'], role, session['goal'], name, args.get('task',name), settings['model'],
-                                        context=self.service.snapshot().get('memory_context'))
+                                        context=self.service.snapshot().get('memory_context'),request_contract=request_contract)
                     self.pending_review = {'epoch':args['observation_id'].split(':')[0], 'execution_id':result.get('execution_id'),
                                            'prompt':session['goal'], 'turn_id':turn, 'root':root, 'tool':name, 'arguments':params,
                                            'continuation':name in MOTION_TOOLS - {'run_policy'}, 'context':self.service.snapshot().get('memory_context'),
-                                           'before_observation':before_observation}
+                                           'before_observation':before_observation,'request_contract':request_contract}
                     self.pending_review['signature'] = start_signature
                     self.pending_operations[result['execution_id']] = self.pending_review
                     return reply('已启动 '+name+' 技能。执行结束后会读取新观测，再决定下一步。', calls, 'waiting')
@@ -830,12 +853,46 @@ class Harness:
     def _remember(self, role, prompt, answer):
         self.history[role].extend([{"role": "user", "content": prompt}, {"role": "assistant", "content": answer}])
 
+    def _request_contract(self, name, args, snapshot, root, session):
+        plan = self.workspace.active_plan or {}
+        if plan.get('turn_id') != root or plan.get('epoch') != str(args.get('observation_id', '').split(':')[0]):
+            plan = {}
+        locked_goal = plan.get('placement_goal')
+        if locked_goal is None:
+            locked_goal = plan.get('object_goals')
+        return {
+            'schema': 'openarm-execution/1',
+            'task_id': plan.get('task_id'),
+            'root_execution_id': plan.get('root_execution_id', root),
+            'execution_id': None,
+            'observation_id': args.get('observation_id'),
+            'epoch': str(args.get('observation_id', snapshot.get('observation_id', '')).split(':')[0]),
+            'skill_id': name,
+            'skill_version': '1.0',
+            'backend_id': args.get('backend', args.get('planner', args.get('transport_planner', 'tamp'))),
+            'object_id': args.get('object_id'),
+            'arms': [args[key] for key in ('arm','from_arm','to_arm') if args.get(key) in {'left','right'}],
+            'frame': args.get('frame'),
+            'target': {key: copy.deepcopy(args[key]) for key in
+                       ('position_m','delta_m','target_xy_m','offset_xy_m','quaternion_xyzw','receptacle_id') if key in args},
+            'locked_goal': copy.deepcopy(locked_goal),
+            'time_budget_s': plan.get('time_budget_s',session.get('time_budget_s',40)),
+            'timing_mode': plan.get('timing_mode',session.get('timing_mode','paused')),
+            'status': 'accepted',
+        }
+
     @staticmethod
     def _motion_signature(name, args, snapshot):
         # A different measured robot state permits recovery. Re-reading the
         # same unchanged state does not permit an identical failed action.
         state = snapshot.get('observation', {}).get('state', [])
         return name + json.dumps({k:v for k,v in args.items() if k != 'observation_id'}, sort_keys=True) + json.dumps([round(float(v), 3) for v in state])
+
+    @staticmethod
+    def _motion_command_key(name, args):
+        """Task-local idempotency key; a fresh observation alone is not a new intent."""
+        payload = {k:v for k,v in args.items() if k != 'observation_id'}
+        return name + ':' + json.dumps(payload, sort_keys=True, separators=(',', ':'))
 
     def notifications(self):
         with self.tool_lock:
@@ -880,7 +937,8 @@ class Harness:
             self.workspace.record_feedback(completed.get('execution_id'), 'execute', completed['epoch'], pending['prompt'],
                 pending.get('tool', 'run_pi05_vla'), pending.get('arguments', {}), feedback,
                 pending.get('context'), evidence_kind=source,
-                evidence={'before':pending.get('before_observation'), 'after':after_observation,
+                evidence={'request_contract':pending.get('request_contract'),
+                          'before':pending.get('before_observation'), 'after':after_observation,
                           'run_id':completed.get('run_id'), 'summary_url':last.get('summary_url'),
                           'camera_keyframes':completed.get('camera_evidence', []),
                           'camera_status':'simulated model cameras; physical calibration pending',

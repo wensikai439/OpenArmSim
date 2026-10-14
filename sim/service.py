@@ -30,6 +30,15 @@ from .relocation import RelocationPlanner
 from .view import FRONT,validate_view
 
 
+def execution_lifecycle(kind, status, metrics):
+    """Normalize a worker terminal state without promoting policy exit to success."""
+    if status == 'cancelled': return 'cancelled'
+    if status in {'error','invalid','truncated','budget_exhausted','reference_exhausted'}: return 'failed'
+    if kind == 'tamp':
+        return 'succeeded' if (metrics.get('tamp') or {}).get('primitive_success') is True else 'failed'
+    return 'unverified'
+
+
 def physical_memory_contract(manifest):
     """Fingerprint actual physics/data; planners, workers and tests are separate."""
     physical = {k:manifest.get(k) for k in ('schema','engine','profile','physics_dt','contract')}
@@ -304,7 +313,8 @@ class SimulationService:
                         self.env.require_current_sources()
                         self.stop_job.clear()
                         self.job = {"kind": command, "progress": 0, "episode": args.get("episode", 0),
-                                    "execution_id":uuid.uuid4().hex, "initiator":args.get('initiator',{'type':'direct-command'})}
+                                    "execution_id":uuid.uuid4().hex, "status":"accepted", "phase":"accepted",
+                                    "initiator":args.get('initiator',{'type':'direct-command'})}
                         self._publish()
                         future.set_result({"state": "started", "kind": command, "execution_id":self.job['execution_id']})
                         self._run(command, args)
@@ -333,6 +343,10 @@ class SimulationService:
 
     def _run(self, kind, args):
         execution_id=(self.job or {}).get('execution_id')
+        if self.job:
+            self.job.update(status='planning' if kind=='tamp' else 'executing',
+                            phase='planning' if kind=='tamp' else 'executing')
+            self._publish()
         recorder = client = timing = replay = planner = planning_timing = native_source = None
         status, error, metrics, start_failure_code = "incomplete", None, {}, None
         try:
@@ -439,6 +453,8 @@ class SimulationService:
                     except StopIteration:
                         status = "cancelled" if self.stop_job.is_set() or self.shutdown.is_set() else "budget_exhausted"
                         break
+                if self.job:
+                    self.job.update(status='executing',phase='executing')
                 if kind == "policy" and self.stop_job.is_set():
                     status = "cancelled"
                     break
@@ -487,6 +503,9 @@ class SimulationService:
                 if hasattr(exc,'revalidation'):planner.result['planning_revalidation']=exc.revalidation
         finally:
             try:
+                if self.job:
+                    self.job.update(status='verifying',phase='verifying')
+                    self._publish()
                 if native_source:
                     native_source.close()
                     if planner:
@@ -529,11 +548,14 @@ class SimulationService:
                     except Exception as capture_error:
                         status, error = "error", "final keyframe failed: " + str(capture_error)
                     recorder.finish(status, self.env.info(), error=error, metrics=metrics)
+                    lifecycle = execution_lifecycle(kind,status,metrics)
                     self.last_run = {"run_id": recorder.path.name, "kind":kind, "status": status, "error": error,
+                                     "lifecycle_status":lifecycle,
                                      "execution_id":execution_id, "initiator":args.get('initiator',{'type':'direct-command'}),
                                      "summary_url": f"/runs/{recorder.path.name}/summary.json", "metrics": metrics}
                 else:
                     self.last_run = {"kind":kind,"status": status, "error": error, "execution_id":execution_id,
+                        'lifecycle_status':execution_lifecycle(kind,status,{}),
                         'metrics':{'tamp':{'status':status,'primitive_success':False,'message':error,
                             'scene_source':'simulator_ground_truth','failure_code':start_failure_code or 'start_rejected'}} if kind=='tamp' else {}}
             finally:

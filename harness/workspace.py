@@ -106,7 +106,10 @@ class Workspace:
             ''')
             for table, columns in {
                 'notes': {'invalidated': 'INTEGER DEFAULT 0', 'context': "TEXT DEFAULT '{}'", 'evidence_kind': "TEXT DEFAULT 'legacy_unverified'"},
-                'episodes': {'context': "TEXT DEFAULT '{}'"},
+                'episodes': {'context': "TEXT DEFAULT '{}'", 'task_id': "TEXT DEFAULT ''",
+                    'root_execution_id': "TEXT DEFAULT ''", 'epoch': "TEXT DEFAULT ''",
+                    'observation_id': "TEXT DEFAULT ''", 'backend_id': "TEXT DEFAULT ''",
+                    'request_contract': "TEXT DEFAULT '{}'", 'status': "TEXT DEFAULT 'accepted'"},
                 'experiences': {'outcome': "TEXT DEFAULT 'unverified'", 'evidence': "TEXT DEFAULT '{}'", 'lesson_key': "TEXT DEFAULT ''"},
             }.items():
                 existing = {r[1] for r in self.db.execute(f'PRAGMA table_info({table})')}
@@ -121,6 +124,9 @@ class Workspace:
                                     outcome = 'unverified'
                                 self.db.execute('UPDATE experiences SET outcome=? WHERE id=?', (outcome, row['id']))
             self.db.execute('CREATE INDEX IF NOT EXISTS experience_lookup ON experiences(role,context,evidence_kind,outcome,created)')
+            # Accepted work from an earlier process is evidence of interruption,
+            # never a command to resume after server startup.
+            self.db.execute("UPDATE episodes SET ended=1,status='interrupted' WHERE ended=0 OR status='verifying'")
             for row in self.db.execute("SELECT * FROM experiences WHERE lesson_key IS NULL OR lesson_key NOT LIKE 'v2:%'").fetchall():
                 key = self._lesson_key(row['tool'], json.loads(row['arguments']), json.loads(row['feedback']),
                                        row['context'], row['evidence_kind'], row['outcome'])
@@ -157,11 +163,13 @@ class Workspace:
                     (json.dumps(redact(detail or {}), ensure_ascii=False), status, time.time(), ident))
 
     def plan(self, turn, epoch, model, steps, *, placement_goal=None,time_budget_s=None,timing_mode=None):
-        plan = {'turn_id': turn, 'epoch': epoch, 'model': model, 'source': 'api_model',
+        plan = {'turn_id': turn, 'root_execution_id': turn, 'task_id': uuid.uuid4().hex,
+                'epoch': epoch, 'model': model, 'source': 'api_model',
                 'steps': steps, 'execution_id': None, 'verdict': None}
         with self.lock:
             previous = self.active_plan
             if previous and previous['turn_id'] == turn and previous['epoch'] == epoch:
+                plan['task_id'] = previous.get('task_id', plan['task_id'])
                 for key in ('execution_id', 'executions', 'execution_tools','stage_bindings'):
                     if key in previous:
                         plan[key] = copy.deepcopy(previous[key])
@@ -173,14 +181,18 @@ class Workspace:
             plan['timing_mode']=timing_mode or ((previous or {}).get('timing_mode','paused') if previous and previous['turn_id']==turn else 'paused')
             self.active_plan = plan
             self._write('INSERT OR REPLACE INTO plans VALUES (?,?)', (turn, json.dumps(plan, ensure_ascii=False)))
-        return {'accepted': True, 'steps': steps, 'note': 'Model plan; completion is evaluated separately.'}
+        return {'accepted': True, 'task_id': plan['task_id'], 'root_execution_id': turn,
+                'steps': steps, 'note': 'Model plan; completion is evaluated separately.'}
 
-    def bind(self, turn, execution_id, role, goal, tool, task, model, context=None):
+    def bind(self, turn, execution_id, role, goal, tool, task, model, context=None, request_contract=None):
+        contract = copy.deepcopy(request_contract or {})
+        contract.update({'execution_id': execution_id, 'status': 'accepted'})
         with self.lock:
             if self.active_plan and self.active_plan['turn_id'] == turn:
                 self.active_plan['execution_id'] = execution_id
                 self.active_plan.setdefault('executions', []).append(execution_id)
-                self.active_plan.setdefault('execution_tools', []).append({'id':execution_id, 'skill':tool})
+                self.active_plan.setdefault('execution_tools', []).append({'id':execution_id, 'skill':tool,
+                    'request_contract':copy.deepcopy(contract)})
                 bindings=self.active_plan.setdefault('stage_bindings',{})
                 for step in self.active_plan['steps']:
                     if step.get('skill')!=tool:continue
@@ -190,11 +202,22 @@ class Workspace:
                     bindings[step['id']]=execution_id
                     break
                 self._write('UPDATE plans SET body=? WHERE turn_id=?', (json.dumps(self.active_plan), turn))
-            self._write('INSERT OR REPLACE INTO episodes (id,role,goal,tool,task,run_id,model,verdict,ended,created,context) VALUES (?,?,?,?,?,?,?,?,?,?,?)',
-                        (execution_id, role, redact(goal), tool, task, None, model, None, 0, time.time(), self._context(context)))
+            self._write('''INSERT OR REPLACE INTO episodes
+                         (id,role,goal,tool,task,run_id,model,verdict,ended,created,context,
+                          task_id,root_execution_id,epoch,observation_id,backend_id,request_contract,status)
+                         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
+                        (execution_id, role, redact(goal), tool, task, None, model, None, 0, time.time(), self._context(context),
+                         contract.get('task_id',''), contract.get('root_execution_id',turn), contract.get('epoch',''),
+                         contract.get('observation_id',''), contract.get('backend_id',''),
+                         json.dumps(redact(contract), ensure_ascii=False), 'accepted'))
 
     def complete(self, execution_id, run_id):
-        self._write('UPDATE episodes SET ended=1,run_id=? WHERE id=?', (run_id, execution_id))
+        with self.lock:
+            row=self.db.execute('SELECT request_contract FROM episodes WHERE id=?',(execution_id,)).fetchone()
+        contract=json.loads(row['request_contract'] or '{}') if row else {}
+        contract['status']='verifying'
+        self._write("UPDATE episodes SET ended=1,run_id=?,status='verifying',request_contract=? WHERE id=?",
+                    (run_id,json.dumps(redact(contract),ensure_ascii=False),execution_id))
 
     def assess(self, execution_id, verdict):
         self._write('UPDATE episodes SET verdict=? WHERE id=?', (verdict, execution_id))
@@ -374,14 +397,50 @@ class Workspace:
         clean = redact(feedback)
         outcome = self._outcome(clean, evidence_kind)
         lesson_key = self._lesson_key(tool, redact(arguments), clean, self._context(context), evidence_kind, outcome)
+        evidence_body = copy.deepcopy(evidence or {})
+        contract = evidence_body.get('request_contract')
+        if isinstance(contract, dict):
+            if evidence_kind == 'contract_guard' or outcome == 'rejected':
+                contract['status'] = 'rejected'
+            elif outcome == 'cancelled':
+                contract['status'] = 'cancelled'
+            elif outcome == 'success':
+                contract['status'] = 'succeeded'
+            elif outcome == 'failure':
+                contract['status'] = 'failed'
+            else:
+                contract['status'] = 'unverified'
+            after = evidence_body.get('after') or {}
+            if after.get('observation_id'):
+                contract['terminal_observation_id'] = after['observation_id']
+            evidence_body['request_contract'] = redact(contract)
         self._write('INSERT OR REPLACE INTO experiences (id,role,epoch,goal,tool,arguments,context,evidence_kind,feedback,created,outcome,evidence,lesson_key) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)',
                     (ident, role, epoch, redact(goal), tool, json.dumps(redact(arguments), ensure_ascii=False),
                      self._context(context), evidence_kind, json.dumps(clean, ensure_ascii=False), time.time(), outcome,
-                     json.dumps(redact(evidence or {}), ensure_ascii=False), lesson_key))
+                     json.dumps(redact(evidence_body), ensure_ascii=False), lesson_key))
+        terminal_status = contract['status'] if isinstance(contract, dict) else {
+            'success':'succeeded','failure':'failed','cancelled':'cancelled','rejected':'rejected','unverified':'unverified'
+        }[outcome]
+        if isinstance(contract, dict):
+            self._write('UPDATE episodes SET ended=1,status=?,request_contract=? WHERE id=?',
+                        (terminal_status, json.dumps(redact(contract), ensure_ascii=False), ident))
+        else:
+            self._write('UPDATE episodes SET ended=1,status=? WHERE id=?', (terminal_status, ident))
+        if isinstance(contract, dict):
+            with self.lock:
+                plan=self.active_plan
+                if plan:
+                    for item in plan.get('execution_tools',[]):
+                        if item.get('id')==ident:
+                            item['request_contract']=copy.deepcopy(evidence_body['request_contract'])
+                            self._write('UPDATE plans SET body=? WHERE turn_id=?',
+                                (json.dumps(plan,ensure_ascii=False),plan['turn_id']))
+                            break
         with self.lock:
             row = self.db.execute('SELECT body,context FROM working WHERE role=? AND epoch=?', (role, epoch)).fetchone()
             body = json.loads(row['body']) if row and row['context'] == self._context(context) else {'actions': [], 'failed_attempts': []}
-            receipt = {'execution_id': ident, 'tool': tool, 'feedback': clean, 'evidence_kind': evidence_kind, 'outcome': outcome}
+            receipt = {'execution_id': ident, 'tool': tool, 'feedback': clean, 'evidence_kind': evidence_kind,
+                       'outcome': outcome, 'status': terminal_status}
             body['actions'] = (body['actions'] + [receipt])[-12:]
             if outcome in {'failure', 'rejected'}:
                 body['failed_attempts'] = (body['failed_attempts'] + [receipt])[-6:]
@@ -739,9 +798,22 @@ class Workspace:
     def execution_receipt(self,role,ident,*,context=None,include_oracle=False):
         with self.lock:
             row=self.db.execute('SELECT * FROM experiences WHERE role=? AND id=?',(role,ident)).fetchone()
-        if not row or (context is not None and row['context']!=self._context(context)):
-            raise ValueError('该执行记录不存在或属于不兼容版本')
-        if row['evidence_kind']=='simulator_oracle' and not include_oracle:
-            raise ValueError('仿真几何执行证据须明确 include_oracle；它属于实验记录，不是默认长期记忆')
-        return {'execution_id':row['id'],'skill':row['tool'],'evidence_kind':row['evidence_kind'],
-                'feedback':json.loads(row['feedback']),'evidence':json.loads(row['evidence'])}
+            if row and context is not None and row['context']!=self._context(context): row=None
+            episode=self.db.execute('SELECT * FROM episodes WHERE id=? AND role=?',(ident,role)).fetchone() if not row else None
+            if episode and context is not None and episode['context']!=self._context(context): episode=None
+        if row:
+            if row['evidence_kind']=='simulator_oracle' and not include_oracle:
+                raise ValueError('仿真几何执行证据须明确 include_oracle；它属于实验记录，不是默认长期记忆')
+            evidence=json.loads(row['evidence'])
+            contract=evidence.get('request_contract',{})
+            return {'execution_id':row['id'],'skill':row['tool'],'status':contract.get('status',row['outcome']),
+                    'request_contract':contract,'evidence_kind':row['evidence_kind'],
+                    'feedback':json.loads(row['feedback']),'evidence':evidence}
+        if episode:
+            contract=json.loads(episode['request_contract'] or '{}')
+            contract['status']=episode['status']
+            return {'execution_id':episode['id'],'skill':episode['tool'],'status':episode['status'],
+                    'request_contract':contract,
+                    'evidence_kind':'not_recorded','feedback':None,'evidence':{},
+                    'note':'Execution was accepted but its terminal sensor receipt was not recorded; it was not resumed.'}
+        raise ValueError('该执行记录不存在或属于不兼容版本')
