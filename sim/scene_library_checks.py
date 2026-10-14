@@ -3,6 +3,7 @@ import unittest
 
 import sim.service as service
 from .scene_library import LibraryEnv, service_factory, with_initial_selection
+from .service import service_env_kwargs
 
 
 class SceneLibraryCompositionChecks(unittest.TestCase):
@@ -36,6 +37,10 @@ class SceneLibraryCompositionChecks(unittest.TestCase):
             Selected(initial_scene_selection=('bottle',))
         with self.assertRaisesRegex(ValueError,'requires its registered LibraryEnv'):
             service_factory(BaseService)(environment_factory=OtherEnv)
+
+    def test_frozen_startup_selection_is_converted_for_scene_validator(self):
+        kwargs=service_env_kwargs(('can','block'))
+        self.assertEqual(kwargs,{'images':False,'selection':['can','block']})
 
 
 if __name__=='__main__':unittest.main()

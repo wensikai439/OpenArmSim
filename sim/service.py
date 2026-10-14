@@ -75,6 +75,12 @@ def memory_context(manifest, policy_config, robot):
             'contract':digest(physical),'policy_contract':digest(policy_config or {})}
 
 
+def service_env_kwargs(selection):
+    values={'images':False}
+    if selection is not None:values['selection']=list(selection)
+    return values
+
+
 class SimulationService:
     def __init__(self, *, environment_factory=None, initial_scene_selection=None,
                  policy_client_factory=None, policy_timing_class=None):
@@ -259,10 +265,7 @@ class SimulationService:
     def _worker(self):
         self.env = None
         try:
-            env_kwargs={'images':False}
-            if self.initial_scene_selection is not None:
-                env_kwargs['selection']=self.initial_scene_selection
-            self.env = self.environment_factory(**env_kwargs)
+            self.env = self.environment_factory(**service_env_kwargs(self.initial_scene_selection))
             self.env.reset(seed=0)
             self.policy_config = None
             self.policy_config_error = None
