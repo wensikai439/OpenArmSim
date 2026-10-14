@@ -19,6 +19,13 @@ SELECT = function('select_manipulation_object',
     {'observation_id': OBS, 'object_id': {'type': 'string', 'enum': IDS}}, ['observation_id', 'object_id'])
 
 
+def object_environment_dependencies(kwargs, environment_factory):
+    """Use registered-object physics locally unless an outer task scene was selected."""
+    result=dict(kwargs)
+    result.setdefault('environment_factory',environment_factory)
+    return result
+
+
 def consolidate_objects(receipts, forgotten=()):
     """Different object identities never share a claimed manipulation method."""
     rows = []; original_contexts = {}
@@ -178,7 +185,7 @@ def service_factory():
     import sim.service as service
     from sim.objects import ObjectEnv
     from sim.object_planner import ObjectPlanner
-    service.OpenArmEnv = ObjectEnv; service.TampPlanner = ObjectPlanner
+    service.TampPlanner = ObjectPlanner
     original_recorder = service.Recorder
     class ObjectRecorder(original_recorder):
         def __init__(self, env, *args, **kwargs):
@@ -207,6 +214,9 @@ def service_factory():
                         'physical_state_preserved': True, 'fresh_observation_required': True})
                 except Exception as exc: future.set_exception(exc)
     class ObjectService(service.SimulationService):
+        def __init__(self,*args,**kwargs):
+            super().__init__(*args,**object_environment_dependencies(kwargs,ObjectEnv))
+
         def call(self, command, **arguments):
             if command in {'policy', 'replay'}: raise ValueError('multi-object cell has no matching VLA/replay evaluation contract')
             if command == 'tamp':

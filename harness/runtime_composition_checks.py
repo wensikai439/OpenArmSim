@@ -199,6 +199,30 @@ class RuntimeCompositionChecks(unittest.TestCase):
         self.assertIs(selected['curobo_planner_factory'],selected_planner)
         self.assertIs(selected['curobo_metadata_provider'],selected_metadata)
 
+    def test_task_scene_default_is_scoped_and_outer_library_environment_wins(self):
+        from harness.task_queue import task_scene_dependencies
+        task_scene=object();library_env=object()
+        original={'unrelated':'preserved'}
+        local=task_scene_dependencies(original,task_scene)
+        self.assertEqual(original,{'unrelated':'preserved'})
+        self.assertIs(local['environment_factory'],task_scene)
+        selected=task_scene_dependencies({'environment_factory':library_env},task_scene)
+        self.assertIs(selected['environment_factory'],library_env)
+
+    def test_protected_object_default_is_scoped_and_task_scene_override_wins(self):
+        from harness.object_handover import relay_environment_dependencies
+        protected=object();task_scene=object()
+        self.assertIs(relay_environment_dependencies({},protected)['environment_factory'],protected)
+        selected=relay_environment_dependencies({'environment_factory':task_scene},protected)
+        self.assertIs(selected['environment_factory'],task_scene)
+
+    def test_registered_object_default_is_scoped_and_protected_scene_override_wins(self):
+        from harness.objects import object_environment_dependencies
+        object_env=object();protected=object()
+        self.assertIs(object_environment_dependencies({},object_env)['environment_factory'],object_env)
+        selected=object_environment_dependencies({'environment_factory':protected},object_env)
+        self.assertIs(selected['environment_factory'],protected)
+
     def test_request_middleware_is_instance_scoped_and_composes_in_order(self):
         class Workspace:
             def __init__(self): self.events=[]

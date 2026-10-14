@@ -18,6 +18,13 @@ from .skills import validate_arguments
 MOTIONS = {'pick', 'handover', 'place', 'relocate', 'move_relative', 'move_to_pose', 'set_gripper', 'run_policy'}
 
 
+def task_scene_dependencies(kwargs, environment_factory):
+    """Keep the task-scene fallback local while honoring an outer scene selection."""
+    result=dict(kwargs)
+    result.setdefault('environment_factory',environment_factory)
+    return result
+
+
 def object_snapshot(snapshot, ident):
     """A labelled oracle view for anchoring an unselected named object."""
     value = copy.deepcopy(snapshot); scene = value['diagnostics']['manipulation_scene']
@@ -299,8 +306,7 @@ def install_isolated():
 def service_factory():
     from .object_handover import service_factory as relay
     from sim.task_scene import TaskScene
-    import sim.service as service
-    base = relay(); service.OpenArmEnv = TaskScene
+    base = relay()
     class GoalCommands:
         def __init__(self, original, owner): self.original, self.owner = original, owner
         def put(self, item): return self.original.put(item)
@@ -321,6 +327,9 @@ def service_factory():
                     owner._publish(); future.set_result({'accepted': True, 'physical_state_preserved': True})
                 except Exception as exc: future.set_exception(exc)
     class TaskService(base):
+        def __init__(self,*args,**kwargs):
+            super().__init__(*args,**task_scene_dependencies(kwargs,TaskScene))
+
         def _worker(self):
             self.commands = GoalCommands(self.commands, self)
             return super()._worker()
