@@ -166,13 +166,17 @@ class PlanningChecks(unittest.TestCase):
                 self.result.update(primitive_success=True,status='completed')
         service=SimulationService.__new__(SimulationService)
         service.env=env;service.epoch='fixture';service.keyframes=[]
+        service.tamp_planner_factory=ControlledPlanner
         service.job={'kind':'tamp','execution_id':'fixture'}
         service.stop_job=threading.Event();service.shutdown=threading.Event();service.completed=queue.Queue()
         service._publish=lambda:None;service._capture=lambda *args,**kwargs:None
         service.snapshot=lambda:{'observation_id':'fixture:'+str(env.tick), 'observation':{'tick':env.tick}}
         with tempfile.TemporaryDirectory(dir=ROOT/'runs',prefix='.planning-service-') as out:
             def recorder(*args,**kwargs):return Recorder(*args,root=out,**kwargs)
-            with patch('sim.service.TampPlanner',ControlledPlanner),patch('sim.service.Recorder',side_effect=recorder):
+            class UnexpectedGlobalPlanner:
+                CONTRACT={'planner':'module-global planner must not be used'}
+                def __init__(self,*args,**kwargs):raise AssertionError('service ignored its injected TAMP router')
+            with patch('sim.service.TampPlanner',UnexpectedGlobalPlanner),patch('sim.service.Recorder',side_effect=recorder):
                 service._run('tamp',{'observation_id':'fixture:0','task':'move_relative',
                     'timing_mode':'measured_delay','realtime':False})
             summary=json.loads(next(Path(out).glob('*/summary.json')).read_text())
