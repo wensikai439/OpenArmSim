@@ -158,7 +158,6 @@ def stop_gpu(process):
 def build_backend(*, harness_context=True, stable_hold=True, transit_hints=True):
     _claim_backend_build()
     import sim.service as native_service
-    default_curobo_planner=native_service.CuRoboPlanner
     composed_tamp_planner=None
     _RUNTIME_TRACE['profile']={'harness_context':bool(harness_context),
         'stable_hold':bool(stable_hold),'transit_hints':bool(transit_hints)}
@@ -235,7 +234,6 @@ def build_backend(*, harness_context=True, stable_hold=True, transit_hints=True)
         composed_tamp_planner=_run_layer('planner_layers','harness.settled_hold',settling,composed_tamp_planner)
     factory=_run_layer('factory_layers','sim.service.TampPlanner+RelocationPlanner+CuRoboPlanner',bind_tamp_planner,
         factory,composed_tamp_planner,composed_relocation_planner,composed_curobo_planner,cache_metadata)
-    native_service.CuRoboPlanner=default_curobo_planner
     _RUNTIME_TRACE['complete']=True
     return factory, Harness
 
