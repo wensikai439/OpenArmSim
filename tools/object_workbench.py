@@ -7,6 +7,53 @@ from http.server import ThreadingHTTPServer
 
 os.environ.setdefault('MUJOCO_GL', 'egl')
 
+_RUNTIME_TRACE = {'attempted': False, 'complete': False, 'profile': None,
+                  'global_layers': [], 'factory_layers': [], 'failed_layer': None}
+
+
+def _claim_backend_build():
+    if _RUNTIME_TRACE['attempted']:
+        raise RuntimeError('工作台安装器修改进程级模块；同一进程只允许build_backend一次，请用全新进程重建。')
+    _RUNTIME_TRACE.update(attempted=True, complete=False, profile=None,
+                          global_layers=[], factory_layers=[], failed_layer=None)
+
+
+def _run_layer(kind, name, function, *args, **kwargs):
+    try:
+        result = function(*args, **kwargs)
+    except Exception as exc:
+        _RUNTIME_TRACE['failed_layer'] = name
+        raise RuntimeError(f'运行时组合层 {name} 安装失败；进程可能已部分修改，请退出并用新进程启动。') from exc
+    _RUNTIME_TRACE[kind].append(name)
+    return result
+
+
+def runtime_composition(harness, simulation):
+    """Internal API diagnostic for the concrete process-local wrapper stack."""
+    import harness.agent as agent
+    import sim.service as service
+
+    def lineage(value, suffix):
+        cls = value if isinstance(value, type) else type(value)
+        return [f'{row.__module__}.{row.__qualname__}' for row in cls.__mro__
+                if row.__name__.endswith(suffix)]
+
+    request_stack=[];layer=agent.urllib.request;seen=set()
+    while layer is not None and id(layer) not in seen and len(request_stack)<8:
+        seen.add(id(layer))
+        request_stack.append(f'{type(layer).__module__}.{type(layer).__qualname__}')
+        layer=getattr(layer,'base',None)
+    planner=service.TampPlanner
+    return {'schema':'openarm-runtime-composition/1','profile':_RUNTIME_TRACE.get('profile'),
+        'builder_attempted':_RUNTIME_TRACE['attempted'],'builder_complete':_RUNTIME_TRACE['complete'],
+        'failed_layer':_RUNTIME_TRACE['failed_layer'],
+        'global_install_order':list(_RUNTIME_TRACE['global_layers']),
+        'factory_install_order':list(_RUNTIME_TRACE['factory_layers']),
+        'harness_mro':lineage(harness,'Harness'),'service_mro':lineage(simulation,'Service'),
+        'active_planner_factory':f'{planner.__module__}.{planner.__qualname__}',
+        'current_request_middleware':request_stack,
+        'diagnostic_scope':'internal composition/dispatch provenance; not model capability or task performance'}
+
 
 def start_gpu(root):
     """Start only this on-demand worker; never replace an existing listener."""
@@ -44,6 +91,9 @@ def stop_gpu(process):
 
 
 def build_backend(*, harness_context=True, stable_hold=True, transit_hints=True):
+    _claim_backend_build()
+    _RUNTIME_TRACE['profile']={'harness_context':bool(harness_context),
+        'stable_hold':bool(stable_hold),'transit_hints':bool(transit_hints)}
     from harness.composite import install_isolated as composite
     from sim.grasp import install_isolated as grasp
     from harness.candidate import install_isolated as candidate
@@ -56,23 +106,29 @@ def build_backend(*, harness_context=True, stable_hold=True, transit_hints=True)
     from harness.bottle import BottleHarness, install_isolated as bottle, service_factory
     from sim.environment import ROOT
     os.environ.setdefault('OPENARM_POLICY_CONFIG', str(ROOT/'harness/policy.json'))
-    composite(); grasp(); candidate(); scene(); objects(); relay(); transport(); tasks(); poses(); bottle(); factory = service_factory()
+    for name, installer in (
+        ('harness.composite',composite),('sim.grasp',grasp),('harness.candidate',candidate),
+        ('harness.scene',scene),('harness.objects',objects),('harness.object_handover',relay),
+        ('harness.object_transport',transport),('harness.task_queue',tasks),
+        ('harness.poses',poses),('harness.bottle',bottle)):
+        _run_layer('global_layers',name,installer)
+    factory = _run_layer('factory_layers','harness.bottle.service_factory',service_factory)
     from harness.connected_placement import install_isolated as connected
-    factory = connected(factory)
+    factory = _run_layer('factory_layers','harness.connected_placement',connected,factory)
     from harness.fast_grasp import install_isolated as efficient
-    factory = efficient(factory)
+    factory = _run_layer('factory_layers','harness.fast_grasp',efficient,factory)
     from harness.margin_grasp import install_isolated as margin
-    factory = margin(factory)
+    factory = _run_layer('factory_layers','harness.margin_grasp',margin,factory)
     from harness.free_transport import install_isolated as free
-    factory = free(factory)
+    factory = _run_layer('factory_layers','harness.free_transport',free,factory)
     from harness.task_placement import install_isolated as task_placement
-    factory = task_placement(factory, deployed=True)
+    factory = _run_layer('factory_layers','harness.task_placement',task_placement,factory,deployed=True)
     from sim.scene_library import service_factory as library
-    factory = library(factory)
+    factory = _run_layer('factory_layers','sim.scene_library.service_factory',library,factory)
     from sim.scene_curobo import install_isolated as scene_gpu
-    scene_gpu()
+    _run_layer('global_layers','sim.scene_curobo',scene_gpu)
     from sim.cache_curobo import install_isolated as cache_gpu
-    cache_gpu()
+    _run_layer('global_layers','sim.cache_curobo',cache_gpu)
     # Explicit startup selection preserves the user's optional objects across
     # a controlled development restart. Scene changes still use the physics
     # owner's existing atomic cold-compile command and fresh-observation gate.
@@ -86,27 +142,30 @@ def build_backend(*, harness_context=True, stable_hold=True, transit_hints=True)
             def __init__(self, *, selection=None, **kwargs):
                 super().__init__(selection=selected if selection is None else selection, **kwargs)
         native.OpenArmEnv = InitialEnv
+        _RUNTIME_TRACE['global_layers'].append('OPENARM_SCENE_OBJECTS→sim.service.OpenArmEnv')
     from harness.act_adapter import install_isolated as act
     base = BottleHarness
     if harness_context:
         from harness.policy_trace import install_isolated as policy_trace
-        policy_trace()
+        _run_layer('global_layers','harness.policy_trace',policy_trace)
         from harness.stages import install_isolated as stages
-        base = stages(reveal_by_stage=True, live_context=True, focused_context=True, bind_atomic=True)
-    ActHarness = act(base)
+        base = _run_layer('global_layers','harness.stages',stages,
+            reveal_by_stage=True, live_context=True, focused_context=True, bind_atomic=True)
+    ActHarness = _run_layer('global_layers','harness.act_adapter',act,base)
     from harness.intent import install_isolated as intent
-    Harness = intent(ActHarness)
+    Harness = _run_layer('global_layers','harness.intent',intent,ActHarness)
     if harness_context:
         from harness.policy_route import install_isolated as policy_route
-        Harness = policy_route(Harness)
+        Harness = _run_layer('global_layers','harness.policy_route',policy_route,Harness)
         from harness.compact import install_isolated as compact
-        Harness = compact(Harness)
+        Harness = _run_layer('global_layers','harness.compact',compact,Harness)
     if stable_hold:
         from harness.settled_hold import install_isolated as settling
-        factory = settling(factory)
+        factory = _run_layer('factory_layers','harness.settled_hold',settling,factory)
     if transit_hints:
         from harness.transit_hint import install_isolated as hints
-        Harness = hints(Harness)
+        Harness = _run_layer('global_layers','harness.transit_hint',hints,Harness)
+    _RUNTIME_TRACE['complete']=True
     return factory, Harness
 
 
@@ -167,6 +226,7 @@ def main():
                 **source_identity.status(),
                 'factory_profile': 'objects-default',
                 'harness_profile': 'live-context+policy-route+compact-context+ACT-adapter',
+                'runtime_composition': runtime_composition(server.harness, server.simulation),
                 'enabled_features': ['stable-hold', 'transit-hints', 'registered-object-scene', 'native-MuJoCo-verification'],
                 'policy_config': 'harness/policy.json',
             }

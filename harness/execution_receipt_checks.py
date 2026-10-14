@@ -4,7 +4,7 @@ import unittest
 from pathlib import Path
 
 from .workspace import Workspace
-from sim.service import execution_lifecycle
+from sim.service import execution_lifecycle, planner_provenance
 
 
 class ExecutionReceiptChecks(unittest.TestCase):
@@ -101,6 +101,16 @@ class ExecutionReceiptChecks(unittest.TestCase):
         self.assertEqual(execution_lifecycle('tamp','cancelled',
             {'tamp':{'primitive_success':True}}),'cancelled')
         self.assertEqual(execution_lifecycle('policy','success',{}),'unverified')
+
+    def test_planner_receipt_names_selected_factory_and_concrete_implementation(self):
+        class Router: pass
+        class ConnectedPlanner:
+            CONTRACT={'planner':'tamp','proposal':'connected-path'}
+        result=planner_provenance(Router,ConnectedPlanner(),'tamp','place_bottle')
+        self.assertEqual(result['requested_factory']['class'],'ExecutionReceiptChecks.test_planner_receipt_names_selected_factory_and_concrete_implementation.<locals>.Router')
+        self.assertEqual(result['implementation']['class'],'ExecutionReceiptChecks.test_planner_receipt_names_selected_factory_and_concrete_implementation.<locals>.ConnectedPlanner')
+        self.assertEqual(result['backend'],'tamp')
+        self.assertIn('not a performance',result['scope'])
 
 
 if __name__ == '__main__':

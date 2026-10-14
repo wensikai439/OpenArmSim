@@ -39,6 +39,16 @@ def execution_lifecycle(kind, status, metrics):
     return 'unverified'
 
 
+def planner_provenance(factory, instance, backend, task):
+    """Name both the requested router and the concrete planner it produced."""
+    def identity(value):
+        cls=value if isinstance(value,type) else type(value)
+        return {'module':cls.__module__,'class':cls.__qualname__}
+    return {'requested_factory':identity(factory),'implementation':identity(instance),
+        'backend':backend,'task':task,'contract':copy.deepcopy(getattr(instance,'CONTRACT',{})),
+        'scope':'implementation provenance only; not a performance or success claim'}
+
+
 def physical_memory_contract(manifest):
     """Fingerprint actual physics/data; planners, workers and tests are separate."""
     physical = {k:manifest.get(k) for k in ('schema','engine','profile','physics_dt','contract')}
@@ -383,6 +393,8 @@ class SimulationService:
                     nonlocal planner
                     planner = planner_type(self.env, args.get('task'), parameters=args.get('parameters'),
                         cancel=lambda:self.stop_job.is_set() or self.shutdown.is_set(), feedback=feedback)
+                    recorder.event({'type':'planner_runtime',**planner_provenance(
+                        planner_type,planner,selected,args.get('task'))})
                     yield from planner.actions()
                 steps = min(3600,max(1,int(self.env.task_window()['remaining_seconds']*self.env.profile['control_hz']))) if args.get('task')=='relocate_object' else 1200
             if kind == "policy":
