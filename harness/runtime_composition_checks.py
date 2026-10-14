@@ -39,17 +39,22 @@ class RuntimeCompositionChecks(unittest.TestCase):
             CONTRACT={'fixture':True}
         class Relocation:
             CONTRACT={'fixture':'relocation'}
+        class CuRobo:
+            CONTRACT={'fixture':'curobo'}
         class BaseService:
             def __init__(self,**kwargs): self.dependencies=kwargs
-        Bound=object_workbench.bind_tamp_planner(BaseService,Router,Relocation)
-        self.assertIs(object_workbench.bind_tamp_planner(Bound,Router,Relocation),Bound)
+        Bound=object_workbench.bind_tamp_planner(BaseService,Router,Relocation,CuRobo)
+        self.assertIs(object_workbench.bind_tamp_planner(Bound,Router,Relocation,CuRobo),Bound)
         instance=Bound()
         self.assertIs(instance.dependencies['tamp_planner_factory'],Router)
         self.assertIs(instance.dependencies['relocation_planner_factory'],Relocation)
+        self.assertIs(instance.dependencies['curobo_planner_factory'],CuRobo)
         with self.assertRaisesRegex(ValueError,'already belongs'):
             Bound(tamp_planner_factory=object())
         with self.assertRaisesRegex(ValueError,'relocation planner'):
             Bound(relocation_planner_factory=object())
+        with self.assertRaisesRegex(ValueError,'cuRobo planner'):
+            Bound(curobo_planner_factory=object())
 
     def test_service_default_tamp_router_remains_late_bound(self):
         from sim import service
@@ -80,6 +85,21 @@ class RuntimeCompositionChecks(unittest.TestCase):
             self.assertIs(instance._relocation_planner_factory(),FixtureRouter)
         finally:
             service.RelocationPlanner=original
+
+    def test_service_default_curobo_router_is_late_bound_and_injection_wins(self):
+        from sim import service
+        original=service.CuRoboPlanner
+        class FixtureRouter: pass
+        class LaterDefault: pass
+        instance=service.SimulationService.__new__(service.SimulationService)
+        instance.curobo_planner_factory=None
+        try:
+            service.CuRoboPlanner=LaterDefault
+            self.assertIs(instance._curobo_planner_factory(),LaterDefault)
+            instance.curobo_planner_factory=FixtureRouter
+            self.assertIs(instance._curobo_planner_factory(),FixtureRouter)
+        finally:
+            service.CuRoboPlanner=original
 
     def test_request_middleware_is_instance_scoped_and_composes_in_order(self):
         class Workspace:
