@@ -8,6 +8,92 @@ import numpy as np
 
 
 class PlannerStackChecks(unittest.TestCase):
+    def test_connected_placement_composer_matches_legacy_route_without_global_patch(self):
+        from harness import agent
+        from harness.connected_placement import compose_planner, install_isolated
+        from sim import service
+
+        original=service.TampPlanner
+        old_execution=agent.EXECUTION_TOOLS
+        old_skills=agent.SKILL_TOOLS
+        old_catalogue=agent.catalogue
+        marker=getattr(agent,'_connected_placement_catalogue_installed',None)
+        had_marker=hasattr(agent,'_connected_placement_catalogue_installed')
+        placement=Mock(return_value='connected-table-place')
+
+        class Base:
+            CONTRACT={'planner':'fixture'}
+            def __new__(cls,env,task,**kwargs):return f'base:{task}'
+
+        cases=[(SimpleNamespace(object_id='bottle'),'place_bottle',
+                {'parameters':{'receptacle_id':'table'}}),
+            (SimpleNamespace(object_id='bottle'),'place_bottle',
+                {'parameters':{'receptacle_id':'basket'}}),
+            (SimpleNamespace(object_id='can'),'place_bottle',
+                {'parameters':{'receptacle_id':'table'}})]
+        try:
+            with patch('sim.connected_place.ConnectedBottlePlacement',placement):
+                service.TampPlanner=Base
+                install_isolated(object())
+                legacy=[service.TampPlanner(env,task,**args) for env,task,args in cases]
+                service.TampPlanner=Base
+                Router=compose_planner(Base)
+                local=[Router(env,task,**args) for env,task,args in cases]
+                self.assertEqual(local,legacy)
+                self.assertEqual(local,['connected-table-place','base:place_bottle','base:place_bottle'])
+                self.assertIs(compose_planner(Router),Router)
+                self.assertIs(service.TampPlanner,Base)
+        finally:
+            service.TampPlanner=original
+            agent.EXECUTION_TOOLS=old_execution
+            agent.SKILL_TOOLS=old_skills
+            agent.catalogue=old_catalogue
+            if had_marker:agent._connected_placement_catalogue_installed=marker
+            elif hasattr(agent,'_connected_placement_catalogue_installed'):
+                delattr(agent,'_connected_placement_catalogue_installed')
+
+    def test_connected_placement_catalogue_is_explicit_and_idempotent(self):
+        from harness import agent
+        from harness.connected_placement import install_catalogue
+
+        old_execution=agent.EXECUTION_TOOLS
+        old_skills=agent.SKILL_TOOLS
+        old_catalogue=agent.catalogue
+        marker=getattr(agent,'_connected_placement_catalogue_installed',None)
+        had_marker=hasattr(agent,'_connected_placement_catalogue_installed')
+        try:
+            agent.EXECUTION_TOOLS=copy.deepcopy(old_execution)
+            agent.SKILL_TOOLS=copy.deepcopy(old_skills)
+            agent.catalogue=lambda snapshot,policy_type='pi05':{'skills':[{'id':tool['function']['name']}
+                for tool in agent.SKILL_TOOLS]}
+            if had_marker:delattr(agent,'_connected_placement_catalogue_installed')
+
+            install_catalogue()
+            installed_catalogue=agent.catalogue
+            first_execution=copy.deepcopy(agent.EXECUTION_TOOLS)
+            first_skills=copy.deepcopy(agent.SKILL_TOOLS)
+            install_catalogue()
+
+            plan=next(tool['function'] for tool in agent.EXECUTION_TOOLS
+                      if tool['function']['name']=='set_plan')['parameters']['properties']
+            place=next(tool['function'] for tool in agent.SKILL_TOOLS
+                       if tool['function']['name']=='place')
+            result=agent.catalogue({})
+            self.assertIs(agent.catalogue,installed_catalogue)
+            self.assertEqual(agent.EXECUTION_TOOLS,first_execution)
+            self.assertEqual(agent.SKILL_TOOLS,first_skills)
+            self.assertIn('120s',plan['time_budget_s']['description'])
+            self.assertIn('measured_delay',plan['timing_mode']['description'])
+            self.assertIn('connected upright approach',place['description'])
+            self.assertFalse(result['bottle_table_placement']['transfer_ready'])
+        finally:
+            agent.EXECUTION_TOOLS=old_execution
+            agent.SKILL_TOOLS=old_skills
+            agent.catalogue=old_catalogue
+            if had_marker:agent._connected_placement_catalogue_installed=marker
+            elif hasattr(agent,'_connected_placement_catalogue_installed'):
+                delattr(agent,'_connected_placement_catalogue_installed')
+
     def test_margin_grasp_composer_matches_legacy_router_without_global_patch(self):
         from harness.margin_grasp import compose_planner, install_isolated
         from sim import service

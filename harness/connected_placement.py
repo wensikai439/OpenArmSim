@@ -2,13 +2,14 @@
 import copy
 
 
-def install_isolated(factory):
-    from . import agent
+def compose_planner(previous):
+    """Compose table placement without replacing the module default."""
     from sim.connected_place import ConnectedBottlePlacement
-    import sim.service as service
-    previous = service.TampPlanner
+    if getattr(previous, 'CONNECTED_PLACEMENT_ROUTER', False):
+        return previous
 
     class Router:
+        CONNECTED_PLACEMENT_ROUTER = True
         CONTRACT = {**previous.CONTRACT, 'bottle_table_placement': 'connected upright loaded-path proposals'}
 
         def __new__(cls, env, task, **kwargs):
@@ -17,7 +18,17 @@ def install_isolated(factory):
                 return ConnectedBottlePlacement(env, task, **kwargs)
             return previous(env, task, **kwargs)
 
-    service.TampPlanner = Router
+
+    Router.__module__ = __name__
+    return Router
+
+
+def install_catalogue():
+    """Register model-facing parameters separately from planner routing."""
+    from . import agent
+    if getattr(agent, '_connected_placement_catalogue_installed', False):
+        return
+
     controls = copy.deepcopy(agent.EXECUTION_TOOLS)
     plan = next(t['function'] for t in controls if t['function']['name'] == 'set_plan')
     fields = plan['parameters']['properties']
@@ -55,4 +66,12 @@ def install_isolated(factory):
         return value
 
     agent.catalogue = describe
+    agent._connected_placement_catalogue_installed = True
+
+
+def install_isolated(factory):
+    """Compatibility installer for standalone research scripts."""
+    import sim.service as service
+    service.TampPlanner = compose_planner(service.TampPlanner)
+    install_catalogue()
     return factory

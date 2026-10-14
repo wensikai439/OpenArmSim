@@ -132,14 +132,16 @@ def build_backend(*, harness_context=True, stable_hold=True, transit_hints=True)
         ('harness.poses',poses),('harness.bottle',bottle)):
         _run_layer('global_layers',name,installer)
     factory = _run_layer('factory_layers','harness.bottle.service_factory',service_factory)
-    from harness.connected_placement import install_isolated as connected
-    factory = _run_layer('factory_layers','harness.connected_placement',connected,factory)
     composed_tamp_planner=native_service.TampPlanner
+    from harness.connected_placement import compose_planner as connected
+    composed_tamp_planner=_run_layer('planner_layers','harness.connected_placement',connected,composed_tamp_planner)
     from harness.margin_grasp import compose_planner as margin
     composed_tamp_planner=_run_layer('planner_layers','harness.margin_grasp',margin,composed_tamp_planner)
     from harness.free_transport import compose_planner as free
     composed_tamp_planner=_run_layer('planner_layers','harness.free_transport',free,composed_tamp_planner)
     from harness.task_placement import install_catalogue as task_placement_catalogue
+    from harness.connected_placement import install_catalogue as connected_catalogue
+    _run_layer('global_layers','harness.connected_placement.catalogue',connected_catalogue)
     _run_layer('global_layers','harness.task_placement.catalogue',task_placement_catalogue,deployed=True)
     from sim.scene_library import service_factory as library
     factory = _run_layer('factory_layers','sim.scene_library.service_factory',library,factory)
