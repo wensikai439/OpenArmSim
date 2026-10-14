@@ -133,8 +133,6 @@ def build_backend(*, harness_context=True, stable_hold=True, transit_hints=True)
     factory = _run_layer('factory_layers','harness.bottle.service_factory',service_factory)
     from harness.connected_placement import install_isolated as connected
     factory = _run_layer('factory_layers','harness.connected_placement',connected,factory)
-    from harness.fast_grasp import install_isolated as efficient
-    factory = _run_layer('factory_layers','harness.fast_grasp',efficient,factory)
     from harness.margin_grasp import install_isolated as margin
     factory = _run_layer('factory_layers','harness.margin_grasp',margin,factory)
     from harness.free_transport import install_isolated as free
