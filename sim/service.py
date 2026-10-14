@@ -83,12 +83,14 @@ def service_env_kwargs(selection):
 
 class SimulationService:
     def __init__(self, *, environment_factory=None, initial_scene_selection=None,
-                 policy_client_factory=None, policy_timing_class=None):
+                 policy_client_factory=None, policy_timing_class=None,
+                 tamp_planner_factory=None):
         self.environment_factory = OpenArmEnv if environment_factory is None else environment_factory
         self.initial_scene_selection = (None if initial_scene_selection is None
             else tuple(initial_scene_selection))
         self.policy_client_factory = policy_client_factory or make_client
         self.policy_timing_class = policy_timing_class or PolicyTiming
+        self.tamp_planner_factory = tamp_planner_factory
         self.commands = queue.Queue()
         self.completed = queue.Queue()
         self.lock = threading.Lock()
@@ -114,6 +116,10 @@ class SimulationService:
             raise RuntimeError("simulation initialization timed out")
         if self.cache.get("state") == "error":
             raise RuntimeError(self.cache["error"])
+
+    def _tamp_planner_factory(self):
+        """Resolve an injected router, or the current module default for tests."""
+        return getattr(self, 'tamp_planner_factory', None) or TampPlanner
 
     def snapshot(self):
         with self.lock:
@@ -384,7 +390,7 @@ class SimulationService:
                 selected=(args.get('parameters') or {}).get('planner','tamp')
                 if selected not in ('tamp','curobo'):raise ValueError('unknown planning backend')
                 planner_type=(RelocationPlanner if args.get('task')=='relocate_object' else
-                              CuRoboPlanner if selected=='curobo' else TampPlanner)
+                              CuRoboPlanner if selected=='curobo' else self._tamp_planner_factory())
                 recorder = Recorder(self.env, kind, record_images=bool(args.get('record_images', False)), seed=seed,
                     details={'episode':episode,'execution_id':execution_id,
                         'initiator':args.get('initiator',{'type':'direct-command'}),
@@ -547,7 +553,7 @@ class SimulationService:
                             recorder.event({"type": "policy_close_failed", "error": str(close_error)})
                 if recorder:
                     if kind == 'tamp' and planner is None:
-                        metrics['tamp'] = {**TampPlanner.CONTRACT,'status':status,'primitive_success':False,
+                        metrics['tamp'] = {**self._tamp_planner_factory().CONTRACT,'status':status,'primitive_success':False,
                             'failure_code':start_failure_code or 'start_rejected','message':error,
                             'phase':'preflight','motion_started':False}
                     if planner:

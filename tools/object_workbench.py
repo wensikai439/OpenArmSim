@@ -42,7 +42,9 @@ def runtime_composition(harness, simulation):
         seen.add(id(layer))
         request_stack.append(f'{type(layer).__module__}.{type(layer).__qualname__}')
         layer=getattr(layer,'base',None)
-    planner=service.TampPlanner
+    resolve=getattr(simulation,'_tamp_planner_factory',None)
+    planner=(resolve() if callable(resolve) else
+             getattr(simulation,'tamp_planner_factory',None) or service.TampPlanner)
     return {'schema':'openarm-runtime-composition/1','profile':_RUNTIME_TRACE.get('profile'),
         'builder_attempted':_RUNTIME_TRACE['attempted'],'builder_complete':_RUNTIME_TRACE['complete'],
         'failed_layer':_RUNTIME_TRACE['failed_layer'],
@@ -52,6 +54,20 @@ def runtime_composition(harness, simulation):
         'active_planner_factory':f'{planner.__module__}.{planner.__qualname__}',
         'current_request_middleware':request_stack,
         'diagnostic_scope':'internal composition/dispatch provenance; not model capability or task performance'}
+
+
+def bind_tamp_planner(base, planner):
+    """Bind the composed TAMP router to one service class, not the module."""
+    if base.__dict__.get('_bound_tamp_planner_factory') is planner:return base
+    class BoundTampService(base):
+        _bound_tamp_planner_factory=planner
+        def __init__(self,*args,**kwargs):
+            configured=kwargs.get('tamp_planner_factory')
+            if configured is not None and configured is not planner:
+                raise ValueError('TAMP planner already belongs to this service class')
+            kwargs['tamp_planner_factory']=planner
+            super().__init__(*args,**kwargs)
+    return BoundTampService
 
 
 def start_gpu(root):
@@ -91,6 +107,8 @@ def stop_gpu(process):
 
 def build_backend(*, harness_context=True, stable_hold=True, transit_hints=True):
     _claim_backend_build()
+    import sim.service as native_service
+    default_tamp_planner=native_service.TampPlanner
     _RUNTIME_TRACE['profile']={'harness_context':bool(harness_context),
         'stable_hold':bool(stable_hold),'transit_hints':bool(transit_hints)}
     from harness.composite import install_isolated as composite
@@ -158,6 +176,10 @@ def build_backend(*, harness_context=True, stable_hold=True, transit_hints=True)
     if transit_hints:
         from harness.transit_hint import install_isolated as hints
         Harness = _run_layer('global_layers','harness.transit_hint',hints,Harness)
+    composed_tamp_planner=native_service.TampPlanner
+    factory=_run_layer('factory_layers','sim.service.TampPlanner',bind_tamp_planner,
+        factory,composed_tamp_planner)
+    native_service.TampPlanner=default_tamp_planner
     _RUNTIME_TRACE['complete']=True
     return factory, Harness
 
