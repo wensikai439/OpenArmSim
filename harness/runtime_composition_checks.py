@@ -260,12 +260,19 @@ class RuntimeCompositionChecks(unittest.TestCase):
 
     def test_nested_service_factories_carry_tamp_router_without_mutating_module_default(self):
         from sim import service
+        from unittest.mock import patch
         original=service.TampPlanner
+        class FixtureService:
+            def __init__(self,**kwargs): self.forwarded=kwargs
         from harness.bottle import service_factory
-        base=service_factory()
+        with patch.object(service,'SimulationService',FixtureService):
+            base=service_factory()
+            instance=base()
         self.assertIs(service.TampPlanner,original)
         self.assertTrue(callable(base._tamp_planner_factory_default))
         self.assertIsNot(base._tamp_planner_factory_default,original)
+        self.assertIs(instance.forwarded['tamp_planner_factory'],base._tamp_planner_factory_default)
+        self.assertIn('environment_factory',instance.forwarded)
 
     def test_request_middleware_is_instance_scoped_and_composes_in_order(self):
         class Workspace:

@@ -140,7 +140,7 @@ def service_factory():
     class RelayService(base):
         _tamp_planner_factory_default=RelayPlanner
         def __init__(self,*args,**kwargs):
-            super().__init__(*args,relay_environment_dependencies(
+            super().__init__(*args,**relay_environment_dependencies(
                 kwargs,ProtectedObjectEnv,RelayPlanner))
 
         def call(self, command, **arguments):
