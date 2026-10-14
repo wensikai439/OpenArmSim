@@ -6,9 +6,24 @@ import numpy as np
 from .environment import OpenArmEnv
 from .service import SimulationService
 from .view import FRONT,validate_view
+from .scene import target as scene_target
 
 
 class ViewChecks(unittest.TestCase):
+    def test_object_frame_offsets_follow_the_referenced_object_rotation(self):
+        rotation=np.array([[0.,-1.,0.],[1.,0.,0.],[0.,0.,1.]])
+        directory={'observation_id':'fixture:7','objects':[{'object_id':'block',
+            'origin_m':[.4,.2,.8],'world_bounds':{'min_m':[.35,.15,.7],'max_m':[.45,.25,.9]},
+            'rotation_matrix':rotation.tolist()}]}
+        tcp={'quaternion_xyzw':[0.,0.,0.,1.]}
+        common={'object_id':'block','reference_point':'origin','offset_m':[.1,0.,0.],'arm':'left'}
+        object_relative=scene_target(directory,{**common,'offset_frame':'object'},tcp)
+        world_relative=scene_target(directory,{**common,'offset_frame':'world'},tcp)
+        np.testing.assert_allclose(object_relative['motion_request']['position_m'],[.4,.3,.8],atol=1e-12)
+        np.testing.assert_allclose(world_relative['motion_request']['position_m'],[.5,.2,.8],atol=1e-12)
+        self.assertEqual(object_relative['motion_request']['frame'],'world')
+        self.assertFalse(object_relative['motion_started'])
+
     def test_operator_render_preserves_sensor_pixels_and_physics(self):
         env=OpenArmEnv(images=False)
         try:

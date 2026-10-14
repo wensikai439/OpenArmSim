@@ -95,6 +95,33 @@ class SkillChecks(unittest.TestCase):
         finally:
             env.close()
 
+    def test_relative_world_and_tcp_frames_share_explicit_axes_for_both_arms(self):
+        env=OpenArmEnv(images=False)
+        try:
+            env.reset(seed=0)
+            initial_qpos=env.data.qpos.copy();initial_qvel=env.data.qvel.copy();initial_time=env.data.time
+            delta=np.array([.08,.03,-.02])
+            world_targets=[]
+            for arm in ('left','right'):
+                body=env.ee_ids[arm]
+                rotation=env.data.xmat[body].reshape(3,3).copy()
+                tcp=env.data.xpos[body]+rotation@np.array([0.,.006,.075])
+                world=TampPlanner(env,'move_relative',parameters={'arm':arm,'delta_m':delta.tolist(),'frame':'world'})
+                tool=TampPlanner(env,'move_relative',parameters={'arm':arm,'delta_m':delta.tolist(),'frame':'tool'})
+                np.testing.assert_allclose(world.motion_target,tcp+delta,atol=1e-10)
+                np.testing.assert_allclose(tool.motion_target,tcp+rotation@delta,atol=1e-10)
+                np.testing.assert_allclose(world.motion_target-tcp,delta,atol=1e-10)
+                world_targets.append(world.motion_target-tcp)
+                self.assertEqual(world.result['frame'],'world')
+                self.assertEqual(tool.result['frame'],'world')
+            # A world-left request has the same +Y meaning for either arm;
+            # a tool-frame request rotates through that arm's measured TCP axes.
+            np.testing.assert_allclose(world_targets[0],world_targets[1],atol=1e-10)
+            np.testing.assert_array_equal(env.data.qpos,initial_qpos)
+            np.testing.assert_array_equal(env.data.qvel,initial_qvel)
+            self.assertEqual(env.data.time,initial_time)
+        finally:env.close()
+
     def test_invalid_target_does_not_modify_live_physics(self):
         env = OpenArmEnv(images=False)
         try:
