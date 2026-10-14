@@ -19,13 +19,11 @@ class SettledPlanner:
         self.result.update(status='completed', primitive_success=True)
 
 
-def install_isolated(factory):
-    """Existing demo, source control and unrequested hold semantics stay intact."""
-    import sim.service as service
+def compose_planner(previous):
+    """Return a local TAMP router with the optional settling behavior composed in."""
     from sim.bottle_routing import ContinuousHoldAudit
-    previous = service.TampPlanner
     if getattr(previous, 'PRE_HOLD_SETTLING', False):
-        return factory
+        return previous
     class Router:
         PRE_HOLD_SETTLING = True
         CONTRACT = {**previous.CONTRACT, 'pre_hold_settling': 'PD only; extra bounded native settling before explicitly requested audit'}
@@ -35,5 +33,12 @@ def install_isolated(factory):
                 and (kwargs.get('parameters') or {}).get('hold_seconds') is not None):
                 planner.planner = SettledPlanner(planner.planner)
             return planner
-    service.TampPlanner = Router
+    Router.__module__ = __name__
+    return Router
+
+
+def install_isolated(factory):
+    """Compatibility installer for standalone research scripts."""
+    import sim.service as service
+    service.TampPlanner = compose_planner(service.TampPlanner)
     return factory

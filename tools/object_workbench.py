@@ -8,14 +8,14 @@ from http.server import ThreadingHTTPServer
 os.environ.setdefault('MUJOCO_GL', 'egl')
 
 _RUNTIME_TRACE = {'attempted': False, 'complete': False, 'profile': None,
-                  'global_layers': [], 'factory_layers': [], 'failed_layer': None}
+                  'global_layers': [], 'factory_layers': [], 'planner_layers': [], 'failed_layer': None}
 
 
 def _claim_backend_build():
     if _RUNTIME_TRACE['attempted']:
         raise RuntimeError('工作台安装器修改进程级模块；同一进程只允许build_backend一次，请用全新进程重建。')
     _RUNTIME_TRACE.update(attempted=True, complete=False, profile=None,
-                          global_layers=[], factory_layers=[], failed_layer=None)
+                          global_layers=[], factory_layers=[], planner_layers=[], failed_layer=None)
 
 
 def _run_layer(kind, name, function, *args, **kwargs):
@@ -50,6 +50,7 @@ def runtime_composition(harness, simulation):
         'failed_layer':_RUNTIME_TRACE['failed_layer'],
         'global_install_order':list(_RUNTIME_TRACE['global_layers']),
         'factory_install_order':list(_RUNTIME_TRACE['factory_layers']),
+        'planner_install_order':list(_RUNTIME_TRACE['planner_layers']),
         'harness_mro':lineage(harness,'Harness'),'service_mro':lineage(simulation,'Service'),
         'active_planner_factory':f'{planner.__module__}.{planner.__qualname__}',
         'current_request_middleware':request_stack,
@@ -170,13 +171,13 @@ def build_backend(*, harness_context=True, stable_hold=True, transit_hints=True)
         Harness = _run_layer('global_layers','harness.policy_route',policy_route,Harness)
         from harness.compact import install_isolated as compact
         Harness = _run_layer('global_layers','harness.compact',compact,Harness)
-    if stable_hold:
-        from harness.settled_hold import install_isolated as settling
-        factory = _run_layer('factory_layers','harness.settled_hold',settling,factory)
     if transit_hints:
         from harness.transit_hint import install_isolated as hints
         Harness = _run_layer('global_layers','harness.transit_hint',hints,Harness)
     composed_tamp_planner=native_service.TampPlanner
+    if stable_hold:
+        from harness.settled_hold import compose_planner as settling
+        composed_tamp_planner=_run_layer('planner_layers','harness.settled_hold',settling,composed_tamp_planner)
     factory=_run_layer('factory_layers','sim.service.TampPlanner',bind_tamp_planner,
         factory,composed_tamp_planner)
     native_service.TampPlanner=default_tamp_planner

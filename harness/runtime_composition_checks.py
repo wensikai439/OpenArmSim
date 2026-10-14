@@ -21,7 +21,7 @@ class RuntimeCompositionChecks(unittest.TestCase):
 
     def test_builder_allows_one_process_local_installation_only(self):
         object_workbench._RUNTIME_TRACE.update(attempted=False,complete=False,profile=None,
-            global_layers=[],factory_layers=[],failed_layer=None)
+            global_layers=[],factory_layers=[],planner_layers=[],failed_layer=None)
         object_workbench._claim_backend_build()
         with self.assertRaisesRegex(RuntimeError,'全新进程'):
             object_workbench._claim_backend_build()
