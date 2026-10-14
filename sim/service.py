@@ -85,7 +85,7 @@ class SimulationService:
     def __init__(self, *, environment_factory=None, initial_scene_selection=None,
                  policy_client_factory=None, policy_timing_class=None,
                  tamp_planner_factory=None, relocation_planner_factory=None,
-                 curobo_planner_factory=None):
+                 curobo_planner_factory=None, curobo_metadata_provider=None):
         self.environment_factory = OpenArmEnv if environment_factory is None else environment_factory
         self.initial_scene_selection = (None if initial_scene_selection is None
             else tuple(initial_scene_selection))
@@ -94,6 +94,7 @@ class SimulationService:
         self.tamp_planner_factory = tamp_planner_factory
         self.relocation_planner_factory = relocation_planner_factory
         self.curobo_planner_factory = curobo_planner_factory
+        self.curobo_metadata_provider = curobo_metadata_provider
         self.commands = queue.Queue()
         self.completed = queue.Queue()
         self.lock = threading.Lock()
@@ -131,6 +132,11 @@ class SimulationService:
     def _curobo_planner_factory(self):
         """Resolve an injected GPU route, or the current module default."""
         return getattr(self, 'curobo_planner_factory', None) or CuRoboPlanner
+
+    def _curobo_metadata(self):
+        """Probe the worker paired with this service's selected CuRobo route."""
+        provider = getattr(self, 'curobo_metadata_provider', None)
+        return provider() if provider is not None else curobo_metadata()
 
     def snapshot(self):
         with self.lock:
@@ -189,7 +195,7 @@ class SimulationService:
 
     def _publish(self):
         if not self.job and time.monotonic()-self.backend_refresh>10:
-            self.curobo_status=curobo_metadata()
+            self.curobo_status=self._curobo_metadata()
             self.policy_status={'ready':False,'reason':'compatible checkpoint/endpoint required'}
             if self.policy_config:
                 try:

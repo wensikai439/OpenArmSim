@@ -25,6 +25,7 @@ def call(path,data=None,timeout=90):
 
 
 class CacheCuRoboPlanner(scene_curobo.SceneCuRoboPlanner):
+    _call_provider = staticmethod(call)
     CONTRACT={**scene_curobo.SceneCuRoboPlanner.CONTRACT,'worker_port':8005,
         'world_cache':'same topology; exact official GPU scene update with independent readback/pointer guard'}
     def __init__(self,*args,**kwargs):
@@ -38,6 +39,16 @@ class CacheCuRoboPlanner(scene_curobo.SceneCuRoboPlanner):
             if meta.get(field)!=hashlib.sha256((ROOT/name).read_bytes()).hexdigest():
                 raise PlanningFailure('world_cache_source_mismatch','Candidate must match the frozen scene-cache source')
         self.result['worker_port']=8005
+
+
+def compose_planner():
+    """Select the cache-backed route without replacing a service module class."""
+    return CacheCuRoboPlanner
+
+
+def metadata():
+    """Probe the exact cache endpoint used by CacheCuRoboPlanner."""
+    return object_curobo.metadata(call_provider=call)
 
 
 def install_isolated():

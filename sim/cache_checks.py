@@ -29,6 +29,15 @@ def model(p=None):
 
 
 class CacheChecks(unittest.TestCase):
+    def test_composed_cache_route_does_not_patch_module_defaults(self):
+        from . import cache_curobo, object_curobo, scene_curobo, service
+
+        defaults=(service.CuRoboPlanner,scene_curobo.BASE_CALL,object_curobo.call)
+        planner=cache_curobo.compose_planner()
+        self.assertIs(planner,cache_curobo.CacheCuRoboPlanner)
+        self.assertIs(planner._call_provider,cache_curobo.call)
+        self.assertEqual((service.CuRoboPlanner,scene_curobo.BASE_CALL,object_curobo.call),defaults)
+
     def test_cache_curobo_install_already_includes_scene_aware_route(self):
         from . import cache_curobo, object_curobo, scene_curobo, service
 

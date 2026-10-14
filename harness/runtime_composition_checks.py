@@ -21,14 +21,14 @@ class RuntimeCompositionChecks(unittest.TestCase):
 
     def test_builder_allows_one_process_local_installation_only(self):
         object_workbench._RUNTIME_TRACE.update(attempted=False,complete=False,profile=None,
-            global_layers=[],factory_layers=[],planner_layers=[],failed_layer=None)
+            global_layers=[],factory_layers=[],planner_layers=[],backend_layers=[],failed_layer=None)
         object_workbench._claim_backend_build()
         with self.assertRaisesRegex(RuntimeError,'全新进程'):
             object_workbench._claim_backend_build()
 
     def test_failed_layer_names_the_partially_modified_process(self):
         object_workbench._RUNTIME_TRACE.update(attempted=True,complete=False,profile=None,
-            global_layers=[],factory_layers=[],failed_layer=None)
+            global_layers=[],factory_layers=[],backend_layers=[],failed_layer=None)
         def fail(): raise ValueError('fixture')
         with self.assertRaisesRegex(RuntimeError,'fixture.layer'):
             object_workbench._run_layer('global_layers','fixture.layer',fail)
@@ -41,20 +41,24 @@ class RuntimeCompositionChecks(unittest.TestCase):
             CONTRACT={'fixture':'relocation'}
         class CuRobo:
             CONTRACT={'fixture':'curobo'}
+        metadata=lambda: {'ready':True,'worker_port':8005}
         class BaseService:
             def __init__(self,**kwargs): self.dependencies=kwargs
-        Bound=object_workbench.bind_tamp_planner(BaseService,Router,Relocation,CuRobo)
-        self.assertIs(object_workbench.bind_tamp_planner(Bound,Router,Relocation,CuRobo),Bound)
+        Bound=object_workbench.bind_tamp_planner(BaseService,Router,Relocation,CuRobo,metadata)
+        self.assertIs(object_workbench.bind_tamp_planner(Bound,Router,Relocation,CuRobo,metadata),Bound)
         instance=Bound()
         self.assertIs(instance.dependencies['tamp_planner_factory'],Router)
         self.assertIs(instance.dependencies['relocation_planner_factory'],Relocation)
         self.assertIs(instance.dependencies['curobo_planner_factory'],CuRobo)
+        self.assertIs(instance.dependencies['curobo_metadata_provider'],metadata)
         with self.assertRaisesRegex(ValueError,'already belongs'):
             Bound(tamp_planner_factory=object())
         with self.assertRaisesRegex(ValueError,'relocation planner'):
             Bound(relocation_planner_factory=object())
         with self.assertRaisesRegex(ValueError,'cuRobo planner'):
             Bound(curobo_planner_factory=object())
+        with self.assertRaisesRegex(ValueError,'metadata provider'):
+            Bound(curobo_metadata_provider=object())
 
     def test_service_default_tamp_router_remains_late_bound(self):
         from sim import service
@@ -100,6 +104,18 @@ class RuntimeCompositionChecks(unittest.TestCase):
             self.assertIs(instance._curobo_planner_factory(),FixtureRouter)
         finally:
             service.CuRoboPlanner=original
+
+    def test_service_curobo_metadata_provider_is_instance_scoped(self):
+        from sim import service
+        from unittest.mock import patch
+        expected={'ready':True,'worker_port':8005}
+        instance=service.SimulationService.__new__(service.SimulationService)
+        instance.curobo_metadata_provider=lambda: expected
+        self.assertIs(instance._curobo_metadata(),expected)
+        instance.curobo_metadata_provider=None
+        with patch.object(service,'curobo_metadata',return_value={'worker_port':8004}) as fallback:
+            self.assertEqual(instance._curobo_metadata(),{'worker_port':8004})
+            fallback.assert_called_once_with()
 
     def test_request_middleware_is_instance_scoped_and_composes_in_order(self):
         class Workspace:

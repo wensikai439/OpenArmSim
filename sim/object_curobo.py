@@ -29,9 +29,10 @@ def call(path, data=None, timeout=90):
         raise PlanningFailure('object_gpu_unavailable', str(exc)) from None
 
 
-def metadata():
+def metadata(call_provider=None):
     try:
-        result = call('/metadata', timeout=.5)
+        request = call if call_provider is None else call_provider
+        result = request('/metadata', timeout=.5)
         expected = hashlib.sha256(b''.join((ROOT / 'task/planners' / name).read_bytes()
             for name in ('openarm.json', 'openarm.urdf'))).hexdigest()
         if result.get('protocol') != 'openarm-object-curobo/1' or result.get('geometry_sha256') != expected:
@@ -74,6 +75,12 @@ class ObjectCuRoboPlanner(ObjectPlanner):
         'scope': 'single-arm pose target with registered bottle/box/cylinder; native path/contact checks, no physical calibration',
         'native_path_revalidation': True, 'fallback': False, 'worker_port': 8004}
 
+    def _gpu_call(self, path, data=None, timeout=90):
+        return call(path, data, timeout)
+
+    def _gpu_metadata(self):
+        return metadata(self._gpu_call)
+
     def __init__(self, env, task, **kwargs):
         if task not in ('move_to_pose', 'move_relative'): raise PlanningFailure('unsupported_curobo_skill', 'GPU supports bounded TCP motion only')
         side = (kwargs.get('parameters') or {}).get('arm')
@@ -81,7 +88,7 @@ class ObjectCuRoboPlanner(ObjectPlanner):
             raise PlanningFailure('curobo_other_arm_hold_not_supported', 'Other-arm carrying has no verified locked-arm payload geometry')
         super().__init__(env, task, **kwargs)
         self.result['payload_state'] = 'single_hold' if env.evaluation['held'][side] else 'empty'
-        self.deadline = time.monotonic() + 180; self.result['backend_metadata'] = metadata()
+        self.deadline = time.monotonic() + 180; self.result['backend_metadata'] = self._gpu_metadata()
         if not self.result['backend_metadata'].get('ready'):
             raise PlanningFailure('object_gpu_unavailable', self.result['backend_metadata'].get('reason', 'GPU unavailable'))
         self.result['plans'] = []
@@ -99,12 +106,12 @@ class ObjectCuRoboPlanner(ObjectPlanner):
             payload = {'arm': self.side, 'joints': joint_state(self.env), 'scene': scene(self.env, carrying=carrying),
                 'position_m': command.tolist(), 'quaternion_wxyz': quat.tolist()}
             if carrying: payload['attachment'] = attachment(self.env, self.side)
-            fk = call('/fk', {'joints': payload['joints']}); index = fk['tool_frames'].index(self.side + '_candidate_tcp')
+            fk = self._gpu_call('/fk', {'joints': payload['joints']}); index = fk['tool_frames'].index(self.side + '_candidate_tcp')
             point, rotation = self._pose()
             fk_error = float(np.linalg.norm(np.asarray(fk['position']).reshape(2, 3)[index] - point))
             self.result['fk_consistency_error_m'] = fk_error
             if fk_error > 1e-5: raise PlanningFailure('curobo_fk_mismatch', 'GPU/native software frames disagree')
-            response = call('/plan', payload); self._check()
+            response = self._gpu_call('/plan', payload); self._check()
             if carrying and (response.get('attachment', {}).get('object_id') != self.env.object_id
                 or response['attachment'].get('removed_world_geoms') != payload['attachment']['removed_world_geoms']):
                 raise PlanningFailure('curobo_attachment_missing', 'GPU did not acknowledge the actual selected object geometry')

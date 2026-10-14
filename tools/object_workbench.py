@@ -8,14 +8,16 @@ from http.server import ThreadingHTTPServer
 os.environ.setdefault('MUJOCO_GL', 'egl')
 
 _RUNTIME_TRACE = {'attempted': False, 'complete': False, 'profile': None,
-                  'global_layers': [], 'factory_layers': [], 'planner_layers': [], 'failed_layer': None}
+                  'global_layers': [], 'factory_layers': [], 'planner_layers': [],
+                  'backend_layers': [], 'failed_layer': None}
 
 
 def _claim_backend_build():
     if _RUNTIME_TRACE['attempted']:
         raise RuntimeError('工作台安装器修改进程级模块；同一进程只允许build_backend一次，请用全新进程重建。')
     _RUNTIME_TRACE.update(attempted=True, complete=False, profile=None,
-                          global_layers=[], factory_layers=[], planner_layers=[], failed_layer=None)
+                          global_layers=[], factory_layers=[], planner_layers=[],
+                          backend_layers=[], failed_layer=None)
 
 
 def _run_layer(kind, name, function, *args, **kwargs):
@@ -51,29 +53,38 @@ def runtime_composition(harness, simulation):
     resolve_curobo=getattr(simulation,'_curobo_planner_factory',None)
     curobo=(resolve_curobo() if callable(resolve_curobo) else
             getattr(simulation,'curobo_planner_factory',None) or service.CuRoboPlanner)
+    metadata_provider=getattr(simulation,'curobo_metadata_provider',None)
     return {'schema':'openarm-runtime-composition/1','profile':_RUNTIME_TRACE.get('profile'),
         'builder_attempted':_RUNTIME_TRACE['attempted'],'builder_complete':_RUNTIME_TRACE['complete'],
         'failed_layer':_RUNTIME_TRACE['failed_layer'],
         'global_install_order':list(_RUNTIME_TRACE['global_layers']),
         'factory_install_order':list(_RUNTIME_TRACE['factory_layers']),
         'planner_install_order':list(_RUNTIME_TRACE['planner_layers']),
+        'backend_composition_order':list(_RUNTIME_TRACE['backend_layers']),
         'harness_mro':lineage(harness,'Harness'),'service_mro':lineage(simulation,'Service'),
         'active_planner_factory':f'{planner.__module__}.{planner.__qualname__}',
         'active_relocation_factory':f'{relocation.__module__}.{relocation.__qualname__}',
         'active_curobo_factory':f'{curobo.__module__}.{curobo.__qualname__}',
+        'active_curobo_metadata_provider':(
+            f'{metadata_provider.__module__}.{metadata_provider.__qualname__}'
+            if metadata_provider is not None else
+            f'{service.curobo_metadata.__module__}.{service.curobo_metadata.__qualname__}'),
         'current_request_middleware':request_stack,
         'diagnostic_scope':'internal composition/dispatch provenance; not model capability or task performance'}
 
 
-def bind_tamp_planner(base, planner, relocation_planner=None, curobo_planner=None):
+def bind_tamp_planner(base, planner, relocation_planner=None, curobo_planner=None,
+                      curobo_metadata_provider=None):
     """Bind composed planners to one service class, not the module defaults."""
     if (base.__dict__.get('_bound_tamp_planner_factory') is planner and
         base.__dict__.get('_bound_relocation_planner_factory') is relocation_planner and
-        base.__dict__.get('_bound_curobo_planner_factory') is curobo_planner):return base
+        base.__dict__.get('_bound_curobo_planner_factory') is curobo_planner and
+        base.__dict__.get('_bound_curobo_metadata_provider') is curobo_metadata_provider):return base
     class BoundTampService(base):
         _bound_tamp_planner_factory=planner
         _bound_relocation_planner_factory=relocation_planner
         _bound_curobo_planner_factory=curobo_planner
+        _bound_curobo_metadata_provider=curobo_metadata_provider
         def __init__(self,*args,**kwargs):
             configured=kwargs.get('tamp_planner_factory')
             if configured is not None and configured is not planner:
@@ -85,16 +96,21 @@ def bind_tamp_planner(base, planner, relocation_planner=None, curobo_planner=Non
             configured_curobo=kwargs.get('curobo_planner_factory')
             if configured_curobo is not None and configured_curobo is not curobo_planner:
                 raise ValueError('cuRobo planner already belongs to this service class')
+            configured_metadata=kwargs.get('curobo_metadata_provider')
+            if (configured_metadata is not None and
+                configured_metadata is not curobo_metadata_provider):
+                raise ValueError('cuRobo metadata provider already belongs to this service class')
             kwargs['tamp_planner_factory']=planner
             kwargs['relocation_planner_factory']=relocation_planner
             kwargs['curobo_planner_factory']=curobo_planner
+            kwargs['curobo_metadata_provider']=curobo_metadata_provider
             super().__init__(*args,**kwargs)
     return BoundTampService
 
 
 def start_gpu(root):
     """Start only this on-demand worker; never replace an existing listener."""
-    from sim.object_curobo import metadata
+    from sim.cache_curobo import metadata
     import hashlib
     def compatible():
         value = metadata()
@@ -168,8 +184,8 @@ def build_backend(*, harness_context=True, stable_hold=True, transit_hints=True)
     _run_layer('global_layers','harness.task_placement.catalogue',task_placement_catalogue,deployed=True)
     from sim.scene_library import service_factory as library
     factory = _run_layer('factory_layers','sim.scene_library.service_factory',library,factory)
-    from sim.cache_curobo import install_isolated as cache_gpu
-    _run_layer('global_layers','sim.cache_curobo',cache_gpu)
+    from sim.cache_curobo import compose_planner as cache_gpu, metadata as cache_metadata
+    composed_curobo_planner=_run_layer('backend_layers','sim.cache_curobo',cache_gpu)
     # Explicit startup selection preserves the user's optional objects across
     # a controlled development restart. Scene changes still use the physics
     # owner's existing atomic cold-compile command and fresh-observation gate.
@@ -204,9 +220,8 @@ def build_backend(*, harness_context=True, stable_hold=True, transit_hints=True)
         from harness.settled_hold import compose_planner as settling
         composed_tamp_planner=_run_layer('planner_layers','harness.settled_hold',settling,composed_tamp_planner)
     composed_relocation_planner=native_service.RelocationPlanner
-    composed_curobo_planner=native_service.CuRoboPlanner
     factory=_run_layer('factory_layers','sim.service.TampPlanner+RelocationPlanner+CuRoboPlanner',bind_tamp_planner,
-        factory,composed_tamp_planner,composed_relocation_planner,composed_curobo_planner)
+        factory,composed_tamp_planner,composed_relocation_planner,composed_curobo_planner,cache_metadata)
     native_service.TampPlanner=default_tamp_planner
     native_service.RelocationPlanner=default_relocation_planner
     native_service.CuRoboPlanner=default_curobo_planner
