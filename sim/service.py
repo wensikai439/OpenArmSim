@@ -76,7 +76,9 @@ def memory_context(manifest, policy_config, robot):
 
 
 class SimulationService:
-    def __init__(self):
+    def __init__(self, *, policy_client_factory=None, policy_timing_class=None):
+        self.policy_client_factory = policy_client_factory or make_client
+        self.policy_timing_class = policy_timing_class or PolicyTiming
         self.commands = queue.Queue()
         self.completed = queue.Queue()
         self.lock = threading.Lock()
@@ -412,7 +414,8 @@ class SimulationService:
                 if config != self.policy_config:
                     raise ValueError('策略配置与服务启动时不同，请重启 ./run 后重试')
                 steps = config["max_steps"]
-                timing = PolicyTiming(config["timing_mode"])
+                timing_factory = getattr(self, 'policy_timing_class', PolicyTiming)
+                timing = timing_factory(config["timing_mode"])
             if kind == "replay":
                 self.env.reset(seed=seed, options={"episode": episode})
                 self.epoch = uuid.uuid4().hex[:12]
@@ -431,7 +434,8 @@ class SimulationService:
             before = recorder.observation(self.env)
             actions = iter(())
             if kind == "policy":
-                client = make_client(config, seed=seed).__enter__()
+                client_factory = getattr(self, 'policy_client_factory', make_client)
+                client = client_factory(config, seed=seed).__enter__()
                 recorder.event({"type": "policy_connected", "metadata": client.metadata})
                 actions = timing.actions(self.env, client, config, recorder.event,
                                          lambda: self.stop_job.is_set() or self.shutdown.is_set())

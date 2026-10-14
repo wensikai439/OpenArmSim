@@ -11,7 +11,8 @@ import numpy as np
 from sim.environment import ROOT
 from sim.policy import LeRobotClient
 from sim.policy_wire import TASK, IMAGE_SHAPES, encode, decode
-from .policy_trace import TracingClient, TracingTiming, archive_response
+from .policy_trace import (TracingClient, TracingTiming, archive_response,
+                           install_isolated, traced_client)
 
 
 class TraceChecks(unittest.TestCase):
@@ -90,6 +91,20 @@ class TraceChecks(unittest.TestCase):
         self.assertEqual(len(events),1);self.assertIsNone(events[0]['candidate_prefix'])
         self.assertFalse(events[0]['response_valid']);self.assertIn('rejected_input_file',events[0]['response_diagnostic'])
         self.assertIsNone(client.response_capture);self.assertEqual(env.data.time,0.)
+
+    def test_trace_injection_is_factory_scoped_and_preserves_other_backends(self):
+        class BaseService:
+            def __init__(self,**kwargs): self.dependencies=kwargs
+        factory=install_isolated(BaseService)
+        service=factory()
+        self.assertIs(service.dependencies['policy_client_factory'],traced_client)
+        self.assertIs(service.dependencies['policy_timing_class'],TracingTiming)
+        self.assertEqual(set(service.dependencies),{'policy_client_factory','policy_timing_class'})
+        self.assertIs(install_isolated(factory),factory)
+        marker=object()
+        with patch('harness.policy_trace.make_client',return_value=marker) as fallback:
+            self.assertIs(traced_client({'backend':'act'},seed=3),marker)
+        fallback.assert_called_once_with({'backend':'act'},3)
 
 
 if __name__=='__main__':unittest.main()

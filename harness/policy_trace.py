@@ -9,7 +9,7 @@ import hashlib
 import numpy as np
 
 from sim.environment import ROOT
-from sim.policy import LeRobotClient
+from sim.policy import LeRobotClient, make_client
 from sim.policy_wire import decode, IMAGE_SHAPES
 from sim.timing import PolicyTiming
 
@@ -95,13 +95,17 @@ class TracingTiming(PolicyTiming):
         yield from super().actions(env,client,config,record,cancelled,**kwargs)
 
 
-def install_isolated():
-    """Install only in the objects-workbench process; legacy backends unchanged."""
-    import sim.service as native
-    original=native.make_client
-    if getattr(original,'_openarm_policy_trace',False):return
-    def make_client(config,seed=0):
-        return TracingClient(config,seed) if config.get('backend')=='lerobot_http' else original(config,seed)
-    make_client._openarm_policy_trace=True
-    native.make_client=make_client
-    native.PolicyTiming=TracingTiming
+def traced_client(config,seed=0):
+    """Wrap only the supported local HTTP policy; preserve other backends."""
+    return TracingClient(config,seed) if config.get('backend')=='lerobot_http' else make_client(config,seed)
+
+
+def install_isolated(base):
+    """Inject local policy diagnostics into one service class, without module patches."""
+    if getattr(base,'_openarm_policy_trace',False):return base
+    class TracedService(base):
+        _openarm_policy_trace=True
+        def __init__(self,*args,**kwargs):
+            super().__init__(*args,policy_client_factory=traced_client,
+                policy_timing_class=TracingTiming,**kwargs)
+    return TracedService
