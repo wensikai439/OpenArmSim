@@ -205,7 +205,7 @@ def build_backend(*, harness_context=True, stable_hold=True, transit_hints=True)
             reveal_by_stage=True, live_context=True, focused_context=True, bind_atomic=True)
     ActHarness = _run_layer('global_layers','harness.act_adapter',act,base)
     from harness.intent import install_isolated as intent
-    Harness = _run_layer('global_layers','harness.intent',intent,ActHarness)
+    Harness = _run_layer('harness_layers','harness.intent',intent,ActHarness)
     if harness_context:
         from harness.policy_route import install_isolated as policy_route
         Harness = _run_layer('global_layers','harness.policy_route',policy_route,Harness)

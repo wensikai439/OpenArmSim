@@ -72,6 +72,18 @@ class RuntimeCompositionChecks(unittest.TestCase):
         self.assertTrue(Composed.RECEIPT_TRANSIT_HINTS)
         self.assertEqual(dict(Base.__dict__),before)
 
+    def test_intent_composer_changes_only_the_selected_harness_subclass(self):
+        from harness.intent import install_isolated
+        class Base:
+            pass
+        before=dict(Base.__dict__)
+        Composed=install_isolated(Base)
+        self.assertIsNot(Composed,Base)
+        self.assertIs(Composed.__mro__[1],Base)
+        self.assertTrue(callable(Composed._intent))
+        self.assertTrue(callable(Composed._role_records))
+        self.assertEqual(dict(Base.__dict__),before)
+
     def test_service_default_tamp_router_remains_late_bound(self):
         from sim import service
         original=service.TampPlanner
