@@ -10,6 +10,10 @@ from .composite import CompositeHarness, CompositeWorkspace, validate_composite_
 
 CHECKPOINTS = {'observation', 'visual_review', 'tool_completed', 'motion_reached',
     'grasp_confirmed', 'handover_confirmed', 'placement_confirmed'}
+CANDIDATE_RECOVERY = {
+    'grasp_search_exhausted': ('已声明的几何候选未找到完整抓取路线；这不证明物理不可达。'
+        '保留物体目标，用新观测检查候选与连接路径，尝试另一只手或明确扩展候选；不能重复同一失败搜索、改动物体或关闭检查。')
+}
 
 
 def validate_candidate_plan(values):
@@ -32,6 +36,9 @@ EXECUTION_CONTRACT = {
 
 
 class CandidateWorkspace(CompositeWorkspace):
+    def memory_recovery_rules(self):
+        return {**super().memory_recovery_rules(), **CANDIDATE_RECOVERY}
+
     def public(self, *args, **kwargs):
         value = super().public(*args, **kwargs)
         # Default user memory needs provenance pointers, not repeated raw joint
@@ -70,7 +77,6 @@ class CandidateHarness(CompositeHarness):
 def install_isolated():
     import harness.agent as agent
     import harness.workspace as workspace
-    from .knowledge import RECOVERY
     workspace.Workspace = CandidateWorkspace
     workspace.validate_plan = agent.validate_plan = validate_candidate_plan
     tools = copy.deepcopy(agent.EXECUTION_TOOLS)
@@ -78,6 +84,3 @@ def install_isolated():
     plan['parameters']['properties']['steps']['items']['properties']['checkpoint']['enum'] = sorted(CHECKPOINTS)
     plan['description'] += ' Use generic skill receipt checkpoints only. grasp_confirmed includes actual lift; handover_confirmed includes receiver-only hold. Fixed-demo right_lift/left_grasp events do not describe arbitrary directions.'
     agent.EXECUTION_TOOLS = tools
-    RECOVERY['grasp_search_exhausted'] = (
-        '已声明的几何候选未找到完整抓取路线；这不证明物理不可达。'
-        '保留物体目标，用新观测检查候选与连接路径，尝试另一只手或明确扩展候选；不能重复同一失败搜索、改动物体或关闭检查。')

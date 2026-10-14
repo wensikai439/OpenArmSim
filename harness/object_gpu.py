@@ -6,7 +6,7 @@ from .scene import SceneHarness
 from .objects import consolidate_objects
 
 
-def consolidate_gpu(receipts, forgotten=()):
+def consolidate_gpu(receipts, forgotten=(), *, recovery_rules=None):
     rows = []; scopes = {}
     for receipt in receipts:
         item = copy.deepcopy(receipt)
@@ -16,7 +16,7 @@ def consolidate_gpu(receipts, forgotten=()):
             scoped = str(item.get('context')) + '|gpu_object=' + ident + '|payload=' + payload
             scopes[scoped] = (item.get('context'), ident, payload); item['context'] = scoped
         rows.append(item)
-    lessons = consolidate_objects(rows, forgotten)
+    lessons = consolidate_objects(rows, forgotten, recovery_rules=recovery_rules)
     for lesson in lessons:
         if lesson['context'] not in scopes: continue
         context, ident, payload = scopes[lesson['context']]

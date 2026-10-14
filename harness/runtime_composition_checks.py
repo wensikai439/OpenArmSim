@@ -309,6 +309,53 @@ class RuntimeCompositionChecks(unittest.TestCase):
         memory=workspace.memory('execute','fixture-epoch')
         self.assertEqual([row['id'] for row in memory['knowledge']['lessons']],['local-method'])
 
+    def test_memory_rules_and_index_are_scoped_to_workspace_type(self):
+        from harness import knowledge
+        from harness.candidate import CandidateWorkspace, CANDIDATE_RECOVERY
+        from harness.object_memory import (ObjectMemoryWorkspace, PROTOCOLS as OBJECT_PROTOCOLS,
+            RECOVERY as OBJECT_RECOVERY, index_entry as object_index_entry, install_isolated)
+        from harness.poses import PoseWorkspace, POSE_RECOVERY
+        from harness.bottle import BottleWorkspace
+        base_index=knowledge.index_entry
+        base_protocols=dict(knowledge.PROTOCOLS)
+        base_recovery=dict(knowledge.RECOVERY)
+        self.assertIs(install_isolated(),ObjectMemoryWorkspace)
+        self.assertIs(knowledge.index_entry,base_index)
+        self.assertEqual(knowledge.PROTOCOLS,base_protocols)
+        self.assertEqual(knowledge.RECOVERY,base_recovery)
+
+        workspaces=[CandidateWorkspace(),ObjectMemoryWorkspace(),PoseWorkspace(),BottleWorkspace()]
+        for workspace in workspaces:self.addCleanup(workspace.db.close)
+        candidate,objects,poses,bottle=workspaces
+        self.assertIn('grasp_search_exhausted',candidate.memory_recovery_rules())
+        self.assertIn('non_target_object_displaced',objects.memory_recovery_rules())
+        self.assertIn('grasp_search_exhausted',poses.memory_recovery_rules())
+        self.assertIn('non_target_object_displaced',bottle.memory_recovery_rules())
+        self.assertIn('initial_object_overlap',bottle.memory_recovery_rules())
+        self.assertNotIn('non_target_object_displaced',knowledge.RECOVERY)
+        self.assertNotIn('object_motion',knowledge.PROTOCOLS)
+        self.assertIsNot(objects.memory_index_entry,base_index)
+        lesson={'id':'fixture','title':'fixture','summary':'fixture','support':'fixture','outcome':'success',
+            'tool':'pick','evidence_kind':'simulator_oracle','updated':0,'failure_code':None,
+            'repeat_count':1,'evidence_scope':'fixture','timing_conditions':{},'planner_timing_conditions':{},
+            'object_id':'bottle'}
+        self.assertEqual(objects.memory_index_entry(lesson),object_index_entry(lesson))
+        self.assertIn('object_motion',objects.memory_protocol_rules())
+        self.assertIn('relocate',objects.memory_protocol_rules())
+        self.assertEqual(CANDIDATE_RECOVERY['grasp_search_exhausted'],
+            candidate.memory_recovery_rules()['grasp_search_exhausted'])
+        self.assertEqual(POSE_RECOVERY['initial_object_overlap'],
+            bottle.memory_recovery_rules()['initial_object_overlap'])
+        self.assertEqual(OBJECT_RECOVERY['non_target_object_displaced'],
+            bottle.memory_recovery_rules()['non_target_object_displaced'])
+        self.assertTrue(OBJECT_PROTOCOLS.keys() <= bottle.memory_protocol_rules().keys())
+
+        receipt={'id':'fixture','tool':'pick','outcome':'failure','arguments':{},
+            'feedback':{'failure_code':'non_target_object_displaced'},'evidence_kind':'simulator_oracle'}
+        self.assertEqual(knowledge.consolidate([receipt]),[])
+        local=knowledge.consolidate([receipt],recovery_rules=objects.memory_recovery_rules())
+        self.assertEqual(local[0]['failure_code'],'non_target_object_displaced')
+
     def test_request_middleware_is_instance_scoped_and_composes_in_order(self):
         class Workspace:
             def __init__(self): self.events=[]

@@ -7,7 +7,14 @@ from .task_queue import TaskHarness, TaskWorkspace
 from .object_memory import consolidate as base_consolidate
 
 
-def consolidate(receipts, forgotten=()):
+POSE_RECOVERY = {
+    'grasp_search_exhausted': '当前姿态候选未找到完整抓取及原目标放置方案；搜索耗尽不证明物理不可达。保留原目标和失败证据，不能重置后称为本次恢复。',
+    'unsupported_grasp_geometry': '当前抓取候选只覆盖已注册盒子与圆柱外形；未知网格需独立抓取候选与外形检查，不能套用已有成功经验。',
+    'initial_object_overlap': '物体起点与其它碰撞体相交，不是有效规划样本。保留原场景和任务，停止运动；不能自动移动物体、重置或改目标制造成功。',
+}
+
+
+def consolidate(receipts, forgotten=(), *, recovery_rules=None):
     """Split native pose conditions before grouping, not after retrieval."""
     scoped = []; contexts = {}
     for receipt in receipts:
@@ -18,7 +25,7 @@ def consolidate(receipts, forgotten=()):
             key = str(row.get('context')) + '|start_orientation=non_upright'
             contexts[key] = row.get('context'); row['context'] = key
         scoped.append(row)
-    lessons = base_consolidate(scoped, forgotten)
+    lessons = base_consolidate(scoped, forgotten, recovery_rules=recovery_rules)
     for lesson in lessons:
         if lesson['context'] in contexts:
             lesson['context'] = contexts[lesson['context']]
@@ -139,19 +146,14 @@ class PoseHarness(TaskHarness):
 class PoseWorkspace(TaskWorkspace):
     """Native start-pose conditions stay distinct from successful upright picks."""
     def consolidate_memory(self, receipts, forgotten=()):
-        return consolidate(receipts, forgotten)
+        return consolidate(receipts, forgotten, recovery_rules=self.memory_recovery_rules())
+
+    def memory_recovery_rules(self):
+        return {**super().memory_recovery_rules(), **POSE_RECOVERY}
 
 
 def install_isolated():
-    from . import agent, knowledge
-    # ObjectMemoryWorkspace has its own bounded/filter-before-top-k path.
-    # Both paths must use the same grouping and stable forgetting IDs.
-    knowledge.RECOVERY['grasp_search_exhausted'] = (
-        '当前姿态候选未找到完整抓取及原目标放置方案；搜索耗尽不证明物理不可达。保留原目标和失败证据，不能重置后称为本次恢复。')
-    knowledge.RECOVERY['unsupported_grasp_geometry'] = (
-        '当前抓取候选只覆盖已注册盒子与圆柱外形；未知网格需独立抓取候选与外形检查，不能套用已有成功经验。')
-    knowledge.RECOVERY['initial_object_overlap'] = (
-        '物体起点与其它碰撞体相交，不是有效规划样本。保留原场景和任务，停止运动；不能自动移动物体、重置或改目标制造成功。')
+    from . import agent
     previous_catalogue=agent.catalogue
     def catalogue(snapshot,policy_type='pi05'):
         result=previous_catalogue(snapshot,policy_type)

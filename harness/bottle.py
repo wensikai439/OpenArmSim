@@ -24,7 +24,7 @@ class VisibleRequests:
         return self.base.urlopen(request,*args,**kwargs)
 
 
-def consolidate_hold(receipts,forgotten=()):
+def consolidate_hold(receipts,forgotten=(),*,recovery_rules=None):
     """Requested duration and audit strength are reusable method conditions."""
     scoped=[];contexts={};conditions={}
     for receipt in receipts:
@@ -44,11 +44,11 @@ def consolidate_hold(receipts,forgotten=()):
             applies.update(requested_hold_seconds=seconds,hold_validation=mode)
         if tags:
             # Keep old forget IDs effective when this version splits a group.
-            if any(x['id'] in forgotten for x in pose_consolidate([item])):continue
+            if any(x['id'] in forgotten for x in pose_consolidate([item],recovery_rules=recovery_rules)):continue
             key=str(item.get('context'))+'|'+'|'.join(tags)
             contexts[key]=item.get('context');conditions[key]=applies;item['context']=key
         scoped.append(item)
-    lessons=pose_consolidate(scoped,forgotten)
+    lessons=pose_consolidate(scoped,forgotten,recovery_rules=recovery_rules)
     for lesson in lessons:
         if lesson['context'] not in contexts:continue
         applies=conditions[lesson['context']];lesson['context']=contexts[lesson['context']]
@@ -67,7 +67,7 @@ def consolidate_hold(receipts,forgotten=()):
 class BottleWorkspace(PoseWorkspace):
     """Keep the final bottle-method reducer on the workspace instance."""
     def consolidate_memory(self, receipts, forgotten=()):
-        return consolidate_hold(receipts, forgotten)
+        return consolidate_hold(receipts, forgotten, recovery_rules=self.memory_recovery_rules())
 
 
 class BottleHarness(PoseHarness):

@@ -1,6 +1,6 @@
 """Short method index, explicit applicability and separate evidence archive.
 
-Only the isolated multi-object app installs this adapter. Historical coordinates,
+The workspace type selects this adapter. Historical coordinates,
 images and raw feedback never enter the default index. Detail/receipt gates and
 user forgetting stay owned by Workspace.
 """
@@ -14,9 +14,10 @@ PROTOCOLS = {
     'object_manipulation': '锁定本次物体与原目标；抓取查持续双指接触和抬升，交接查接收手独立持物，放置查支撑、松手、撤离和连续稳定。另查非目标物体是否被碰动。历史经验不证明开放物体或真机迁移。',
 }
 DISPLACEMENT = '非目标物体被碰动后停止本任务并保留证据。改进路径净空，再另开新测试；不能改原目标、关掉检查或把重置后的成功算成本次恢复。'
+RECOVERY = {'non_target_object_displaced': DISPLACEMENT}
 
 
-def consolidate(receipts, forgotten=()):
+def consolidate(receipts, forgotten=(), *, recovery_rules=None):
     rows = []; scopes = {}
     for receipt in receipts:
         item = copy.deepcopy(receipt)
@@ -31,7 +32,7 @@ def consolidate(receipts, forgotten=()):
             scoped = str(item.get('context')) + '|next_receiver=' + receiver
             scopes[scoped] = item.get('context'); item['context'] = scoped
         rows.append(item)
-    lessons = consolidate_gpu(rows, forgotten)
+    lessons = consolidate_gpu(rows, forgotten, recovery_rules=recovery_rules)
     originals = {item['id']: item for item in receipts}
     for lesson in lessons:
         if lesson['context'] in scopes: lesson['context'] = scopes[lesson['context']]
@@ -62,8 +63,7 @@ def consolidate(receipts, forgotten=()):
 def index_entry(lesson):
     # The base index intentionally omits sources. Add typed applicability only,
     # never a raw receipt, camera path, transient pose or model conjecture.
-    from .knowledge import index_entry as current
-    base = getattr(current, '_object_memory_original', current)
+    from .knowledge import index_entry as base
     item = base(lesson)
     for key in ('object_id', 'payload_state', 'backend', 'surface', 'conditions'):
         if key in lesson: item[key] = copy.deepcopy(lesson[key])
@@ -73,8 +73,17 @@ def index_entry(lesson):
 class ObjectMemoryWorkspace(ObjectGPUWorkspace):
     index_byte_limit = 8192
 
+    def memory_recovery_rules(self):
+        return {**super().memory_recovery_rules(), **RECOVERY}
+
+    def memory_protocol_rules(self):
+        return {**super().memory_protocol_rules(), **PROTOCOLS}
+
+    def memory_index_entry(self, lesson):
+        return index_entry(lesson)
+
     def consolidate_memory(self, receipts, forgotten=()):
-        return consolidate(receipts, forgotten)
+        return consolidate(receipts, forgotten, recovery_rules=self.memory_recovery_rules())
 
     def memory(self, role, epoch, *, public=False, query='', context=None, include_oracle=False, skill=None, compact=False):
         value = super().memory(role, epoch, public=public, query=query, context=context,
@@ -97,10 +106,10 @@ class ObjectMemoryWorkspace(ObjectGPUWorkspace):
         if selected:
             lessons = [item for item in lessons if item.get('object_id') in (None, selected)]
         candidates = self._rank(lessons, query, 8) if query else lessons[:8]
-        from .knowledge import PROTOCOLS as protocols
+        protocols = self.memory_protocol_rules()
         index = []; rules = {}
         for lesson in candidates:
-            item = index_entry(lesson); new_rules = dict(rules)
+            item = self.memory_index_entry(lesson); new_rules = dict(rules)
             if lesson.get('protocol_id') in protocols: new_rules[lesson['protocol_id']] = protocols[lesson['protocol_id']]
             size = len(json.dumps({'index': index + [item], 'protocols': new_rules}, ensure_ascii=False).encode('utf-8'))
             if size > self.index_byte_limit: continue
@@ -149,9 +158,5 @@ class ObjectMemoryWorkspace(ObjectGPUWorkspace):
 
 
 def install_isolated():
-    from . import knowledge
-    if knowledge.index_entry is not index_entry:
-        index_entry._object_memory_original = knowledge.index_entry
-    knowledge.index_entry = index_entry
-    knowledge.PROTOCOLS.update(PROTOCOLS)
-    knowledge.RECOVERY['non_target_object_displaced'] = DISPLACEMENT
+    """Compatibility entry point; memory behavior now belongs to the workspace class."""
+    return ObjectMemoryWorkspace

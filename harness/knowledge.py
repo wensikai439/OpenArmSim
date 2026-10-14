@@ -56,7 +56,8 @@ RECOVERY={
  'curobo_empty_gripper_required':'当前 cuRobo 接口仅支持空手运动；持物路径请使用具备携物碰撞检查的 TAMP，不自动切换后端。',
 }
 
-def consolidate(receipts,forgotten=()):
+def consolidate(receipts,forgotten=(),*,recovery_rules=None):
+    recovery=RECOVERY if recovery_rules is None else recovery_rules
     groups={}
     for item in receipts:
         if item.get('compatible') is False or item['tool'] not in NAMES:continue
@@ -77,7 +78,7 @@ def consolidate(receipts,forgotten=()):
             if 'gripper' in message and ('range' in message or 'outside' in message):code='policy_gripper_range'
             elif 'checkpoint' in message and ('identity' in message or 'mismatch' in message):code='policy_identity_mismatch'
         if outcome in ('failure','rejected'):
-            if code not in RECOVERY:continue  # low-signal/generic errors stay in diagnostics
+            if code not in recovery:continue  # low-signal/generic errors stay in diagnostics
         backend=args.get('transport_planner',args.get('planner',args.get('backend','tamp')))
         arm=args.get('arm');donor=args.get('from_arm');receiver=args.get('to_arm',args.get('via_arm'))
         surface=args.get('receptacle_id',feedback.get('surface')) if item['tool'] in {'place','relocate'} else None
@@ -122,7 +123,7 @@ def consolidate(receipts,forgotten=()):
         count=group['repeat_count'];tool=group['tool'];code=group['failure_code']
         # One tiny successful move is a log entry, not durable knowledge.
         if group['outcome']=='success' and tool in ('move_to_pose','move_relative') and count<2:continue
-        if code:summary=RECOVERY[code]
+        if code:summary=recovery[code]
         elif tool in ('move_relative','move_to_pose'):
             summary='每次从新观测读取末端位姿，再求解并复核整条路径；历史目标坐标不可直接复用。'
         elif tool=='pick':summary='闭合后须确认持续双指接触和物体实际抬升；继续持瓶前还需检查瓶子相对夹爪的滑动。接触与抬升不代表持续稳定夹持。'

@@ -101,8 +101,7 @@ class ObjectRelayHarness(ObjectGPUHarness):
 
 def install_isolated():
     import harness.agent as agent
-    from .object_memory import install_isolated as memory
-    memory(); previous = agent.catalogue
+    previous = agent.catalogue
     tools = copy.deepcopy(agent.SKILL_TOOLS)
     for tool in tools:
         value = tool['function']; name = value['name']

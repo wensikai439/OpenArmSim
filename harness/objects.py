@@ -34,7 +34,7 @@ def object_service_dependencies(kwargs, environment_factory, recorder_class, pla
     return result
 
 
-def consolidate_objects(receipts, forgotten=()):
+def consolidate_objects(receipts, forgotten=(), *, recovery_rules=None):
     """Different object identities never share a claimed manipulation method."""
     rows = []; original_contexts = {}
     for item in receipts:
@@ -45,7 +45,7 @@ def consolidate_objects(receipts, forgotten=()):
             scoped = str(value.get('context')) + '|object=' + ident
             original_contexts[scoped] = (value.get('context'), ident); value['context'] = scoped
         rows.append(value)
-    lessons = base_consolidate(rows, forgotten)
+    lessons = base_consolidate(rows, forgotten, recovery_rules=recovery_rules)
     for lesson in lessons:
         if lesson['context'] in original_contexts:
             context, ident = original_contexts[lesson['context']]
