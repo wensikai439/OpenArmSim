@@ -21,14 +21,15 @@ class RuntimeCompositionChecks(unittest.TestCase):
 
     def test_builder_allows_one_process_local_installation_only(self):
         object_workbench._RUNTIME_TRACE.update(attempted=False,complete=False,profile=None,
-            global_layers=[],factory_layers=[],planner_layers=[],backend_layers=[],failed_layer=None)
+            global_layers=[],factory_layers=[],planner_layers=[],backend_layers=[],
+            harness_layers=[],failed_layer=None)
         object_workbench._claim_backend_build()
         with self.assertRaisesRegex(RuntimeError,'全新进程'):
             object_workbench._claim_backend_build()
 
     def test_failed_layer_names_the_partially_modified_process(self):
         object_workbench._RUNTIME_TRACE.update(attempted=True,complete=False,profile=None,
-            global_layers=[],factory_layers=[],backend_layers=[],failed_layer=None)
+            global_layers=[],factory_layers=[],backend_layers=[],harness_layers=[],failed_layer=None)
         def fail(): raise ValueError('fixture')
         with self.assertRaisesRegex(RuntimeError,'fixture.layer'):
             object_workbench._run_layer('global_layers','fixture.layer',fail)
@@ -59,6 +60,17 @@ class RuntimeCompositionChecks(unittest.TestCase):
             Bound(curobo_planner_factory=object())
         with self.assertRaisesRegex(ValueError,'metadata provider'):
             Bound(curobo_metadata_provider=object())
+
+    def test_transit_hint_composer_changes_only_the_selected_harness_subclass(self):
+        from harness.transit_hint import install_isolated
+        class Base:
+            pass
+        before=dict(Base.__dict__)
+        Composed=install_isolated(Base)
+        self.assertIsNot(Composed,Base)
+        self.assertIs(Composed.__mro__[1],Base)
+        self.assertTrue(Composed.RECEIPT_TRANSIT_HINTS)
+        self.assertEqual(dict(Base.__dict__),before)
 
     def test_service_default_tamp_router_remains_late_bound(self):
         from sim import service

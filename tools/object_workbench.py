@@ -9,7 +9,7 @@ os.environ.setdefault('MUJOCO_GL', 'egl')
 
 _RUNTIME_TRACE = {'attempted': False, 'complete': False, 'profile': None,
                   'global_layers': [], 'factory_layers': [], 'planner_layers': [],
-                  'backend_layers': [], 'failed_layer': None}
+                  'backend_layers': [], 'harness_layers': [], 'failed_layer': None}
 
 
 def _claim_backend_build():
@@ -17,7 +17,7 @@ def _claim_backend_build():
         raise RuntimeError('工作台安装器修改进程级模块；同一进程只允许build_backend一次，请用全新进程重建。')
     _RUNTIME_TRACE.update(attempted=True, complete=False, profile=None,
                           global_layers=[], factory_layers=[], planner_layers=[],
-                          backend_layers=[], failed_layer=None)
+                          backend_layers=[], harness_layers=[], failed_layer=None)
 
 
 def _run_layer(kind, name, function, *args, **kwargs):
@@ -61,6 +61,7 @@ def runtime_composition(harness, simulation):
         'factory_install_order':list(_RUNTIME_TRACE['factory_layers']),
         'planner_install_order':list(_RUNTIME_TRACE['planner_layers']),
         'backend_composition_order':list(_RUNTIME_TRACE['backend_layers']),
+        'harness_composition_order':list(_RUNTIME_TRACE['harness_layers']),
         'harness_mro':lineage(harness,'Harness'),'service_mro':lineage(simulation,'Service'),
         'active_planner_factory':f'{planner.__module__}.{planner.__qualname__}',
         'active_relocation_factory':f'{relocation.__module__}.{relocation.__qualname__}',
@@ -212,7 +213,7 @@ def build_backend(*, harness_context=True, stable_hold=True, transit_hints=True)
         Harness = _run_layer('global_layers','harness.compact',compact,Harness)
     if transit_hints:
         from harness.transit_hint import install_isolated as hints
-        Harness = _run_layer('global_layers','harness.transit_hint',hints,Harness)
+        Harness = _run_layer('harness_layers','harness.transit_hint',hints,Harness)
     from harness.task_placement import compose_planner as task_placement
     composed_tamp_planner=_run_layer('planner_layers','harness.task_placement',task_placement,
         composed_tamp_planner,deployed=True)
