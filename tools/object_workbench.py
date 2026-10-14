@@ -165,7 +165,7 @@ def build_backend(*, harness_context=True, stable_hold=True, transit_hints=True)
     _RUNTIME_TRACE['profile']={'harness_context':bool(harness_context),
         'stable_hold':bool(stable_hold),'transit_hints':bool(transit_hints)}
     from harness.composite import install_isolated as composite
-    from sim.grasp import install_isolated as grasp
+    from sim.grasp import compose_relocation as geometric_relocation
     from harness.candidate import install_isolated as candidate
     from harness.scene import install_isolated as scene
     from harness.object_gpu import install_isolated as objects
@@ -177,11 +177,13 @@ def build_backend(*, harness_context=True, stable_hold=True, transit_hints=True)
     from sim.environment import ROOT
     os.environ.setdefault('OPENARM_POLICY_CONFIG', str(ROOT/'harness/policy.json'))
     for name, installer in (
-        ('harness.composite',composite),('sim.grasp',grasp),('harness.candidate',candidate),
+        ('harness.composite',composite),('harness.candidate',candidate),
         ('harness.scene',scene),('harness.objects',objects),('harness.object_handover',relay),
         ('harness.object_transport',transport),('harness.task_queue',tasks),
         ('harness.poses',poses),('harness.bottle',bottle)):
         _run_layer('global_layers',name,installer)
+    composed_relocation_planner=_run_layer('planner_layers','sim.grasp',geometric_relocation,
+        native_service.RelocationPlanner)
     factory = _run_layer('factory_layers','harness.bottle.service_factory',service_factory)
     composed_tamp_planner=native_service.TampPlanner
     from harness.connected_placement import compose_planner as connected
@@ -231,7 +233,6 @@ def build_backend(*, harness_context=True, stable_hold=True, transit_hints=True)
     if stable_hold:
         from harness.settled_hold import compose_planner as settling
         composed_tamp_planner=_run_layer('planner_layers','harness.settled_hold',settling,composed_tamp_planner)
-    composed_relocation_planner=native_service.RelocationPlanner
     factory=_run_layer('factory_layers','sim.service.TampPlanner+RelocationPlanner+CuRoboPlanner',bind_tamp_planner,
         factory,composed_tamp_planner,composed_relocation_planner,composed_curobo_planner,cache_metadata)
     native_service.TampPlanner=default_tamp_planner

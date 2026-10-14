@@ -128,6 +128,18 @@ class RuntimeCompositionChecks(unittest.TestCase):
         self.assertTrue(callable(Composed.tools_for_request))
         self.assertEqual(dict(BottleHarness.__dict__),before)
 
+    def test_geometric_relocation_composer_is_local_and_keeps_the_selected_base(self):
+        from sim import service
+        from sim.grasp import compose_relocation
+        original=service.RelocationPlanner
+        class Base:
+            def _skill(self,*args,**kwargs): return iter(())
+        Composed=compose_relocation(Base)
+        self.assertIsNot(Composed,Base)
+        self.assertIs(Composed.__mro__[1],Base)
+        self.assertIn('_skill',Composed.__dict__)
+        self.assertIs(service.RelocationPlanner,original)
+
     def test_service_default_tamp_router_remains_late_bound(self):
         from sim import service
         original=service.TampPlanner

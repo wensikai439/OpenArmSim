@@ -117,12 +117,20 @@ class GeometricPlanner(TampPlanner):
             held_by=side,lift_height_m=float(bottom-initial_bottom))
 
 
-def install_isolated():
-    import sim.service as service
-    from harness.composite import ReportingRelocation
-    service.TampPlanner=GeometricPlanner
-    class GeometricRelocation(ReportingRelocation):
+def compose_relocation(base=None):
+    """Add geometric subskill routing to one selected relocation base class."""
+    if base is None:
+        from harness.composite import ReportingRelocation
+        base=ReportingRelocation
+    class GeometricRelocation(base):
         def _skill(self,name,parameters,planner_type=TampPlanner):
             yield from super()._skill(name,parameters,
                 GeometricPlanner if planner_type is TampPlanner else planner_type)
-    service.RelocationPlanner=GeometricRelocation
+    return GeometricRelocation
+
+
+def install_isolated():
+    """Legacy research entrypoint; the daily workbench uses explicit composers."""
+    import sim.service as service
+    service.TampPlanner=GeometricPlanner
+    service.RelocationPlanner=compose_relocation()
