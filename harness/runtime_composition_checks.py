@@ -95,6 +95,17 @@ class RuntimeCompositionChecks(unittest.TestCase):
         self.assertIn('_invoke',Composed.__dict__)
         self.assertEqual(dict(Base.__dict__),before)
 
+    def test_compact_composer_changes_only_the_selected_harness_subclass(self):
+        from harness.compact import install_isolated
+        class Base:
+            def chat(self): pass
+        before=dict(Base.__dict__)
+        Composed=install_isolated(Base)
+        self.assertIsNot(Composed,Base)
+        self.assertIs(Composed.__mro__[1],Base)
+        self.assertIn('chat',Composed.__dict__)
+        self.assertEqual(dict(Base.__dict__),before)
+
     def test_service_default_tamp_router_remains_late_bound(self):
         from sim import service
         original=service.TampPlanner
