@@ -27,6 +27,16 @@ class RuntimeCompositionChecks(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError,'全新进程'):
             object_workbench._claim_backend_build()
 
+    def test_runtime_profile_is_derived_from_the_actual_harness_mro(self):
+        class OuterHarness: pass
+        class InnerHarness: pass
+        OuterHarness.__module__='fixture.outer'
+        InnerHarness.__module__='fixture.inner'
+        OuterHarness.__qualname__='TransitHarness'
+        InnerHarness.__qualname__='StageHarness'
+        profile=object_workbench._harness_profile([OuterHarness,InnerHarness])
+        self.assertEqual(profile,'Transit → Stage')
+
     def test_failed_layer_names_the_partially_modified_process(self):
         object_workbench._RUNTIME_TRACE.update(attempted=True,complete=False,profile=None,
             global_layers=[],factory_layers=[],backend_layers=[],harness_layers=[],failed_layer=None)

@@ -12,6 +12,14 @@ _RUNTIME_TRACE = {'attempted': False, 'complete': False, 'profile': None,
                   'backend_layers': [], 'harness_layers': [], 'failed_layer': None}
 
 
+def _harness_profile(values):
+    names=[]
+    for value in values:
+        name=value.__qualname__ if isinstance(value,type) else str(value).rsplit('.',1)[-1]
+        names.append(name.rsplit('.',1)[-1].removesuffix('Harness') or 'Harness')
+    return ' → '.join(names)
+
+
 def _claim_backend_build():
     if _RUNTIME_TRACE['attempted']:
         raise RuntimeError('工作台安装器修改进程级模块；同一进程只允许build_backend一次，请用全新进程重建。')
@@ -54,6 +62,8 @@ def runtime_composition(harness, simulation):
     curobo=(resolve_curobo() if callable(resolve_curobo) else
             getattr(simulation,'curobo_planner_factory',None) or service.CuRoboPlanner)
     metadata_provider=getattr(simulation,'curobo_metadata_provider',None)
+    harness_mro=lineage(harness,'Harness')
+    harness_profile=_harness_profile(harness_mro)
     return {'schema':'openarm-runtime-composition/1','profile':_RUNTIME_TRACE.get('profile'),
         'builder_attempted':_RUNTIME_TRACE['attempted'],'builder_complete':_RUNTIME_TRACE['complete'],
         'failed_layer':_RUNTIME_TRACE['failed_layer'],
@@ -62,7 +72,8 @@ def runtime_composition(harness, simulation):
         'planner_install_order':list(_RUNTIME_TRACE['planner_layers']),
         'backend_composition_order':list(_RUNTIME_TRACE['backend_layers']),
         'harness_composition_order':list(_RUNTIME_TRACE['harness_layers']),
-        'harness_mro':lineage(harness,'Harness'),'service_mro':lineage(simulation,'Service'),
+        'harness_mro':harness_mro,'harness_profile':harness_profile,
+        'service_mro':lineage(simulation,'Service'),
         'active_planner_factory':f'{planner.__module__}.{planner.__qualname__}',
         'active_relocation_factory':f'{relocation.__module__}.{relocation.__qualname__}',
         'active_curobo_factory':f'{curobo.__module__}.{curobo.__qualname__}',
@@ -283,11 +294,12 @@ def main():
         owned_gpu = start_gpu(ROOT)
         server.simulation = factory(); server.learning = ExperimentArchive()
         def workbench_status():
+            composition=runtime_composition(server.harness, server.simulation)
             return {
                 **source_identity.status(),
                 'factory_profile': 'objects-default',
-                'harness_profile': 'live-context+policy-route+compact-context+ACT-adapter',
-                'runtime_composition': runtime_composition(server.harness, server.simulation),
+                'harness_profile': composition['harness_profile'],
+                'runtime_composition': composition,
                 'enabled_features': ['stable-hold', 'transit-hints', 'registered-object-scene', 'native-MuJoCo-verification'],
                 'policy_config': 'harness/policy.json',
             }
