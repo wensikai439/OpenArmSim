@@ -157,8 +157,6 @@ def build_backend(*, harness_context=True, stable_hold=True, transit_hints=True)
     _run_layer('global_layers','harness.task_placement.catalogue',task_placement_catalogue,deployed=True)
     from sim.scene_library import service_factory as library
     factory = _run_layer('factory_layers','sim.scene_library.service_factory',library,factory)
-    from sim.scene_curobo import install_isolated as scene_gpu
-    _run_layer('global_layers','sim.scene_curobo',scene_gpu)
     from sim.cache_curobo import install_isolated as cache_gpu
     _run_layer('global_layers','sim.cache_curobo',cache_gpu)
     # Explicit startup selection preserves the user's optional objects across

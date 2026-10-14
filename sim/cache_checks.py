@@ -29,6 +29,27 @@ def model(p=None):
 
 
 class CacheChecks(unittest.TestCase):
+    def test_cache_curobo_install_already_includes_scene_aware_route(self):
+        from . import cache_curobo, object_curobo, scene_curobo, service
+
+        original_planner=service.CuRoboPlanner
+        original_base_call=scene_curobo.BASE_CALL
+        original_object_call=object_curobo.call
+        try:
+            scene_curobo.install_isolated()
+            scene_planner=service.CuRoboPlanner
+            self.assertIs(scene_planner,scene_curobo.SceneCuRoboPlanner)
+
+            cache_curobo.install_isolated()
+            self.assertIs(service.CuRoboPlanner,cache_curobo.CacheCuRoboPlanner)
+            self.assertTrue(issubclass(cache_curobo.CacheCuRoboPlanner,scene_planner))
+            self.assertIs(scene_curobo.BASE_CALL,cache_curobo.call)
+            self.assertIs(object_curobo.call,scene_curobo.call)
+        finally:
+            service.CuRoboPlanner=original_planner
+            scene_curobo.BASE_CALL=original_base_call
+            object_curobo.call=original_object_call
+
     def test_world_or_topology_change_never_reuses_old_geometry(self):
         world={'cuboid':{'table':{'dims':[1.,1.,.1],'pose':[0,0,0,1,0,0,0]}}}
         original=cache_key('right',{'left_joint':.3},world,True)
