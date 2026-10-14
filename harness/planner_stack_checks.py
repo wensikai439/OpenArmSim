@@ -8,6 +8,49 @@ import numpy as np
 
 
 class PlannerStackChecks(unittest.TestCase):
+    def test_margin_grasp_composer_matches_legacy_router_without_global_patch(self):
+        from harness.margin_grasp import compose_planner, install_isolated
+        from sim import service
+
+        original=service.TampPlanner
+        pick=Mock(return_value='margin-pick')
+        handover=Mock(return_value='margin-handover')
+
+        class Base:
+            CONTRACT={'planner':'fixture'}
+            def __new__(cls,env,task,**kwargs):return f'base:{task}'
+
+        def environment(*,object_id='bottle',upright=True):
+            rotation=np.eye(3)
+            rotation[2,2]=1. if upright else .5
+            return SimpleNamespace(object_id=object_id,bottle_id=0,
+                data=SimpleNamespace(xmat=np.asarray([rotation.reshape(-1)])))
+
+        pick_args={'parameters':{'arm':'right','bottle_single_arm_placement':True}}
+        relay_args={'parameters':{'arm':'left','next_handover':{'to_arm':'right'}}}
+        handover_args={'parameters':{'from_arm':'left','to_arm':'right'}}
+        cases=[(environment(),'pick_bottle',pick_args),
+            (environment(),'pick_bottle',relay_args),
+            (environment(),'handover_object',handover_args),
+            (environment(upright=False),'pick_bottle',pick_args),
+            (environment(object_id='can'),'pick_bottle',pick_args)]
+        try:
+            with patch('sim.margin_grasp.MarginBottlePick',pick), \
+                 patch('sim.fast_handover.FastBottleHandover',handover):
+                service.TampPlanner=Base
+                install_isolated(object())
+                legacy=[service.TampPlanner(env,task,**args) for env,task,args in cases]
+                service.TampPlanner=Base
+                Router=compose_planner(Base)
+                local=[Router(env,task,**args) for env,task,args in cases]
+                self.assertEqual(local,legacy)
+                self.assertEqual(local,['margin-pick','margin-pick','margin-handover',
+                                        'base:pick_bottle','base:pick_bottle'])
+                self.assertIs(compose_planner(Router),Router)
+                self.assertIs(service.TampPlanner,Base)
+        finally:
+            service.TampPlanner=original
+
     def test_free_transport_composer_matches_legacy_router_without_global_patch(self):
         from harness.free_transport import compose_planner, install_isolated
         from sim import service

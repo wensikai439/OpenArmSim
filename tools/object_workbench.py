@@ -134,9 +134,9 @@ def build_backend(*, harness_context=True, stable_hold=True, transit_hints=True)
     factory = _run_layer('factory_layers','harness.bottle.service_factory',service_factory)
     from harness.connected_placement import install_isolated as connected
     factory = _run_layer('factory_layers','harness.connected_placement',connected,factory)
-    from harness.margin_grasp import install_isolated as margin
-    factory = _run_layer('factory_layers','harness.margin_grasp',margin,factory)
     composed_tamp_planner=native_service.TampPlanner
+    from harness.margin_grasp import compose_planner as margin
+    composed_tamp_planner=_run_layer('planner_layers','harness.margin_grasp',margin,composed_tamp_planner)
     from harness.free_transport import compose_planner as free
     composed_tamp_planner=_run_layer('planner_layers','harness.free_transport',free,composed_tamp_planner)
     from harness.task_placement import install_catalogue as task_placement_catalogue

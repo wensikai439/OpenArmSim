@@ -5,15 +5,17 @@ This is a proposal/compute improvement, not calibrated perception or hardware.
 """
 
 
-def install_isolated(factory):
-    import sim.service as service
+def compose_planner(previous):
+    """Compose the margin provider without replacing the module default."""
     from sim.margin_grasp import MarginBottlePick
     from sim.fast_handover import FastBottleHandover
     from sim.bottle_routing import ContinuousHoldAudit
     from sim.oriented_grasp import HoldAudit
-    previous=service.TampPlanner
+    if getattr(previous, 'MARGIN_GRASP_ROUTER', False):
+        return previous
 
     class Router:
+        MARGIN_GRASP_ROUTER = True
         CONTRACT={**previous.CONTRACT,
             'bottle_grasp_refinement':'bounded scratch pose proposals; original native gates',
             'bottle_relay_IK':'minimal native kinematics; full native collision acceptance'}
@@ -32,5 +34,12 @@ def install_isolated(factory):
                     return ContinuousHoldAudit(planner,params['hold_seconds']) if 'hold_seconds' in params else planner
             return previous(env,task,**kwargs)
 
-    service.TampPlanner=Router
+    Router.__module__ = __name__
+    return Router
+
+
+def install_isolated(factory):
+    """Compatibility installer for standalone research scripts."""
+    import sim.service as service
+    service.TampPlanner = compose_planner(service.TampPlanner)
     return factory
