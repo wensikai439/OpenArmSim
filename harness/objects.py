@@ -26,6 +26,12 @@ def object_environment_dependencies(kwargs, environment_factory):
     return result
 
 
+def object_service_dependencies(kwargs, environment_factory, recorder_class):
+    result=object_environment_dependencies(kwargs,environment_factory)
+    result.setdefault('recorder_class',recorder_class)
+    return result
+
+
 def consolidate_objects(receipts, forgotten=()):
     """Different object identities never share a claimed manipulation method."""
     rows = []; original_contexts = {}
@@ -186,15 +192,13 @@ def service_factory():
     from sim.objects import ObjectEnv
     from sim.object_planner import ObjectPlanner
     service.TampPlanner = ObjectPlanner
-    original_recorder = service.Recorder
-    class ObjectRecorder(original_recorder):
+    class ObjectRecorder(service.Recorder):
         def __init__(self, env, *args, **kwargs):
             super().__init__(env, *args, **kwargs)
             self.manifest['task'] = 'Manipulate selected registered object: ' + env.object_id
             self.manifest['details']['object_selection'] = env.selection()
             from sim.recording import dump
             dump(self.path / 'manifest.json', self.manifest)
-    service.Recorder = ObjectRecorder
     class OwnerCommands:
         def __init__(self, original, owner): self.original, self.owner = original, owner
         def put(self, value): return self.original.put(value)
@@ -215,7 +219,7 @@ def service_factory():
                 except Exception as exc: future.set_exception(exc)
     class ObjectService(service.SimulationService):
         def __init__(self,*args,**kwargs):
-            super().__init__(*args,**object_environment_dependencies(kwargs,ObjectEnv))
+            super().__init__(*args,**object_service_dependencies(kwargs,ObjectEnv,ObjectRecorder))
 
         def call(self, command, **arguments):
             if command in {'policy', 'replay'}: raise ValueError('multi-object cell has no matching VLA/replay evaluation contract')

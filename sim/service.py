@@ -85,7 +85,8 @@ class SimulationService:
     def __init__(self, *, environment_factory=None, initial_scene_selection=None,
                  policy_client_factory=None, policy_timing_class=None,
                  tamp_planner_factory=None, relocation_planner_factory=None,
-                 curobo_planner_factory=None, curobo_metadata_provider=None):
+                 curobo_planner_factory=None, curobo_metadata_provider=None,
+                 recorder_class=None):
         self.environment_factory = OpenArmEnv if environment_factory is None else environment_factory
         self.initial_scene_selection = (None if initial_scene_selection is None
             else tuple(initial_scene_selection))
@@ -95,6 +96,7 @@ class SimulationService:
         self.relocation_planner_factory = relocation_planner_factory
         self.curobo_planner_factory = curobo_planner_factory
         self.curobo_metadata_provider = curobo_metadata_provider
+        self.recorder_class = recorder_class
         self.commands = queue.Queue()
         self.completed = queue.Queue()
         self.lock = threading.Lock()
@@ -137,6 +139,10 @@ class SimulationService:
         """Probe the worker paired with this service's selected CuRobo route."""
         provider = getattr(self, 'curobo_metadata_provider', None)
         return provider() if provider is not None else curobo_metadata()
+
+    def _recorder_class(self):
+        """Resolve an instance recorder, or the current module default for tests."""
+        return getattr(self, 'recorder_class', None) or Recorder
 
     def snapshot(self):
         with self.lock:
@@ -256,7 +262,7 @@ class SimulationService:
         if selected not in {'operator','overview','head','left','right'}:
             raise ValueError('unknown capture camera')
         if recorder is None:
-            recorder = Recorder(self.env, "snapshot", record_images=False, seed=0)
+            recorder = self._recorder_class()(self.env, "snapshot", record_images=False, seed=0)
             own = True
         else:
             own = False
@@ -412,7 +418,7 @@ class SimulationService:
                     planner_type=self._curobo_planner_factory()
                 else:
                     planner_type=self._tamp_planner_factory()
-                recorder = Recorder(self.env, kind, record_images=bool(args.get('record_images', False)), seed=seed,
+                recorder = self._recorder_class()(self.env, kind, record_images=bool(args.get('record_images', False)), seed=seed,
                     details={'episode':episode,'execution_id':execution_id,
                         'initiator':args.get('initiator',{'type':'direct-command'}),
                         'tamp':{**planner_type.CONTRACT,'task':args.get('task'),'skill':args.get('skill'),
@@ -461,7 +467,7 @@ class SimulationService:
                 self.job["clock_mode"] = replay.clock
             if recorder is None:
                 self.keyframes = []
-                recorder = Recorder(self.env, kind, record_images=bool(args.get("record_images", kind == "policy")),
+                recorder = self._recorder_class()(self.env, kind, record_images=bool(args.get("record_images", kind == "policy")),
                                 seed=seed, details={"episode": episode, 'execution_id':execution_id, 'initiator':args.get('initiator',{'type':'direct-command'}), **({"policy": config, "timing": timing.contract()} if kind == "policy" else
                                     {"tamp":{**planner.CONTRACT,'task':planner.task, 'skill':args.get('skill'), 'parameters':args.get('parameters', {})}} if kind == 'tamp' else {"replay_clock": replay.contract})})
                 self.job["run_id"] = recorder.path.name

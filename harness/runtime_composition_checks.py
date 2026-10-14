@@ -185,6 +185,17 @@ class RuntimeCompositionChecks(unittest.TestCase):
             self.assertEqual(instance._curobo_metadata(),{'worker_port':8004})
             fallback.assert_called_once_with()
 
+    def test_service_recorder_is_instance_scoped_and_default_is_late_bound(self):
+        from sim import service
+        from unittest.mock import patch
+        instance=service.SimulationService.__new__(service.SimulationService)
+        selected=object();instance.recorder_class=selected
+        self.assertIs(instance._recorder_class(),selected)
+        instance.recorder_class=None
+        fallback=object()
+        with patch.object(service,'Recorder',fallback):
+            self.assertIs(instance._recorder_class(),fallback)
+
     def test_object_gpu_defaults_are_scoped_and_explicit_service_backend_wins(self):
         from harness.object_gpu import object_gpu_dependencies
         object_planner=object();object_metadata=object()
@@ -217,11 +228,15 @@ class RuntimeCompositionChecks(unittest.TestCase):
         self.assertIs(selected['environment_factory'],task_scene)
 
     def test_registered_object_default_is_scoped_and_protected_scene_override_wins(self):
-        from harness.objects import object_environment_dependencies
-        object_env=object();protected=object()
-        self.assertIs(object_environment_dependencies({},object_env)['environment_factory'],object_env)
-        selected=object_environment_dependencies({'environment_factory':protected},object_env)
+        from harness.objects import object_service_dependencies
+        object_env=object();protected=object();recorder=object();selected_recorder=object()
+        defaults=object_service_dependencies({},object_env,recorder)
+        self.assertIs(defaults['environment_factory'],object_env)
+        self.assertIs(defaults['recorder_class'],recorder)
+        selected=object_service_dependencies({'environment_factory':protected,
+            'recorder_class':selected_recorder},object_env,recorder)
         self.assertIs(selected['environment_factory'],protected)
+        self.assertIs(selected['recorder_class'],selected_recorder)
 
     def test_request_middleware_is_instance_scoped_and_composes_in_order(self):
         class Workspace:
