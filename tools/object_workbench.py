@@ -137,8 +137,8 @@ def build_backend(*, harness_context=True, stable_hold=True, transit_hints=True)
     factory = _run_layer('factory_layers','harness.margin_grasp',margin,factory)
     from harness.free_transport import install_isolated as free
     factory = _run_layer('factory_layers','harness.free_transport',free,factory)
-    from harness.task_placement import install_isolated as task_placement
-    factory = _run_layer('factory_layers','harness.task_placement',task_placement,factory,deployed=True)
+    from harness.task_placement import install_catalogue as task_placement_catalogue
+    _run_layer('global_layers','harness.task_placement.catalogue',task_placement_catalogue,deployed=True)
     from sim.scene_library import service_factory as library
     factory = _run_layer('factory_layers','sim.scene_library.service_factory',library,factory)
     from sim.scene_curobo import install_isolated as scene_gpu
@@ -173,6 +173,9 @@ def build_backend(*, harness_context=True, stable_hold=True, transit_hints=True)
         from harness.transit_hint import install_isolated as hints
         Harness = _run_layer('global_layers','harness.transit_hint',hints,Harness)
     composed_tamp_planner=native_service.TampPlanner
+    from harness.task_placement import compose_planner as task_placement
+    composed_tamp_planner=_run_layer('planner_layers','harness.task_placement',task_placement,
+        composed_tamp_planner,deployed=True)
     if stable_hold:
         from harness.settled_hold import compose_planner as settling
         composed_tamp_planner=_run_layer('planner_layers','harness.settled_hold',settling,composed_tamp_planner)

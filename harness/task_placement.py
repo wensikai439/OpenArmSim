@@ -2,17 +2,18 @@
 import copy
 
 
-def install_isolated(factory, *, deployed=False):
-    from . import agent
-    import sim.service as service
+TASK_PLACEMENT_CONTRACT='current grasp baseline + continuous-yaw fallback + bounded native-preview control'
+
+
+def compose_planner(previous, *, deployed=False):
+    """Return the task-placement route without replacing the module default."""
     from sim.task_grasp import TaskBottlePick
     from sim.predictive_place import PredictiveBottlePlacement
     from sim.bottle_routing import ContinuousHoldAudit
-    previous = service.TampPlanner
 
     class Router:
         CONTRACT = {**previous.CONTRACT,
-            'bottle_task_placement': 'current grasp baseline + continuous-yaw fallback + bounded native-preview control'}
+            'bottle_task_placement': TASK_PLACEMENT_CONTRACT}
 
         def __new__(cls, env, task, **kwargs):
             params = kwargs.get('parameters') or {}
@@ -26,7 +27,13 @@ def install_isolated(factory, *, deployed=False):
                     return planner
             return previous(env, task, **kwargs)
 
-    service.TampPlanner = Router
+    Router.__module__ = __name__
+    return Router
+
+
+def install_catalogue(*, deployed=False):
+    """Register the existing model-facing descriptions independently of routing."""
+    from . import agent
     tools = copy.deepcopy(agent.SKILL_TOOLS)
     for item in tools:
         value = item['function']
@@ -46,11 +53,18 @@ def install_isolated(factory, *, deployed=False):
             tool = next((t['function'] for t in tools if t['function']['name'] == skill['id']), None)
             if tool:
                 skill.update(description=tool['description'], parameters=tool['parameters'])
-        result['bottle_task_placement'] = {'provider': Router.CONTRACT['bottle_task_placement'],
+        result['bottle_task_placement'] = {'provider': TASK_PLACEMENT_CONTRACT,
             'deployed': deployed, 'original_demo_and_other_objects_preserved': True,
             'scope': 'registered upright bottle on table; known simulator geometry',
             'validation_difference': 'small biased actuator increments checked using150ms original native dynamics',
             'physics_and_final_task_scores_unchanged': True, 'hardware_access': False, 'transfer_ready': False}
         return result
     agent.catalogue = catalogue
+
+
+def install_isolated(factory, *, deployed=False):
+    """Compatibility installer for standalone research scripts."""
+    import sim.service as service
+    service.TampPlanner = compose_planner(service.TampPlanner,deployed=deployed)
+    install_catalogue(deployed=deployed)
     return factory

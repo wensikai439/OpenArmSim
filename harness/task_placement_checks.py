@@ -7,7 +7,7 @@ from unittest.mock import patch
 import numpy as np
 
 from . import agent
-from .task_placement import install_isolated
+from .task_placement import compose_planner, install_isolated
 import sim.service as service
 from sim.bottle_routing import ContinuousHoldAudit
 
@@ -26,6 +26,7 @@ class Routes(TestCase):
         class Place:
             def __init__(self, env, task, **kwargs):self.result={'preview_servo_contract':{'not_deployed':True}}
         service.TampPlanner=Previous
+        self.previous=Previous
         agent.catalogue=lambda snapshot,policy_type='pi05':{'skills':[{'id':x['function']['name']} for x in tools]}
         self.pick = Pick; self.place = Place
         with patch('sim.task_grasp.TaskBottlePick',Pick),patch('sim.predictive_place.PredictiveBottlePlacement',Place):
@@ -61,6 +62,21 @@ class Routes(TestCase):
         self.assertIn('handover',[x['id'] for x in value['skills']])
         self.assertFalse(value['bottle_task_placement']['transfer_ready'])
         self.assertIn('known simulator geometry',value['bottle_task_placement']['scope'])
+
+    def test_planner_composer_is_instance_local_and_matches_legacy_routes(self):
+        module_default=service.TampPlanner
+        with patch('sim.task_grasp.TaskBottlePick',self.pick), \
+             patch('sim.predictive_place.PredictiveBottlePlacement',self.place):
+            local=compose_planner(self.previous,deployed=True)
+            self.assertIs(service.TampPlanner,module_default)
+            self.assertIsInstance(local(self.env,'pick_bottle',parameters={
+                'bottle_single_arm_placement':True}),self.pick)
+            placed=local(self.env,'place_bottle',parameters={'receptacle_id':'table'})
+            self.assertIsInstance(placed,self.place)
+            self.assertFalse(placed.result['preview_servo_contract']['not_deployed'])
+            self.assertEqual(local(self.env,'handover_to_basket',parameters={})['original'],
+                self.previous(self.env,'handover_to_basket')['original'])
+        self.assertIs(service.TampPlanner,module_default)
 
 
 if __name__=='__main__':main()
