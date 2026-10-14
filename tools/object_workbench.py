@@ -158,12 +158,11 @@ def stop_gpu(process):
 def build_backend(*, harness_context=True, stable_hold=True, transit_hints=True):
     _claim_backend_build()
     import sim.service as native_service
-    default_relocation_planner=native_service.RelocationPlanner
     default_curobo_planner=native_service.CuRoboPlanner
     composed_tamp_planner=None
     _RUNTIME_TRACE['profile']={'harness_context':bool(harness_context),
         'stable_hold':bool(stable_hold),'transit_hints':bool(transit_hints)}
-    from harness.composite import install_isolated as composite
+    from harness.composite import ReportingRelocation, install_isolated as composite
     from sim.grasp import compose_relocation as geometric_relocation
     from harness.candidate import install_isolated as candidate
     from harness.scene import install_isolated as scene
@@ -182,7 +181,7 @@ def build_backend(*, harness_context=True, stable_hold=True, transit_hints=True)
         ('harness.poses',poses),('harness.bottle',bottle)):
         _run_layer('global_layers',name,installer)
     composed_relocation_planner=_run_layer('planner_layers','sim.grasp',geometric_relocation,
-        native_service.RelocationPlanner)
+        ReportingRelocation)
     factory = _run_layer('factory_layers','harness.bottle.service_factory',service_factory)
     composed_tamp_planner=getattr(factory,'_tamp_planner_factory_default',None)
     if composed_tamp_planner is None:
@@ -236,7 +235,6 @@ def build_backend(*, harness_context=True, stable_hold=True, transit_hints=True)
         composed_tamp_planner=_run_layer('planner_layers','harness.settled_hold',settling,composed_tamp_planner)
     factory=_run_layer('factory_layers','sim.service.TampPlanner+RelocationPlanner+CuRoboPlanner',bind_tamp_planner,
         factory,composed_tamp_planner,composed_relocation_planner,composed_curobo_planner,cache_metadata)
-    native_service.RelocationPlanner=default_relocation_planner
     native_service.CuRoboPlanner=default_curobo_planner
     _RUNTIME_TRACE['complete']=True
     return factory, Harness

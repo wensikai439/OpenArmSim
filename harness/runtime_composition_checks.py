@@ -130,6 +130,7 @@ class RuntimeCompositionChecks(unittest.TestCase):
 
     def test_geometric_relocation_composer_is_local_and_keeps_the_selected_base(self):
         from sim import service
+        from harness.composite import ReportingRelocation
         from sim.grasp import compose_relocation
         original=service.RelocationPlanner
         class Base:
@@ -138,6 +139,30 @@ class RuntimeCompositionChecks(unittest.TestCase):
         self.assertIsNot(Composed,Base)
         self.assertIs(Composed.__mro__[1],Base)
         self.assertIn('_skill',Composed.__dict__)
+        self.assertIs(service.RelocationPlanner,original)
+        Reported=compose_relocation(ReportingRelocation)
+        self.assertIs(Reported.__mro__[1],ReportingRelocation)
+        self.assertIs(service.RelocationPlanner,original)
+
+    def test_composite_install_keeps_relocation_factory_module_default(self):
+        import harness.agent as agent
+        import harness.workspace as workspace
+        from harness.composite import install_isolated
+        from sim import service
+        saved={
+            'workspace.validate_plan':workspace.validate_plan,
+            'workspace.Workspace':workspace.Workspace,
+            'agent.validate_plan':agent.validate_plan,
+            'agent.Harness':agent.Harness,
+            'agent.EXECUTION_TOOLS':copy.deepcopy(agent.EXECUTION_TOOLS),
+        }
+        self.addCleanup(setattr,workspace,'validate_plan',saved['workspace.validate_plan'])
+        self.addCleanup(setattr,workspace,'Workspace',saved['workspace.Workspace'])
+        self.addCleanup(setattr,agent,'validate_plan',saved['agent.validate_plan'])
+        self.addCleanup(setattr,agent,'Harness',saved['agent.Harness'])
+        self.addCleanup(setattr,agent,'EXECUTION_TOOLS',saved['agent.EXECUTION_TOOLS'])
+        original=service.RelocationPlanner
+        install_isolated()
         self.assertIs(service.RelocationPlanner,original)
 
     def test_service_default_tamp_router_remains_late_bound(self):
