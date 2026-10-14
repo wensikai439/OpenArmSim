@@ -37,14 +37,19 @@ class RuntimeCompositionChecks(unittest.TestCase):
     def test_tamp_router_is_bound_to_service_and_wrapper_is_idempotent(self):
         class Router:
             CONTRACT={'fixture':True}
+        class Relocation:
+            CONTRACT={'fixture':'relocation'}
         class BaseService:
             def __init__(self,**kwargs): self.dependencies=kwargs
-        Bound=object_workbench.bind_tamp_planner(BaseService,Router)
-        self.assertIs(object_workbench.bind_tamp_planner(Bound,Router),Bound)
+        Bound=object_workbench.bind_tamp_planner(BaseService,Router,Relocation)
+        self.assertIs(object_workbench.bind_tamp_planner(Bound,Router,Relocation),Bound)
         instance=Bound()
         self.assertIs(instance.dependencies['tamp_planner_factory'],Router)
+        self.assertIs(instance.dependencies['relocation_planner_factory'],Relocation)
         with self.assertRaisesRegex(ValueError,'already belongs'):
             Bound(tamp_planner_factory=object())
+        with self.assertRaisesRegex(ValueError,'relocation planner'):
+            Bound(relocation_planner_factory=object())
 
     def test_service_default_tamp_router_remains_late_bound(self):
         from sim import service
@@ -60,6 +65,21 @@ class RuntimeCompositionChecks(unittest.TestCase):
             self.assertIs(instance._tamp_planner_factory(),FixtureRouter)
         finally:
             service.TampPlanner=original
+
+    def test_service_default_relocation_router_is_late_bound_and_injection_wins(self):
+        from sim import service
+        original=service.RelocationPlanner
+        class FixtureRouter: pass
+        class LaterDefault: pass
+        instance=service.SimulationService.__new__(service.SimulationService)
+        instance.relocation_planner_factory=None
+        try:
+            service.RelocationPlanner=LaterDefault
+            self.assertIs(instance._relocation_planner_factory(),LaterDefault)
+            instance.relocation_planner_factory=FixtureRouter
+            self.assertIs(instance._relocation_planner_factory(),FixtureRouter)
+        finally:
+            service.RelocationPlanner=original
 
     def test_request_middleware_is_instance_scoped_and_composes_in_order(self):
         class Workspace:

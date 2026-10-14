@@ -45,6 +45,9 @@ def runtime_composition(harness, simulation):
     resolve=getattr(simulation,'_tamp_planner_factory',None)
     planner=(resolve() if callable(resolve) else
              getattr(simulation,'tamp_planner_factory',None) or service.TampPlanner)
+    resolve_relocation=getattr(simulation,'_relocation_planner_factory',None)
+    relocation=(resolve_relocation() if callable(resolve_relocation) else
+                getattr(simulation,'relocation_planner_factory',None) or service.RelocationPlanner)
     return {'schema':'openarm-runtime-composition/1','profile':_RUNTIME_TRACE.get('profile'),
         'builder_attempted':_RUNTIME_TRACE['attempted'],'builder_complete':_RUNTIME_TRACE['complete'],
         'failed_layer':_RUNTIME_TRACE['failed_layer'],
@@ -53,20 +56,28 @@ def runtime_composition(harness, simulation):
         'planner_install_order':list(_RUNTIME_TRACE['planner_layers']),
         'harness_mro':lineage(harness,'Harness'),'service_mro':lineage(simulation,'Service'),
         'active_planner_factory':f'{planner.__module__}.{planner.__qualname__}',
+        'active_relocation_factory':f'{relocation.__module__}.{relocation.__qualname__}',
         'current_request_middleware':request_stack,
         'diagnostic_scope':'internal composition/dispatch provenance; not model capability or task performance'}
 
 
-def bind_tamp_planner(base, planner):
-    """Bind the composed TAMP router to one service class, not the module."""
-    if base.__dict__.get('_bound_tamp_planner_factory') is planner:return base
+def bind_tamp_planner(base, planner, relocation_planner=None):
+    """Bind composed planners to one service class, not the module defaults."""
+    if (base.__dict__.get('_bound_tamp_planner_factory') is planner and
+        base.__dict__.get('_bound_relocation_planner_factory') is relocation_planner):return base
     class BoundTampService(base):
         _bound_tamp_planner_factory=planner
+        _bound_relocation_planner_factory=relocation_planner
         def __init__(self,*args,**kwargs):
             configured=kwargs.get('tamp_planner_factory')
             if configured is not None and configured is not planner:
                 raise ValueError('TAMP planner already belongs to this service class')
+            configured_relocation=kwargs.get('relocation_planner_factory')
+            if (configured_relocation is not None and
+                configured_relocation is not relocation_planner):
+                raise ValueError('relocation planner already belongs to this service class')
             kwargs['tamp_planner_factory']=planner
+            kwargs['relocation_planner_factory']=relocation_planner
             super().__init__(*args,**kwargs)
     return BoundTampService
 
@@ -110,6 +121,7 @@ def build_backend(*, harness_context=True, stable_hold=True, transit_hints=True)
     _claim_backend_build()
     import sim.service as native_service
     default_tamp_planner=native_service.TampPlanner
+    default_relocation_planner=native_service.RelocationPlanner
     composed_tamp_planner=None
     _RUNTIME_TRACE['profile']={'harness_context':bool(harness_context),
         'stable_hold':bool(stable_hold),'transit_hints':bool(transit_hints)}
@@ -182,9 +194,11 @@ def build_backend(*, harness_context=True, stable_hold=True, transit_hints=True)
     if stable_hold:
         from harness.settled_hold import compose_planner as settling
         composed_tamp_planner=_run_layer('planner_layers','harness.settled_hold',settling,composed_tamp_planner)
-    factory=_run_layer('factory_layers','sim.service.TampPlanner',bind_tamp_planner,
-        factory,composed_tamp_planner)
+    composed_relocation_planner=native_service.RelocationPlanner
+    factory=_run_layer('factory_layers','sim.service.TampPlanner+RelocationPlanner',bind_tamp_planner,
+        factory,composed_tamp_planner,composed_relocation_planner)
     native_service.TampPlanner=default_tamp_planner
+    native_service.RelocationPlanner=default_relocation_planner
     _RUNTIME_TRACE['complete']=True
     return factory, Harness
 

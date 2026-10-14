@@ -84,13 +84,14 @@ def service_env_kwargs(selection):
 class SimulationService:
     def __init__(self, *, environment_factory=None, initial_scene_selection=None,
                  policy_client_factory=None, policy_timing_class=None,
-                 tamp_planner_factory=None):
+                 tamp_planner_factory=None, relocation_planner_factory=None):
         self.environment_factory = OpenArmEnv if environment_factory is None else environment_factory
         self.initial_scene_selection = (None if initial_scene_selection is None
             else tuple(initial_scene_selection))
         self.policy_client_factory = policy_client_factory or make_client
         self.policy_timing_class = policy_timing_class or PolicyTiming
         self.tamp_planner_factory = tamp_planner_factory
+        self.relocation_planner_factory = relocation_planner_factory
         self.commands = queue.Queue()
         self.completed = queue.Queue()
         self.lock = threading.Lock()
@@ -120,6 +121,10 @@ class SimulationService:
     def _tamp_planner_factory(self):
         """Resolve an injected router, or the current module default for tests."""
         return getattr(self, 'tamp_planner_factory', None) or TampPlanner
+
+    def _relocation_planner_factory(self):
+        """Resolve an injected relocation router, or the current module default."""
+        return getattr(self, 'relocation_planner_factory', None) or RelocationPlanner
 
     def snapshot(self):
         with self.lock:
@@ -389,7 +394,7 @@ class SimulationService:
                 self.keyframes = []
                 selected=(args.get('parameters') or {}).get('planner','tamp')
                 if selected not in ('tamp','curobo'):raise ValueError('unknown planning backend')
-                planner_type=(RelocationPlanner if args.get('task')=='relocate_object' else
+                planner_type=(self._relocation_planner_factory() if args.get('task')=='relocate_object' else
                               CuRoboPlanner if selected=='curobo' else self._tamp_planner_factory())
                 recorder = Recorder(self.env, kind, record_images=bool(args.get('record_images', False)), seed=seed,
                     details={'episode':episode,'execution_id':execution_id,
