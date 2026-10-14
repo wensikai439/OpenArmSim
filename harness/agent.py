@@ -25,7 +25,8 @@ from .failures import CallFailures
 from .llm import ModelSettings
 from .workspace import Workspace, CHECKPOINTS, validate_plan
 from .goals import PLACEMENT_SCHEMA,resolve_placement,bind_place,preserve_completed,assess_placement,object_state_from_feedback
-from .skills import SKILL_TOOLS, MOTION_TOOLS, LEGACY_MOTION_TOOLS, catalogue, request, validate_arguments
+from .skills import (SKILL_TOOLS, MOTION_TOOLS, LEGACY_MOTION_TOOLS, SPATIAL_LANGUAGE_RULES,
+                     catalogue, request, validate_arguments)
 
 
 def schema(name, description, properties=None, required=None):
@@ -544,6 +545,7 @@ class Harness:
             system = ("You are the OpenArm simulation execution agent. The VLA adapter supports only this atomic task, and is usable only when configured: " + TASK +
                       " Do not invent subtask policy capabilities. Use tools and fresh observations. Tool start/exit/budget exhaustion is never success. "
                       "Use typed skills: move_to_pose/move_relative, pick, handover, place and run_policy. Read list_skills if unsure. "
+                      + SPATIAL_LANGUAGE_RULES + " "
                       "set_gripper independently opens/closes a gripper and binds a tool_completed stage to set_gripper; encoder settling is NOT object grasp evidence. You can compose free-space pose movement and gripper commands for requested arm exercises. For transporting the bottle prefer contact-verified pick/handover/place. "
                       "pick supports either arm and handover supports both directions; preserve the user's requested direction. A donor must hold the bottle before handover. "
                       "cuRobo supports move_relative and move_to_pose with the selected arm empty or alone holding the declared bottle. It does not perform pick/handover/place. Other-arm or dual holds are unsupported. Carried motion verifies TCP and contacts, not precise object pose or stable placement; use place and the locked object goal for placement. Never substitute TAMP for a failed requested cuRobo path. "

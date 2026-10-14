@@ -10,13 +10,39 @@ import numpy as np
 
 from .agent import Harness, tools_for
 from .checks import LocalState
-from .skills import SKILL_TOOLS, validate_arguments
+from .skills import SKILL_TOOLS, SPATIAL_LANGUAGE_RULES, validate_arguments
 from .workspace import Workspace
 from sim.environment import OpenArmEnv
 from sim.tamp import TampPlanner, PlanningFailure
 
 
 class SkillChecks(unittest.TestCase):
+    def test_spatial_language_rules_are_exposed_to_model_and_catalogue(self):
+        state=LocalState();agent=Harness(state)
+        data=agent.invoke('list_skills',{})
+        rules=data['coordinate_contract']['natural_language_directions']
+        self.assertEqual(rules,SPATIAL_LANGUAGE_RULES)
+        self.assertIn('+X robot-forward',rules)
+        self.assertIn('+Y robot-left',rules)
+        self.assertIn('never from the screen or operator camera',rules)
+        self.assertIn('ask before motion',rules)
+        from .scene import TOOLS as scene_tools
+        target=next(tool['function'] for tool in scene_tools if tool['function']['name']=='resolve_scene_target')
+        self.assertIn('offset_frame=world',target['description'])
+        self.assertIn('object-local directions',target['description'])
+        agent.configure_model({'base_url':'http://127.0.0.1:1234/v1','model':'test','api_key':'placeholder','vision':False})
+        def response(request,**kwargs):
+            payload=json.loads(request.data)
+            self.assertIn(SPATIAL_LANGUAGE_RULES,payload['messages'][0]['content'])
+            class Reply:
+                def __enter__(self):return self
+                def __exit__(self,*args):pass
+                def read(self,_):return json.dumps({'choices':[{'message':{'role':'assistant','content':'只讨论，不行动。'}}]}).encode()
+            return Reply()
+        with patch('urllib.request.urlopen',side_effect=response),patch.object(agent,'_log'):
+            agent.chat('解释坐标方向，不要行动')
+        self.assertEqual(state.calls,[])
+
     def test_model_tools_are_skills_and_unavailable_policy_is_not_substituted(self):
         names = {t['function']['name'] for t in tools_for('execute')}
         self.assertTrue({'pick', 'place', 'handover', 'move_to_pose', 'move_relative', 'run_policy'} <= names)

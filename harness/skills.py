@@ -26,6 +26,14 @@ QUAT = {'type': 'array', 'items': {'type': 'number'}, 'minItems': 4, 'maxItems':
 XY = {'type':'array','items':{'type':'number'},'minItems':2,'maxItems':2}
 SPEED = {'type': 'number', 'minimum': 0.05, 'maximum': 1.0}
 PLANNER = {'type':'string','enum':['tamp','curobo'],'description':'Default tamp. curobo supports one selected arm empty or alone holding the declared bottle; other-arm/dual holds unsupported. GPU attachment collision plus mandatory native mesh check; no backend substitution.'}
+SPATIAL_LANGUAGE_RULES = (
+    'Interpret forward/back/left/right/up/down in the fixed robot-base/world frame, never from the screen or operator camera: '
+    '+X robot-forward, -X backward, +Y robot-left, -Y robot-right, +Z up, -Z down. These axes are identical for both arms. '
+    'For move_relative, use frame=world for robot-relative directions; use frame=tool only when the user explicitly means the selected TCP/gripper axes. '
+    'For a target anchored to a named object, keep the object as the origin and use offset_frame=world for robot-relative directions; '
+    'use offset_frame=object only when the user explicitly means that object\'s local axes. '
+    'If the reference could mean robot, camera/viewer, or object-local directions and is not clear, ask before motion.'
+)
 
 SKILL_TOOLS = [
     function('list_skills', 'Read supported skills, preconditions, coordinate conventions and REAL backend readiness. Declared assets are not visual detections.'),
@@ -35,7 +43,7 @@ SKILL_TOOLS = [
              {'observation_id': OBS, 'arm': ARM, 'position_m': VECTOR, 'quaternion_xyzw': QUAT,
               'frame': {'type': 'string', 'enum': ['world']}, 'speed_scale': SPEED, 'planner':PLANNER},
              ['observation_id', 'arm', 'position_m', 'quaternion_xyzw', 'frame']),
-    function('move_relative', 'Move a gripper TCP by at most 15 cm from the freshly measured robot pose, keeping its orientation. Delta may be in world or current tool axes. Collision checks include carried bottle; no direct joint commands.',
+    function('move_relative', 'Move a gripper TCP by at most 15 cm from the freshly measured robot pose, keeping its orientation. Fixed robot/world axes: +X forward, -X backward, +Y robot-left, -Y robot-right, +Z up, -Z down; same for both arms and independent of camera. Use frame=world for robot-relative directions; frame=tool only for explicit selected-TCP-relative wording. Collision checks include carried bottle; no direct joint commands.',
              {'observation_id': OBS, 'arm': ARM, 'delta_m': VECTOR,
               'frame': {'type': 'string', 'enum': ['world', 'tool']}, 'speed_scale': SPEED, 'planner':PLANNER},
              ['observation_id', 'arm', 'delta_m', 'frame']),
@@ -114,6 +122,7 @@ def catalogue(snapshot, policy_type='pi05'):
     return {'environment': 'native-mujoco', 'hardware_access': False, 'transfer_ready': False,
         'coordinate_contract': {'frame': 'world', 'units': 'metres, radians',
             'axes':'+X forward away from robot, +Y robot-left, +Z up; operator camera may face the opposite direction',
+            'natural_language_directions': SPATIAL_LANGUAGE_RULES,
             'quaternion': 'xyzw', 'tcp_local_offset_m': [0, 0.006, 0.075],
             'tcp_status': 'candidate simulated TCP; physical calibration pending'},
         'declared_assets': [{'id': 'bottle', 'type': 'rigid graspable'}, {'id': 'basket', 'type': 'container'}],
