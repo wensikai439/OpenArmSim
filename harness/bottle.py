@@ -3,7 +3,7 @@ import copy
 import json
 import urllib.request
 
-from .poses import PoseHarness, consolidate as pose_consolidate
+from .poses import PoseHarness, PoseWorkspace, consolidate as pose_consolidate
 
 
 class VisibleRequests:
@@ -62,6 +62,12 @@ def consolidate_hold(receipts,forgotten=()):
                 if applies['hold_validation']=='all_full_windows' else
                 ' 此类记录只带末段窗口审核，不能当作全时段稳定证据。')
     return lessons
+
+
+class BottleWorkspace(PoseWorkspace):
+    """Keep the final bottle-method reducer on the workspace instance."""
+    def consolidate_memory(self, receipts, forgotten=()):
+        return consolidate_hold(receipts, forgotten)
 
 
 class BottleHarness(PoseHarness):
@@ -148,8 +154,6 @@ class BottleHarness(PoseHarness):
 
 def install_isolated():
     import harness.agent as agent
-    from . import knowledge,object_memory
-    knowledge.consolidate=consolidate_hold;object_memory.consolidate=consolidate_hold
     previous=agent.catalogue;tools=copy.deepcopy(agent.SKILL_TOOLS)
     for item in tools:
         f=item['function']

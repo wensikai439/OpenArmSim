@@ -55,10 +55,8 @@ def object_gpu_dependencies(kwargs, planner, metadata_provider):
 
 def install_isolated():
     import harness.agent as agent
-    import harness.knowledge as knowledge
     from .objects import install_isolated as objects
     objects(); previous = agent.catalogue
-    knowledge.consolidate = consolidate_gpu
     tools = copy.deepcopy(agent.SKILL_TOOLS)
     for tool in tools:
         value = tool['function']; name = value['name']

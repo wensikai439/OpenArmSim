@@ -156,8 +156,6 @@ class ObjectHarness(SceneHarness):
 
 def install_isolated():
     import harness.agent as agent
-    import harness.knowledge as knowledge
-    knowledge.consolidate = consolidate_objects
     tools = copy.deepcopy(agent.SKILL_TOOLS)
     for tool in tools:
         value = tool['function']

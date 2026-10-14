@@ -73,6 +73,9 @@ def index_entry(lesson):
 class ObjectMemoryWorkspace(ObjectGPUWorkspace):
     index_byte_limit = 8192
 
+    def consolidate_memory(self, receipts, forgotten=()):
+        return consolidate(receipts, forgotten)
+
     def memory(self, role, epoch, *, public=False, query='', context=None, include_oracle=False, skill=None, compact=False):
         value = super().memory(role, epoch, public=public, query=query, context=context,
             include_oracle=include_oracle, skill=skill, compact=compact)
@@ -90,7 +93,7 @@ class ObjectMemoryWorkspace(ObjectGPUWorkspace):
         for row in rows:
             for key in ('arguments', 'feedback', 'evidence'): row[key] = json.loads(row[key])
             row['compatible'] = True
-        lessons = consolidate(rows, forgotten)
+        lessons = self.consolidate_memory(rows, forgotten)
         if selected:
             lessons = [item for item in lessons if item.get('object_id') in (None, selected)]
         candidates = self._rank(lessons, query, 8) if query else lessons[:8]
@@ -149,7 +152,6 @@ def install_isolated():
     from . import knowledge
     if knowledge.index_entry is not index_entry:
         index_entry._object_memory_original = knowledge.index_entry
-    knowledge.consolidate = consolidate
     knowledge.index_entry = index_entry
     knowledge.PROTOCOLS.update(PROTOCOLS)
     knowledge.RECOVERY['non_target_object_displaced'] = DISPLACEMENT

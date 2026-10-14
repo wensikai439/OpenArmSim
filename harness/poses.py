@@ -138,15 +138,14 @@ class PoseHarness(TaskHarness):
 
 class PoseWorkspace(TaskWorkspace):
     """Native start-pose conditions stay distinct from successful upright picks."""
-    pass
+    def consolidate_memory(self, receipts, forgotten=()):
+        return consolidate(receipts, forgotten)
 
 
 def install_isolated():
-    from . import agent, knowledge, object_memory
+    from . import agent, knowledge
     # ObjectMemoryWorkspace has its own bounded/filter-before-top-k path.
     # Both paths must use the same grouping and stable forgetting IDs.
-    knowledge.consolidate = consolidate
-    object_memory.consolidate = consolidate
     knowledge.RECOVERY['grasp_search_exhausted'] = (
         '当前姿态候选未找到完整抓取及原目标放置方案；搜索耗尽不证明物理不可达。保留原目标和失败证据，不能重置后称为本次恢复。')
     knowledge.RECOVERY['unsupported_grasp_geometry'] = (

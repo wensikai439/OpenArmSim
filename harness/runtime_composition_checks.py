@@ -299,6 +299,16 @@ class RuntimeCompositionChecks(unittest.TestCase):
         self.assertIs(instance.forwarded['tamp_planner_factory'],base._tamp_planner_factory_default)
         self.assertIn('environment_factory',instance.forwarded)
 
+    def test_workspace_memory_reducer_is_resolved_per_instance(self):
+        from harness.workspace import Workspace
+        class LocalWorkspace(Workspace):
+            def consolidate_memory(self,receipts,forgotten=()):
+                return [{'id':'local-method','protocol_id':'local-method'}]
+        workspace=LocalWorkspace()
+        self.addCleanup(workspace.db.close)
+        memory=workspace.memory('execute','fixture-epoch')
+        self.assertEqual([row['id'] for row in memory['knowledge']['lessons']],['local-method'])
+
     def test_request_middleware_is_instance_scoped_and_composes_in_order(self):
         class Workspace:
             def __init__(self): self.events=[]

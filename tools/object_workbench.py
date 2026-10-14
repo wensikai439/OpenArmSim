@@ -169,7 +169,7 @@ def build_backend(*, harness_context=True, stable_hold=True, transit_hints=True)
     from harness.object_handover import install_isolated as relay
     from harness.object_transport import install_isolated as transport
     from harness.task_queue import install_isolated as tasks
-    from harness.poses import PoseWorkspace, install_isolated as poses
+    from harness.poses import install_isolated as poses
     from harness.bottle import BottleHarness, install_isolated as bottle, service_factory
     from sim.environment import ROOT
     os.environ.setdefault('OPENARM_POLICY_CONFIG', str(ROOT/'harness/policy.json'))
@@ -241,7 +241,7 @@ def build_backend(*, harness_context=True, stable_hold=True, transit_hints=True)
 def main():
     factory, ActHarness = build_backend()
     from sim.environment import ROOT
-    from harness.poses import PoseWorkspace
+    from harness.bottle import BottleWorkspace
     from tools.source_identity import SourceIdentity
     source_identity = SourceIdentity(ROOT)
     import server as web
@@ -303,7 +303,7 @@ def main():
         server.workbench_status = workbench_status
         server.assert_current_source = source_identity.assert_current
         server.harness = Harness(server.simulation, server.learning,
-            settings=web.ModelSettings(store=web.SecretStore()), workspace=PoseWorkspace(ROOT/'harness/state/objects.sqlite3'))
+            settings=web.ModelSettings(store=web.SecretStore()), workspace=BottleWorkspace(ROOT/'harness/state/objects.sqlite3'))
         from harness.provider import install_isolated as provider
         provider(server.harness)
         print(f'OpenArm · http://127.0.0.1:{port}/ · 按需启动 · 真机未连接', flush=True)
