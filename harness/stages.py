@@ -6,7 +6,6 @@ This subclass is installed BEFORE ACT/intent wrappers so their gates remain.
 """
 import copy
 import json
-from types import SimpleNamespace
 import urllib.request
 
 from .bottle import BottleHarness
@@ -141,9 +140,8 @@ def install_isolated(*, reveal_by_stage=False, live_context=False, focused_conte
     class StageHarness(BottleHarness):
         def chat(self,*args,**kwargs):
             if live_context:
-                from . import agent
-                if getattr(agent.urllib.request,'stage_context_owner',None) is not self:
-                    agent.urllib=SimpleNamespace(request=StageRequests(agent.urllib.request,self,focused_context,bind_atomic),error=agent.urllib.error)
+                if getattr(self.request_transport,'stage_context_owner',None) is not self:
+                    self.request_transport=StageRequests(self.request_transport,self,focused_context,bind_atomic)
             return super().chat(*args,**kwargs)
 
         def current_ledger(self):

@@ -30,7 +30,6 @@ def _run_layer(kind, name, function, *args, **kwargs):
 
 def runtime_composition(harness, simulation):
     """Internal API diagnostic for the concrete process-local wrapper stack."""
-    import harness.agent as agent
     import sim.service as service
 
     def lineage(value, suffix):
@@ -38,7 +37,7 @@ def runtime_composition(harness, simulation):
         return [f'{row.__module__}.{row.__qualname__}' for row in cls.__mro__
                 if row.__name__.endswith(suffix)]
 
-    request_stack=[];layer=agent.urllib.request;seen=set()
+    request_stack=[];layer=harness.request_transport;seen=set()
     while layer is not None and id(layer) not in seen and len(request_stack)<8:
         seen.add(id(layer))
         request_stack.append(f'{type(layer).__module__}.{type(layer).__qualname__}')

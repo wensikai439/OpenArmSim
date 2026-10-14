@@ -132,6 +132,7 @@ class Harness:
         self.learning = learning
         self.settings = settings if settings is not None else ModelSettings()
         self.workspace = workspace if workspace is not None else Workspace()
+        self.request_transport = urllib.request
         self.chat_lock = threading.Lock()
         self.observed = {}
         self.observation_epoch = None
@@ -640,7 +641,7 @@ class Harness:
                 request_tools = tool_router(tools)[0] if callable(tool_router) else tools
                 payload = {'model':settings['model'], 'messages':messages, 'tools':request_tools,
                            'temperature':0, 'parallel_tool_calls':False, 'max_tokens':1600}
-                request = urllib.request.Request(settings['base_url'].rstrip('/') + '/chat/completions',
+                request = self.request_transport.Request(settings['base_url'].rstrip('/') + '/chat/completions',
                     data=json.dumps(payload).encode(), headers={'Authorization':'Bearer '+settings['api_key'], 'Content-Type':'application/json'})
                 event = self.workspace.event(turn, 'api', '调用模型 API',
                     {'model': settings['model'], 'provider': urlsplit(settings['base_url']).hostname,
@@ -649,7 +650,7 @@ class Harness:
                     remaining = deadline - time.monotonic()
                     if remaining <= 0:
                         raise TimeoutError('turn deadline')
-                    with urllib.request.urlopen(request, timeout=min(60, remaining)) as response:
+                    with self.request_transport.urlopen(request, timeout=min(60, remaining)) as response:
                         data = json.loads(response.read(8 * 1024 * 1024))
                         msg = data['choices'][0]['message']
                         if not isinstance(msg, dict):

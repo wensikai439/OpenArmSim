@@ -8,7 +8,6 @@ sensor blocks retain their original meaning. Not a physical verification.
 import copy
 import json
 from collections import Counter
-from types import SimpleNamespace
 import urllib.request
 
 
@@ -101,8 +100,7 @@ class CompactRequests:
 def install_isolated(Harness):
     class CompactHarness(Harness):
         def chat(self,*args,**kwargs):
-            from . import agent
-            if getattr(agent.urllib.request,'context_projection_owner',None) is not self:
-                agent.urllib=SimpleNamespace(request=CompactRequests(agent.urllib.request,self),error=agent.urllib.error)
+            if getattr(self.request_transport,'context_projection_owner',None) is not self:
+                self.request_transport=CompactRequests(self.request_transport,self)
             return super().chat(*args,**kwargs)
     return CompactHarness

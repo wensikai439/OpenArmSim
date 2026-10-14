@@ -7,7 +7,6 @@ No new endpoint, key storage, token budget, retry or robot command is added.
 import json
 import urllib.request
 import urllib.error
-from types import SimpleNamespace
 from urllib.parse import urlsplit
 
 DOCUMENTATION='https://api-docs.deepseek.com/guides/thinking_mode/'
@@ -50,23 +49,23 @@ class CheckedResponse:
 
 
 class CheckedRequests:
-    def __init__(self,notify):self.notify=notify
-    def __getattr__(self,name):return getattr(urllib.request,name)
+    def __init__(self,base,notify,owner):self.base,self.notify,self.provider_owner=base,notify,owner
+    def __getattr__(self,name):return getattr(self.base,name)
     def urlopen(self,request,*args,**kwargs):
         if not isinstance(request,urllib.request.Request) or request.data is None:
-            return urllib.request.urlopen(request,*args,**kwargs)
+            return self.base.urlopen(request,*args,**kwargs)
         adapted,adapter=adapt_request(request)
-        response=urllib.request.urlopen(adapted,*args,**kwargs)
+        response=self.base.urlopen(adapted,*args,**kwargs)
         return CheckedResponse(response,self.notify,adapter)
 
 
 def install_isolated(harness):
-    import harness.agent as agent
     def notify(detail):
         root=harness.active_session
         if root:
             harness.workspace.event(root,'protocol','API 响应检查',detail,
                 'completed' if detail['response_accepted'] else 'error')
-    # Replace this module's urllib binding only. The standard library, other
-    # processes, the main server and ModelSettings' credential flow stay intact.
-    agent.urllib=SimpleNamespace(request=CheckedRequests(notify),error=urllib.error)
+    # Scope interception to this Harness instance; the standard library and
+    # other Harness instances retain their own unwrapped transport.
+    if getattr(harness.request_transport,'provider_owner',None) is not harness:
+        harness.request_transport=CheckedRequests(harness.request_transport,notify,harness)

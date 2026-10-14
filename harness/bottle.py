@@ -2,7 +2,6 @@
 import copy
 import json
 import urllib.request
-from types import SimpleNamespace
 
 from .poses import PoseHarness, consolidate as pose_consolidate
 
@@ -67,9 +66,8 @@ def consolidate_hold(receipts,forgotten=()):
 
 class BottleHarness(PoseHarness):
     def chat(self,*args,**kwargs):
-        from . import agent
-        if getattr(agent.urllib.request,'tool_visibility_owner',None) is not self:
-            agent.urllib=SimpleNamespace(request=VisibleRequests(agent.urllib.request,self),error=agent.urllib.error)
+        if getattr(self.request_transport,'tool_visibility_owner',None) is not self:
+            self.request_transport=VisibleRequests(self.request_transport,self)
         return super().chat(*args,**kwargs)
 
     def tools_for_request(self,tools):
