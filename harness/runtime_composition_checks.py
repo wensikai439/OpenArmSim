@@ -106,6 +106,18 @@ class RuntimeCompositionChecks(unittest.TestCase):
         self.assertIn('chat',Composed.__dict__)
         self.assertEqual(dict(Base.__dict__),before)
 
+    def test_stage_composer_changes_only_the_selected_harness_subclass(self):
+        from harness.bottle import BottleHarness
+        from harness.stages import install_isolated
+        before=dict(BottleHarness.__dict__)
+        Composed=install_isolated(reveal_by_stage=True,live_context=True,
+            focused_context=True,bind_atomic=True)
+        self.assertIsNot(Composed,BottleHarness)
+        self.assertIs(Composed.__mro__[1],BottleHarness)
+        self.assertTrue(callable(Composed.current_ledger))
+        self.assertTrue(callable(Composed.tools_for_request))
+        self.assertEqual(dict(BottleHarness.__dict__),before)
+
     def test_service_default_tamp_router_remains_late_bound(self):
         from sim import service
         original=service.TampPlanner

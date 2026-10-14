@@ -201,7 +201,7 @@ def build_backend(*, harness_context=True, stable_hold=True, transit_hints=True)
         from harness.policy_trace import install_isolated as policy_trace
         factory = _run_layer('factory_layers','harness.policy_trace',policy_trace,factory)
         from harness.stages import install_isolated as stages
-        base = _run_layer('global_layers','harness.stages',stages,
+        base = _run_layer('harness_layers','harness.stages',stages,
             reveal_by_stage=True, live_context=True, focused_context=True, bind_atomic=True)
     ActHarness = _run_layer('global_layers','harness.act_adapter',act,base)
     from harness.intent import install_isolated as intent
