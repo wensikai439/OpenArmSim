@@ -45,6 +45,14 @@ class ObjectGPUHarness(ObjectHarness):
         return super()._invoke(name, args, role, context)
 
 
+def object_gpu_dependencies(kwargs, planner, metadata_provider):
+    """Supply the legacy object backend locally, unless the service selected another one."""
+    result=dict(kwargs)
+    result.setdefault('curobo_planner_factory',planner)
+    result.setdefault('curobo_metadata_provider',metadata_provider)
+    return result
+
+
 def install_isolated():
     import harness.agent as agent
     import harness.knowledge as knowledge
@@ -82,8 +90,10 @@ def service_factory():
     from sim.object_curobo import ObjectCuRoboPlanner, metadata
     import sim.service as service
     base = objects()
-    service.CuRoboPlanner = ObjectCuRoboPlanner; service.curobo_metadata = metadata
     class ObjectGPUService(base):
+        def __init__(self,*args,**kwargs):
+            super().__init__(*args,**object_gpu_dependencies(kwargs,ObjectCuRoboPlanner,metadata))
+
         def call(self, command, **arguments):
             if command == 'tamp' and (arguments.get('parameters') or {}).get('planner') == 'curobo':
                 selected = self.snapshot()['diagnostics']['manipulation_scene']['object_id']

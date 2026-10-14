@@ -185,6 +185,20 @@ class RuntimeCompositionChecks(unittest.TestCase):
             self.assertEqual(instance._curobo_metadata(),{'worker_port':8004})
             fallback.assert_called_once_with()
 
+    def test_object_gpu_defaults_are_scoped_and_explicit_service_backend_wins(self):
+        from harness.object_gpu import object_gpu_dependencies
+        object_planner=object();object_metadata=object()
+        selected_planner=object();selected_metadata=object()
+        original={'sentinel':'kept'}
+        local=object_gpu_dependencies(original,object_planner,object_metadata)
+        self.assertEqual(original,{'sentinel':'kept'})
+        self.assertIs(local['curobo_planner_factory'],object_planner)
+        self.assertIs(local['curobo_metadata_provider'],object_metadata)
+        selected=object_gpu_dependencies({'curobo_planner_factory':selected_planner,
+            'curobo_metadata_provider':selected_metadata},object_planner,object_metadata)
+        self.assertIs(selected['curobo_planner_factory'],selected_planner)
+        self.assertIs(selected['curobo_metadata_provider'],selected_metadata)
+
     def test_request_middleware_is_instance_scoped_and_composes_in_order(self):
         class Workspace:
             def __init__(self): self.events=[]
