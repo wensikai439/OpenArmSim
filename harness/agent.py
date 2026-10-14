@@ -248,6 +248,8 @@ class Harness:
         if name == 'list_skills':
             snapshot = self.service.snapshot()
             data = catalogue(snapshot, snapshot.get('policy_type', 'pi05'))
+            from .skill_registry import reconcile_catalogue
+            data = reconcile_catalogue(data, SKILL_TOOLS, snapshot)
             data['recorded_capabilities'] = self.workspace.capability_profile(role, context=snapshot.get('memory_context'),
                 include_oracle=self.privileged_epoch == snapshot.get('observation_id','').split(':')[0])
             data['experience_scope'] = 'Observed compatible receipts only. Unknown and cancelled exits are not scored successes/failures. Oracle records require explicit privileged recall.'
