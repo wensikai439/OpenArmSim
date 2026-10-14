@@ -208,7 +208,7 @@ def build_backend(*, harness_context=True, stable_hold=True, transit_hints=True)
     Harness = _run_layer('harness_layers','harness.intent',intent,ActHarness)
     if harness_context:
         from harness.policy_route import install_isolated as policy_route
-        Harness = _run_layer('global_layers','harness.policy_route',policy_route,Harness)
+        Harness = _run_layer('harness_layers','harness.policy_route',policy_route,Harness)
         from harness.compact import install_isolated as compact
         Harness = _run_layer('global_layers','harness.compact',compact,Harness)
     if transit_hints:
