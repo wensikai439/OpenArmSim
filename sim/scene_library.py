@@ -126,7 +126,6 @@ def commit_scene(owner, candidate):
 def service_factory(base):
     """Only the physics owner compiles/commits scene changes; failures are atomic."""
     import sim.service as service
-    service.OpenArmEnv = LibraryEnv
     class Commands:
         def __init__(self, original, owner): self.original, self.owner = original, owner
         def put(self, value): return self.original.put(value)
@@ -164,6 +163,12 @@ def service_factory(base):
                     if candidate is not None: candidate.close()
                     future.set_exception(exc)
     class LibraryService(base):
+        def __init__(self,*args,**kwargs):
+            configured=kwargs.get('environment_factory')
+            if configured is not None and configured is not LibraryEnv:
+                raise ValueError('scene-library service requires its registered LibraryEnv')
+            kwargs['environment_factory']=LibraryEnv
+            super().__init__(*args,**kwargs)
         def snapshot(self):
             with self.lock:
                 transition = getattr(self, 'scene_transition', None)
@@ -210,3 +215,18 @@ def service_factory(base):
                     'reason': None if admitted else 'ACT 需匹配本机权重接口并操作瓶子',
                     'scope': 'ACT interface available; candidate scene transfer performance remains experimental'}
     return LibraryService
+
+
+def with_initial_selection(base, selection):
+    """Bind startup object selection to one service class, without replacing OpenArmEnv."""
+    selected=tuple(validate_selection(selection))
+    if getattr(base,'_initial_scene_selection',None)==selected:return base
+    class SelectedSceneService(base):
+        _initial_scene_selection=selected
+        def __init__(self,*args,**kwargs):
+            configured=kwargs.get('initial_scene_selection')
+            if configured is not None and tuple(configured)!=selected:
+                raise ValueError('startup object selection already belongs to this service class')
+            kwargs['initial_scene_selection']=selected
+            super().__init__(*args,**kwargs)
+    return SelectedSceneService

@@ -133,15 +133,9 @@ def build_backend(*, harness_context=True, stable_hold=True, transit_hints=True)
     # owner's existing atomic cold-compile command and fresh-observation gate.
     if 'OPENARM_SCENE_OBJECTS' in os.environ:
         import json
-        import sim.service as native
-        from sim.scene_library import validate_selection
+        from sim.scene_library import validate_selection, with_initial_selection
         selected = validate_selection(json.loads(os.environ['OPENARM_SCENE_OBJECTS']))
-        original_env = native.OpenArmEnv
-        class InitialEnv(original_env):
-            def __init__(self, *, selection=None, **kwargs):
-                super().__init__(selection=selected if selection is None else selection, **kwargs)
-        native.OpenArmEnv = InitialEnv
-        _RUNTIME_TRACE['global_layers'].append('OPENARM_SCENE_OBJECTS→sim.service.OpenArmEnv')
+        factory = _run_layer('factory_layers','OPENARM_SCENE_OBJECTS',with_initial_selection,factory,selected)
     from harness.act_adapter import install_isolated as act
     base = BottleHarness
     if harness_context:

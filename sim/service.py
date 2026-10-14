@@ -76,7 +76,11 @@ def memory_context(manifest, policy_config, robot):
 
 
 class SimulationService:
-    def __init__(self, *, policy_client_factory=None, policy_timing_class=None):
+    def __init__(self, *, environment_factory=None, initial_scene_selection=None,
+                 policy_client_factory=None, policy_timing_class=None):
+        self.environment_factory = OpenArmEnv if environment_factory is None else environment_factory
+        self.initial_scene_selection = (None if initial_scene_selection is None
+            else tuple(initial_scene_selection))
         self.policy_client_factory = policy_client_factory or make_client
         self.policy_timing_class = policy_timing_class or PolicyTiming
         self.commands = queue.Queue()
@@ -255,7 +259,10 @@ class SimulationService:
     def _worker(self):
         self.env = None
         try:
-            self.env = OpenArmEnv(images=False)
+            env_kwargs={'images':False}
+            if self.initial_scene_selection is not None:
+                env_kwargs['selection']=self.initial_scene_selection
+            self.env = self.environment_factory(**env_kwargs)
             self.env.reset(seed=0)
             self.policy_config = None
             self.policy_config_error = None
