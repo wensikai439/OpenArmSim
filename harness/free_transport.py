@@ -1,14 +1,15 @@
 """Isolated empty-scene corridor provider; all occupied routes unchanged."""
 
 
-def install_isolated(factory):
-    import sim.service as service
+def compose_planner(previous):
+    """Compose empty-scene routes without replacing the module default."""
     from sim.free_transport import FreeBottlePick, FreeBottleHandover
     from sim.bottle_routing import ContinuousHoldAudit
     from sim.oriented_grasp import HoldAudit
-    previous = service.TampPlanner
+    if getattr(previous,'FREE_TRANSPORT_ROUTER',False):return previous
 
     class Router:
+        FREE_TRANSPORT_ROUTER=True
         CONTRACT = {**previous.CONTRACT, 'empty_scene_corridors': 'current geometry and robot anchors; native paths'}
 
         def __new__(cls, env, task, **kwargs):
@@ -24,5 +25,12 @@ def install_isolated(factory):
                     return ContinuousHoldAudit(planner, params['hold_seconds']) if 'hold_seconds' in params else planner
             return previous(env, task, **kwargs)
 
-    service.TampPlanner = Router
+    Router.__module__ = __name__
+    return Router
+
+
+def install_isolated(factory):
+    """Compatibility installer for standalone research scripts."""
+    import sim.service as service
+    service.TampPlanner = compose_planner(service.TampPlanner)
     return factory

@@ -1,12 +1,54 @@
 """Audit planner-provider precedence before simplifying the workbench stack."""
 import copy
 import unittest
+from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
 import numpy as np
 
 
 class PlannerStackChecks(unittest.TestCase):
+    def test_free_transport_composer_matches_legacy_router_without_global_patch(self):
+        from harness.free_transport import compose_planner, install_isolated
+        from sim import service
+
+        original=service.TampPlanner
+        pick=Mock(return_value='free-pick')
+        handover=Mock(return_value='free-handover')
+
+        class Base:
+            CONTRACT={'planner':'fixture'}
+            def __new__(cls,env,task,**kwargs):return f'base:{task}'
+
+        def environment(*,occupied=False, upright=True):
+            rotation=np.eye(3)
+            rotation[2,2]=1. if upright else .5
+            return SimpleNamespace(object_id='bottle',bottle_id=0,
+                data=SimpleNamespace(xmat=np.asarray([rotation.reshape(-1)])),
+                registry=({'bottle':{}} if not occupied else {'bottle':{},'can':{}}))
+
+        pick_args={'parameters':{'arm':'left','next_handover':{'to_arm':'right'}}}
+        handover_args={'parameters':{'from_arm':'left','to_arm':'right'}}
+        cases=[(environment(),'pick_bottle',pick_args),
+            (environment(),'handover_object',handover_args),
+            (environment(occupied=True),'pick_bottle',pick_args),
+            (environment(upright=False),'pick_bottle',pick_args)]
+        try:
+            with patch('sim.free_transport.FreeBottlePick',pick), \
+                 patch('sim.free_transport.FreeBottleHandover',handover):
+                service.TampPlanner=Base
+                install_isolated(object())
+                legacy=[service.TampPlanner(env,task,**args) for env,task,args in cases]
+                service.TampPlanner=Base
+                Router=compose_planner(Base)
+                local=[Router(env,task,**args) for env,task,args in cases]
+                self.assertEqual(local,legacy)
+                self.assertEqual(local,['free-pick','free-handover','base:pick_bottle','base:pick_bottle'])
+                self.assertIs(compose_planner(Router),Router)
+                self.assertIs(service.TampPlanner,Base)
+        finally:
+            service.TampPlanner=original
+
     def test_fast_grasp_provider_is_shadowed_by_later_specific_routes(self):
         from harness import agent
         from harness.connected_placement import install_isolated as connected
