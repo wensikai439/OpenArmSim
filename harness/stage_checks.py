@@ -92,6 +92,19 @@ class StageChecks(TestCase):
         names=[t['function']['name'] for t in visible]
         self.assertIn('finish',names);self.assertNotIn('move_to_pose',names);self.assertNotIn('run_tamp',names)
 
+    def test_visual_review_with_redundant_motion_binding_cannot_deadlock_finish(self):
+        for step in self.steps[:4]:step['status']='done'
+        self.steps[-1].update(checkpoint='visual_review',skill='move_to_pose',status='pending')
+        before=copy.deepcopy(self.plan)
+        visible,meta=route_tools(self.tools(),self.plan)
+        names=[item['function']['name'] for item in visible]
+        self.assertIn('finish',names)
+        self.assertNotIn('move_to_pose',names)
+        self.assertTrue(meta['finish_available'])
+        self.assertIsNone(pending_action(self.plan))
+        with self.assertRaises(ValueError):require_next_action(self.plan,'move_to_pose')
+        self.assertEqual(before,self.plan)
+
     def test_initial_model_can_choose_its_own_plan_and_tools(self):
         original=self.tools();visible,meta=route_tools(original,None)
         self.assertEqual(visible,original);self.assertEqual(meta['hidden_tools'],[])

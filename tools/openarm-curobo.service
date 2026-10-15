@@ -2,15 +2,15 @@
 Description=OpenArm local cuRobo planning
 PartOf=openarm-sim.service
 ConditionPathExists=@OPENARMSIM_CUROBO_PRESENT@
-StartLimitIntervalSec=60
-StartLimitBurst=3
+StartLimitIntervalSec=0
 
 [Service]
 Type=simple
 WorkingDirectory=@OPENARMSIM_ROOT@
 ExecStart=@OPENARMSIM_CUROBO_PYTHON@ -B -m sim.curobo_server
 Environment=PYTHONDONTWRITEBYTECODE=1
-Restart=no
+Restart=always
+RestartSec=5
 KillSignal=SIGINT
 TimeoutStopSec=15
 UMask=0077

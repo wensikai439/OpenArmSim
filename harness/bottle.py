@@ -86,9 +86,12 @@ class BottleHarness(PoseHarness):
             and not snapshot.get('diagnostics',{}).get('evaluation',{}).get('invalid'))
         active=(plan.get('turn_id')==self.active_session and self.active_session is not None)
         hide=pristine or active or session.get('actions',0)>0 or session.get('prepared',False)
-        visible=[t for t in tools if not(hide and t['function']['name']=='prepare_simulation')]
+        hidden = {'prepare_simulation'} if hide else set()
+        if active and (plan.get('placement_goal') or {}).get('surface') != 'table':
+            hidden.add('resolve_placement_transit')
+        visible=[t for t in tools if t['function']['name'] not in hidden]
         return visible,{'schema':'observation-tool-visibility/1','hidden_tools':
-            ['prepare_simulation'] if len(visible)!=len(tools) else [],
+            [t['function']['name'] for t in tools if t['function']['name'] in hidden],
             'reason':'already pristine or same active goal; no new task window needed' if hide else 'new user goal in an advanced scene',
             'source':'current native task clock and this root session; no physical state mutation'}
 
@@ -146,7 +149,8 @@ class BottleHarness(PoseHarness):
                 'connected receiver search and checked empty-donor parking. A locked table goal supplies placement lookahead. '
                 'For a planned left→right relay, pick.next_handover.to_arm=right ranks donor grasps before pick. '
                 'handover.hold_seconds requests2–10s actual independent receiver hold after donor parking; every complete native audit window must pass. '
-                'Right→left and the old full bottle demo remain the original routes. '
+                'Parameterized right→left bottle relay checks empty-donor withdrawal after receiver-only hold; '
+                'the old full bottle demonstration keeps its original route. '
                 'New geometric plans default to measured_delay and a bounded120s budget when omitted; the first declared mode/budget remains locked. '
                 'Only fixed native development cases have evidence; no arbitrary actions or physical transfer claim.')
         return result
@@ -165,7 +169,8 @@ def install_isolated():
             f['parameters']['properties']['hold_seconds']={'type':'number','minimum':2,'maximum':10,
                 'description':'Optional actual independent receiver hold; all complete native audit windows checked before the skill returns.'}
             f['description']=('Transfer the currently SELECTED registered object between distinct arms. '
-                'Left→right bottle, box/cylinder use connected geometry search; the right→left bottle demo remains available. '
+                'Left→right bottle, box/cylinder use connected geometry search; parameterized right→left bottle '
+                'includes collision-checked empty-donor withdrawal, while the old full demo remains available. '
                 'Requires actual lifted donor hold and empty receiver. Bottle left→right includes obstacle-derived bypass '
                 'and checked empty-donor parking after native dual contact/release/independent receiver hold. '
                 'A locked table goal adds scratch-only placement lookahead; predictions are not execution or success. '

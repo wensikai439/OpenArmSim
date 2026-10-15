@@ -8,7 +8,7 @@ This is a proposal/compute improvement, not calibrated perception or hardware.
 def compose_planner(previous):
     """Compose the margin provider without replacing the module default."""
     from sim.margin_grasp import MarginBottlePick
-    from sim.fast_handover import FastBottleHandover
+    from sim.fast_handover import FastBottleHandover, ForwardBottleHandover
     from sim.bottle_routing import ContinuousHoldAudit
     from sim.oriented_grasp import HoldAudit
     if getattr(previous, 'MARGIN_GRASP_ROUTER', False):
@@ -24,6 +24,10 @@ def compose_planner(previous):
             params=kwargs.get('parameters') or {}
             upright=env.data.xmat[env.bottle_id].reshape(3,3)[2,2]>=.98
             if env.object_id=='bottle' and upright:
+                if (task == 'handover_bottle' and params.get('from_arm', 'right') == 'right'
+                        and params.get('to_arm', 'left') == 'left'):
+                    planner = ForwardBottleHandover(env, task, **kwargs)
+                    return ContinuousHoldAudit(planner, params['hold_seconds']) if 'hold_seconds' in params else planner
                 if (task=='pick_bottle' and (params.get('bottle_single_arm_placement') is True
                     or params.get('arm')=='left' and params.get('next_handover',{}).get('to_arm')=='right')):
                     planner=MarginBottlePick(env,task,**kwargs)

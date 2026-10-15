@@ -120,6 +120,19 @@ def bind_tamp_planner(base, planner, relocation_planner=None, curobo_planner=Non
     return BoundTampService
 
 
+def bind_relocation_primitives(base, planner):
+    """Composite skills use the same verified native registry as atomic calls."""
+    from sim.tamp import TampPlanner
+    if base.__dict__.get('_bound_primitive_factory') is planner:
+        return base
+    class BoundRelocation(base):
+        _bound_primitive_factory = planner
+        def _skill(self, name, parameters, planner_type=TampPlanner):
+            selected = planner if planner_type is TampPlanner else planner_type
+            return super()._skill(name, parameters, selected)
+    return BoundRelocation
+
+
 def start_gpu(root):
     """Start only this on-demand worker; never replace an existing listener."""
     from sim.cache_curobo import metadata
@@ -232,6 +245,8 @@ def build_backend(*, harness_context=True, stable_hold=True, transit_hints=True)
     if stable_hold:
         from harness.settled_hold import compose_planner as settling
         composed_tamp_planner=_run_layer('planner_layers','harness.settled_hold',settling,composed_tamp_planner)
+    composed_relocation_planner = _run_layer('planner_layers', 'relocation.native_primitives',
+        bind_relocation_primitives, composed_relocation_planner, composed_tamp_planner)
     factory=_run_layer('factory_layers','sim.service.TampPlanner+RelocationPlanner+CuRoboPlanner',bind_tamp_planner,
         factory,composed_tamp_planner,composed_relocation_planner,composed_curobo_planner,cache_metadata)
     _RUNTIME_TRACE['complete']=True
@@ -276,8 +291,7 @@ def main():
             except RuntimeError as exc: self._json(503, {'error': str(exc)})
         def _file(self, path, root):
             if path.resolve() == (ROOT/'ui/index.html').resolve():
-                content = path.read_text().replace('<title>OpenArm Lab</title>', '<title>OpenArm Lab · 多物体开发</title>')
-                content = content.replace('仅仿真 · 真机未连接', '独立开发场景 · 真机未连接')
+                content = path.read_text()
                 content = content.replace('<option value="research">实验与训练</option>', '')
                 return self._send(200, content.encode(), 'text/html; charset=utf-8')
             return super()._file(path, root)

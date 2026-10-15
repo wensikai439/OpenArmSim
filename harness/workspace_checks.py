@@ -18,6 +18,128 @@ SETTINGS = {'model':'test-model','vision':False}
 
 
 class WorkspaceChecks(unittest.TestCase):
+    def test_requested_unsupported_or_absent_object_never_becomes_a_bottle(self):
+        from .intent import extract, require_available_objects
+        clean = {'scene_library': {'selected': []}}
+        with self.assertRaisesRegex(ValueError, '尚未支持 cup'):
+            require_available_objects(extract('左手拿起杯子'), clean)
+        with self.assertRaisesRegex(ValueError, '当前场景没有 block'):
+            require_available_objects(extract('右手抓起方块'), clean)
+        require_available_objects(extract('右手抓起方块'), {'scene_library': {'selected': ['block']}})
+        require_available_objects(extract('左手拿起瓶子'), clean)
+
+    def model_request(self, results, *, code=None, budget=1, deadline=120):
+        from unittest.mock import Mock
+        from urllib.error import HTTPError
+        import urllib.request
+        agent = object.__new__(Harness)
+        agent.workspace = Mock()
+        agent.service = Mock()
+        agent.request_transport = Mock()
+        reply = Mock()
+        reply.__enter__ = Mock(return_value=reply)
+        reply.__exit__ = Mock(return_value=False)
+        reply.read.return_value = json.dumps({'choices': [{'message': {'content': 'ready'}}]}).encode()
+        agent.request_transport.urlopen.side_effect = [HTTPError('https://example.test', x, 'error', {}, None)
+                                                       if isinstance(x, int) else reply for x in results]
+        session = {'llm_calls': budget}
+        clock = [0.]
+        def advance(seconds): clock[0] += seconds
+        with patch('harness.agent.time.monotonic', side_effect=lambda: clock[0]), \
+                patch('harness.agent.time.sleep', side_effect=advance):
+            def run():
+                return agent._model_reply(urllib.request.Request('https://example.test'), deadline=deadline,
+                    turn='task', settings={'model': 'test', 'base_url': 'https://example.test'},
+                    request_number=1, vision=True, session=session)
+            if code is not None:
+                with self.assertRaises(HTTPError) as caught: run()
+                self.assertEqual(caught.exception.code, code)
+            else:
+                self.assertEqual(run(), {'content': 'ready'})
+        agent.service.call.assert_not_called()
+        return agent, session, clock[0]
+
+    def test_transient_http_retry_is_audited_without_robot_tool_replay(self):
+        agent, session, elapsed = self.model_request([503, None])
+        self.assertEqual(agent.request_transport.urlopen.call_count, 2)
+        self.assertEqual(session['api_retries'], 1)
+        self.assertEqual(session['llm_calls'], 1)
+        self.assertAlmostEqual(elapsed, 1.)
+        attempts = [call for call in agent.workspace.event.call_args_list if call.args[1] == 'api']
+        self.assertEqual(len(attempts), 2)
+
+    def test_auth_balance_and_invalid_requests_are_never_retried(self):
+        for code in (400, 401, 402, 403):
+            with self.subTest(code=code):
+                agent, session, _ = self.model_request([code], code=code)
+                self.assertEqual(agent.request_transport.urlopen.call_count, 1)
+                self.assertNotIn('api_retries', session)
+
+    def test_transient_retries_remain_bounded_by_attempts_budget_and_deadline(self):
+        for results, budget, deadline, count in (([503, 503, 503], 1, 120, 3),
+                                                ([503], 32, 120, 1), ([503], 1, .5, 1)):
+            with self.subTest(count=count, budget=budget, deadline=deadline):
+                agent, session, _ = self.model_request(results, code=503, budget=budget, deadline=deadline)
+                self.assertEqual(agent.request_transport.urlopen.call_count, count)
+
+    def test_idle_composite_plan_cannot_match_an_absent_job_id(self):
+        from .bottle import BottleWorkspace
+        from .composite import validate_composite_plan
+        work = BottleWorkspace()
+        try:
+            steps = validate_composite_plan({'steps': [
+                {'id': 'pick', 'title': '抓取', 'checkpoint': 'grasp_confirmed',
+                 'skill': 'relocate', 'subskill': 'pick', 'sub_occurrence': 1}]})
+            work.plan('t', 'episode', 'test-model', steps)
+            state = LocalState().snapshot()
+            state['job'] = None
+            plan = work.plan_status(state)
+            self.assertEqual(plan['steps'][0]['status'], 'pending')
+            self.assertIsNone(plan['execution_id'])
+        finally:
+            work.db.close()
+
+    def test_orphan_wait_cleanup_requires_this_request_and_no_native_job(self):
+        from unittest.mock import Mock
+        agent = object.__new__(Harness)
+        snapshot = {'state': 'running', 'job': None,
+                    'decision_timing': {'root': 'task-a', 'request_id': 3}}
+        agent.service = Mock()
+        agent.service.snapshot.return_value = snapshot
+        agent._release_orphan_decision('task-b', 3)
+        agent._release_orphan_decision('task-a', 2)
+        agent.service.call.assert_not_called()
+        agent._release_orphan_decision('task-a', 3)
+        self.assertEqual(agent.service.call.call_args_list[0].args, ('stop',))
+        agent.service.call.assert_called_with('end_decision', root='task-a', request_id=3)
+        agent.service.call.reset_mock()
+        snapshot['job'] = {'execution_id': 'native-motion'}
+        agent._release_orphan_decision('task-a', 3)
+        agent.service.call.assert_not_called()
+
+    def test_deployed_bottle_workspace_preserves_native_request_contract(self):
+        from .bottle import BottleWorkspace
+        work = BottleWorkspace()
+        try:
+            turn = work.start('execute', 'episode', '移动右手', SETTINGS)
+            work.plan(turn, 'episode', 'test-model', [
+                {'id': 'move', 'title': '移动右手', 'checkpoint': 'motion_reached', 'skill': 'move_to_pose'}])
+            contract = {'task_id': 'demo-task', 'root_execution_id': turn, 'epoch': 'episode',
+                        'observation_id': 'episode:0', 'backend_id': 'curobo',
+                        'target': {'arm': 'right', 'position_m': [.35, -.4, 1.2]}}
+            work.bind(turn, 'move-1', 'execute', '移动右手', 'move_to_pose', 'move_to_pose',
+                      'test-model', request_contract=contract)
+            contract['target']['position_m'][0] = 99
+            row = work.db.execute('SELECT request_contract,task_id FROM episodes WHERE id=?', ('move-1',)).fetchone()
+            stored = json.loads(row['request_contract'])
+            self.assertEqual(row['task_id'], 'demo-task')
+            self.assertEqual(stored['observation_id'], 'episode:0')
+            self.assertEqual(stored['target']['position_m'], [.35, -.4, 1.2])
+            self.assertEqual(work.active_plan['stage_bindings']['move'], 'move-1')
+            self.assertEqual(work.active_plan['execution_tools'][0]['request_contract'], stored)
+        finally:
+            work.db.close()
+
     def test_read_only_batch_is_sequenced_and_mutation_batch_never_runs(self):
         def call(name,args,ident):
             return {'id':ident,'type':'function','function':{'name':name,'arguments':json.dumps(args)}}

@@ -91,8 +91,9 @@ def child_receipt(step,feedback):
 
 
 class CompositeWorkspace(BaseWorkspace):
-    def bind(self,turn,execution_id,role,goal,tool,task,model,context=None):
-        super().bind(turn,execution_id,role,goal,tool,task,model,context)
+    def bind(self,turn,execution_id,role,goal,tool,task,model,context=None,request_contract=None):
+        super().bind(turn,execution_id,role,goal,tool,task,model,context,
+                     request_contract=request_contract)
         if tool!='relocate':return
         with self.lock:
             plan=self.active_plan
@@ -121,7 +122,7 @@ class CompositeWorkspace(BaseWorkspace):
     def plan_status(self,snapshot):
         plan=super().plan_status(snapshot)
         job=snapshot.get('job') or {}
-        if not plan or job.get('execution_id')!=plan.get('execution_id'):return plan
+        if not plan or not job.get('execution_id') or job.get('execution_id')!=plan.get('execution_id'):return plan
         feedback={'substeps':job.get('completed_substeps',[])}
         active=False
         for step in plan['steps']:

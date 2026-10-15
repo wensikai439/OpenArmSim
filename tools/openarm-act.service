@@ -2,8 +2,7 @@
 Description=OpenArm local ACT inference
 PartOf=openarm-sim.service
 ConditionPathExists=@OPENARMSIM_ACT_CHECKPOINT@
-StartLimitIntervalSec=60
-StartLimitBurst=3
+StartLimitIntervalSec=0
 
 [Service]
 Type=simple
@@ -11,7 +10,8 @@ WorkingDirectory=@OPENARMSIM_ROOT@
 ExecStart=%h/xunlian/LeberoAct/spatial/env/lerobot/bin/python -B -m sim.act_server
 Environment=PYTHONPATH=%h/xunlian/LeberoAct/spatial/repos/lerobot/src
 Environment=PYTHONDONTWRITEBYTECODE=1
-Restart=no
+Restart=always
+RestartSec=5
 KillSignal=SIGINT
 TimeoutStopSec=15
 UMask=0077

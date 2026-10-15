@@ -462,11 +462,15 @@ class TampPlanner:
         self._phase('retreat');self._arm('right');self._sync();point,_=self._pose()
         # Retreat toward the donor's original workspace. Pulling straight back
         # at this height traps the elbow against the torso.
-        yield from self._move(point+np.array([.04,-.10,-.08]))
+        yield from self._retreat_after_forward_handover(point)
         if not self.env._left_held or not self.env.evaluation['held']['left']:
             raise PlanningFailure('handover_not_confirmed','右手撤离后未确认左手单独持瓶')
         self.result.update(from_arm='right',to_arm='left',held_by='left',
                            verification_source='native_receiver_contact_then_donor_release')
+
+    def _retreat_after_forward_handover(self, point):
+        """Original fixed-demo donor withdrawal, preserved by default."""
+        yield from self._move(point+np.array([.04,-.10,-.08]))
 
     def _reverse_handover(self):
         donor,receiver=self.donor,self.receiver

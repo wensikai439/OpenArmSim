@@ -204,6 +204,22 @@ def check_action(contract, state, action):
             '；不能换手/换交接方向来替代。可以按新观测更换路径或抓取姿态；本次提议未启动运动')
 
 
+def require_available_objects(contract, snapshot):
+    """An unsupported or absent requested operand cannot become another item."""
+    from .objects import IDS
+    requested = {row['object_id'] for row in contract['requirements']}
+    unsupported = requested - set(IDS)
+    if unsupported:
+        raise ValueError('当前抓放技能尚未支持 '+', '.join(sorted(unsupported))+
+                         '；不能用瓶子或其他物品替代，未启动运动')
+    library = snapshot.get('scene_library')
+    if isinstance(library, dict) and isinstance(library.get('selected'), list):
+        missing = requested - {'bottle'} - set(library['selected'])
+        if missing:
+            raise ValueError('当前场景没有 '+', '.join(sorted(missing))+
+                             '；请先添加对应物品，不能换成其他物品，未启动运动')
+
+
 def proposed_events(name, args):
     if name in ('pick', 'handover', 'place'):
         return [{'skill': name, **{k:args[k] for k in ('object_id', 'arm', 'from_arm', 'to_arm') if k in args}}]
@@ -254,6 +270,9 @@ def install_isolated(base):
             pair = self._intent(context) if role == 'execute' else None
             if pair:
                 root, contract = pair; records = self._role_records(root); state = progress(contract, records)
+                if contract['requirements'] and (name == 'set_plan' or proposed_events(name, args)):
+                    optional_objects = any(r['object_id'] != 'bottle' for r in contract['requirements'])
+                    require_available_objects(contract, self.service.snapshot() if optional_objects else {})
                 preview = copy.deepcopy(state)
                 for event in proposed_events(name, args):
                     check_action(contract, preview, event)

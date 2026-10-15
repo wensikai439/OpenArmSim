@@ -22,11 +22,15 @@ export function createSceneUI({api,toast}){
   function cards(){
     $('scene-items').replaceChildren(...latest.items.map(item=>{
       const card=document.createElement('button');card.type='button';card.className='scene-item';
-      card.setAttribute('aria-label',item.label);card.setAttribute('aria-pressed',String(draft.has(item.object_id)));
-      const drawing=icon(item.icon),name=document.createElement('strong'),description=document.createElement('small');
+      const supported=item.manipulation==='registered';
+      card.dataset.manipulation=supported?'tamp-pick-place':'scene-only';
+      card.setAttribute('aria-label',`${item.label}，${supported?'TAMP 抓取与放置':'仅加入仿真场景'}`);
+      card.setAttribute('aria-pressed',String(draft.has(item.object_id)));
+      const drawing=icon(item.icon),name=document.createElement('strong'),description=document.createElement('small'),capability=document.createElement('span');
       name.textContent=item.label;description.textContent=item.description;
+      capability.className='scene-capability';capability.textContent=supported?'TAMP 抓放':'仅场景';
       const check=document.createElement('span');check.className='scene-check';check.textContent='✓';check.setAttribute('aria-hidden','true');
-      card.append(drawing,name,description,check);card.disabled=busy||!latest.editable;
+      card.append(drawing,name,description,capability,check);card.disabled=busy||!latest.editable;
       card.addEventListener('click',()=>{draft.has(item.object_id)?draft.delete(item.object_id):draft.add(item.object_id);card.setAttribute('aria-pressed',String(draft.has(item.object_id)));update();});
       return card;
     }));update();

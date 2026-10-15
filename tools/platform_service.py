@@ -11,6 +11,11 @@ import time
 import urllib.error
 import urllib.request
 
+try:
+    from .source_identity import fingerprint
+except ImportError:
+    from source_identity import fingerprint
+
 ROOT = Path(__file__).resolve().parents[1]
 UNIT = 'openarm-sim.service'
 SOURCE = ROOT / 'tools' / UNIT
@@ -94,19 +99,48 @@ def health_json():
         return json.load(response)
 
 
+def current_source(health):
+    if health.get('source_current', True) is not True:
+        return False
+    revision = health.get('source_revision_sha256')
+    return revision is None or revision == fingerprint(ROOT)[0]
+
+
 def ready():
     try:
         status = health_json()
         return (status.get('state') in {'ready', 'running'}
                 and status.get('backend') == 'native-mujoco'
-                and status.get('source_current', True) is True)
+                and current_source(status))
     except (OSError, urllib.error.URLError, ValueError):
         return False
 
 
+def synchronize_service(active):
+    """Reload changed code only when no live task owns the simulation."""
+    if active and not current_source(health_json()):
+        try:
+            status = status_json()
+        except urllib.error.HTTPError as error:
+            if error.code < 500:
+                raise
+            health = health_json()
+            required = ('task_active', 'agent_busy', 'learning_active')
+            if any(health.get(key) is not False for key in required):
+                raise RuntimeError('状态接口异常，且无法确认所有任务已结束；未重启。') from None
+            status = {}
+        if (status.get('job') or (status.get('agent') or {}).get('busy')
+                or (status.get('learning_job') or {}).get('running')
+                or status.get('decision_wait')):
+            raise RuntimeError('当前任务仍在运行，未重启；请等待完成后再同步服务版本。')
+        systemctl('restart', UNIT)
+    else:
+        systemctl('start', UNIT)
+
+
 def main():
-    parser = argparse.ArgumentParser(description='按需启动、停止或查看 OpenArm 平台服务')
-    parser.add_argument('command', choices=['start', 'stop', 'status', 'logs'])
+    parser = argparse.ArgumentParser(description='启动、持续运行、停止或查看 OpenArm 平台服务')
+    parser.add_argument('command', choices=['start', 'keep', 'stop', 'status', 'logs'])
     args = parser.parse_args()
     if args.command == 'logs':
         return subprocess.call(['journalctl', '--user', '-u', UNIT, '-n', '50', '--no-pager'])
@@ -127,7 +161,7 @@ def main():
         if workers.get('curobo', {}).get('reason'):
             print(f'cuRobo：{workers["curobo"]["reason"]}')
         return 0 if active.returncode == 0 and is_ready else 1
-    if args.command == 'start':
+    if args.command in {'start', 'keep'}:
         overrides = [name for name in ('OPENARM_POLICY_CONFIG', 'OPENARM_LLM_BASE', 'OPENARM_LLM_MODEL',
                                        'OPENARM_LLM_KEY', 'OPENARM_LLM_VISION', 'CUDA_VISIBLE_DEVICES')
                      if name in os.environ]
@@ -135,8 +169,8 @@ def main():
             raise RuntimeError('持久服务不继承终端的模型/渲染环境设置。此类启动请使用 ./run serve；API 可在页面保存。')
     install()
     if args.command == 'stop':
-        systemctl('stop', UNIT)
-        print('平台已停止，睡眠保护已释放。')
+        systemctl('disable', '--now', UNIT)
+        print('平台已停止，自动启动与睡眠保护已释放。')
         return 0
     if os.environ.get('OPENARM_PORT', '8767') != '8767':
         raise RuntimeError('工作台服务固定使用 8767；旧版入口可用 OPENARM_PORT=端口 ./run serve。')
@@ -144,12 +178,16 @@ def main():
     if not active and ready():
         raise RuntimeError('已有前台服务占用 8767；请先结束该服务，再使用 ./run 启动持久服务。')
     systemctl('reset-failed', UNIT, 'openarm-act.service', 'openarm-curobo.service', check=False)
-    systemctl('start', UNIT)
+    synchronize_service(active)
+    if args.command == 'keep':
+        systemctl('enable', UNIT)
     deadline = time.monotonic() + 25
     while time.monotonic() < deadline:
         if ready():
             print(f'OpenArm Lab: {URL}/')
-            print('持久服务已就绪；运行期间保持系统清醒。停止：./run stop；状态：./run status')
+            print('持续运行已启用，登录/重启后恢复。' if args.command == 'keep'
+                  else '持久服务已就绪；运行期间保持系统清醒。')
+            print('停止：./run stop；状态：./run status')
             return 0
         state = systemctl('is-active', UNIT, check=False, capture=True).stdout.strip()
         if state not in {'active', 'activating'}:

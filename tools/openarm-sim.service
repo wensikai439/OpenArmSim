@@ -1,7 +1,6 @@
 [Unit]
 Description=OpenArm Lab local simulation
-StartLimitIntervalSec=60
-StartLimitBurst=3
+StartLimitIntervalSec=0
 Wants=openarm-act.service openarm-curobo.service
 
 [Service]
@@ -11,9 +10,13 @@ ExecStart=/usr/bin/systemd-inhibit --what=sleep --mode=block --who=OpenArmSim "-
 Environment=MUJOCO_GL=egl
 Environment=PYTHONDONTWRITEBYTECODE=1
 Environment=OPENARM_POLICY_CONFIG=@OPENARMSIM_POLICY@
-Restart=on-failure
-RestartSec=3
+Environment=OPENARM_SCENE_OBJECTS=[]
+Restart=always
+RestartSec=5
 KillSignal=SIGINT
 TimeoutStopSec=20
 UMask=0077
 NoNewPrivileges=true
+
+[Install]
+WantedBy=default.target

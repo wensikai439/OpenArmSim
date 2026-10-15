@@ -74,6 +74,10 @@ class Handler(BaseHTTPRequestHandler):
                     'backend': 'native-mujoco',
                     'task': snapshot.get('task'),
                     'task_active': snapshot.get('state') == 'running' or bool(snapshot.get('job')),
+                    'agent_busy': (self.server.harness.chat_lock.locked()
+                                   or bool(self.server.harness.pending_operations)
+                                   or bool(self.server.harness.pending_review)),
+                    'learning_active': bool(self.server.learning.busy),
                     'policy_ready': bool(policy.get('ready')),
                     'policy_reason': policy.get('reason'),
                     'curobo_ready': bool(curobo.get('ready')),

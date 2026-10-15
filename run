@@ -11,7 +11,7 @@ if [ "$#" -eq 0 ]; then
   set -- start
 fi
 case "$1" in
-  start|stop|status|logs)
+  start|keep|stop|status|logs)
     exec .venv/bin/python -B tools/platform_service.py "$@"
     ;;
   serve)

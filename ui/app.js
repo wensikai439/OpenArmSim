@@ -1,6 +1,14 @@
 import {createAgentUI} from './agent.js?v=platform-24';
 import {createSceneUI} from './scene.js?v=platform-25';
 const $ = (id) => document.getElementById(id);
+document.querySelectorAll('[data-demo-prompt]').forEach(button => {
+  button.addEventListener('click', () => {
+    const input = $('chat-input');
+    input.value = button.dataset.demoPrompt;
+    input.dispatchEvent(new Event('input', {bubbles:true}));
+    input.focus();
+  });
+});
 const labels = {operator:'正面观察',overview:'全景',head:'头部 · 模型相机',left:'左腕 · 模型相机',right:'右腕 · 模型相机'};
 const statusLabels = {success:'仿真任务成功',primitive_completed:'技能执行完成 · 完整目标另行复查',invalid:'物理状态异常',cancelled:'已停止',error:'执行失败',reference_exhausted:'轨迹已播完，任务未成功',budget_exhausted:'步数预算耗尽，任务未成功',truncated:'达到时长上限'};
 let state, camera='operator', imageToken='', sensorToken='', frames=[], frameIndex=0, shownRun='', toastTimer;

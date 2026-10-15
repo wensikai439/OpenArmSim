@@ -9,6 +9,7 @@ import base64
 import copy
 import hashlib
 import json
+import logging
 import os
 import threading
 import time
@@ -41,13 +42,14 @@ EXECUTION_TOOLS = [
            {'observation_id':{'type':'string'},'mode':{'type':'string','enum':['preserve','reset']}},['observation_id','mode']),
     schema('set_plan', 'Publish your own concise Chinese task stages BEFORE starting a robot tool. Select 1-8 meaningful stages for the user request, not a fixed template. Each checkpoint is independently verified; you cannot mark stages complete. basket means the bottle is stable in the basket; visual_review is your later camera assessment. Do not plan unsupported actions.',
            {'observation_id': {'type':'string'}, 'placement_goal':PLACEMENT_SCHEMA,
-            'time_budget_s':{'type':'integer','enum':[40,60,90,120],'description':'Optional generic TAMP horizon, declared once before ANY motion. Default 40; complex recovery may need 60 or 90. Never extend it after an attempt. Learned policies and the legacy benchmark retain 40 seconds.'},
+            'time_budget_s':{'type':'integer','enum':[40,60,90,120],'description':'Optional generic TAMP horizon, declared once before ANY motion. Measured-delay geometric tasks default to 120 seconds, including API waits and final review; omit unless the user requests another supported deadline. Never extend after an attempt. Learned policies and the legacy benchmark retain 40 seconds.'},
             'timing_mode':{'type':'string','enum':['paused','measured_delay'],'description':'Declared on the FIRST plan only. paused is an action-only diagnostic baseline. measured_delay includes later LLM API waits AND native TAMP/cuRobo computation by holding the prior target before dispatch; stale paths are rejected and waits consume the task budget. Initial LLM planning before this declaration is excluded. VLA keeps its own timing contract.'},
             'steps': {'type':'array', 'minItems':1, 'maxItems':8,
             'items': {'type':'object','properties':{'id':{'type':'string'},'title':{'type':'string'},
                       'checkpoint':{'type':'string','enum':list(CHECKPOINTS),
                         'description':'Exact evidence meaning: observation=fresh images/state; right_grasp=right fingers hold bottle; right_lift=right lifts bottle; handover=both hands contact during transfer; left_grasp=left alone holds after right opens; left_release_at_basket=LEFT hand opens over basket (never right-hand opening); basket=bottle stably inside basket; tool_completed=tool exit only; motion_reached=robot FK confirms requested pose; grasp_confirmed=this pick has two-finger hold and lift; handover_confirmed=this transfer ends with receiver-only hold. These require skill binding. visual_review=model camera verdict. Title must describe that checkpoint.'},
-                      'skill':{'type':'string','enum':['pick','handover','place','relocate','move_to_pose','move_relative','run_policy','set_gripper']},
+                      'skill':{'type':'string','enum':['pick','handover','place','relocate','move_to_pose','move_relative','run_policy','set_gripper'],
+                               'description':'Bind robot motion checkpoints to their actual skill. Omit skill and occurrence for visual_review: that stage uses observe then finish, not motion.'},
                       'occurrence':{'type':'integer','minimum':1,'maximum':8,'description':'1-based occurrence of this skill in this task; bind repeated motion checkpoints separately.'}},
                       'required':['id','title','checkpoint'],'additionalProperties':False}}}, ['observation_id','steps']),
     schema('run_tamp', 'Start bounded TAMP in SIMULATION with fresh observation. Uses simulator scene truth: privileged oracle baseline, not visual perception or transfer validation. reach_bottle approaches; pick_bottle grasps/lifts; handover_bottle requires right-held bottle; place_bottle requires verified left hold after handover; handover_to_basket runs the full task from the initial table scene. Preconditions and contact checks can reject execution. Return running status, then wait for feedback.',
@@ -519,6 +521,8 @@ class Harness:
         if not self.chat_lock.acquire(blocking=False):
             raise ValueError("上一条智能体请求仍在处理中")
         turn = None
+        root = None
+        session = None
         try:
             epoch = self.service.snapshot().get('observation_id', '').split(':')[0]
             turn = self.workspace.start(role, epoch, prompt, settings, review, parent)
@@ -560,7 +564,7 @@ class Harness:
                       "Do not finish merely because the NEXT requested action has not been executed. Continue the same user goal until all requested actions have verified receipts, or an actual recorded failure prevents continuation. Camera uncertainty may affect your final visual verdict, but does not justify skipping an available planned robot tool. "
                       "Each skill runs asynchronously; execution completion resumes this same goal automatically. Do not treat one skill as the complete goal. "
                       "Before the first motion call set_plan. On continuation the existing root plan remains active; don't replace it unless recovery changes the plan. "
-                      "For generic TAMP tasks choose time_budget_s=40,60,90 or120 on the FIRST plan, considering recovery and several skills. Default is40. The budget is locked before motion; it cannot be extended after a failed attempt. Learned policies and the fixed legacy benchmark use40. Read observation.task_window for remaining time. "
+                      "New generic geometric tasks default to measured_delay and 120 seconds, including API requests, all motions, recovery and final review. Omit time_budget_s unless the user requests a supported 40/60/90/120-second limit. The first declared budget is locked before motion and cannot be extended after an attempt. Learned policies and the fixed legacy benchmark keep their own 40-second contract. Read observation.task_window for remaining time. "
                       "TAMP uses simulator truth, an oracle baseline. Do not claim it is visual perception or that a single pick completes the full task. "
                       "The system is uncalibrated for real transfer. Independent full-task scores are not supplied. "
                       "Do not invoke TAMP or the policy unless the user asks for simulation task execution. "
@@ -631,41 +635,27 @@ class Harness:
             for index in range(8):
                 if session.get('cancelled'):
                     return reply('任务已停止，未继续调用动作。', calls, 'cancelled')
-                if session['llm_calls'] >= 32:
+                if session['llm_calls'] + session.get('api_retries', 0) >= 32:
                     return reply('本任务已到达 32 次模型调用预算，已停止继续动作。', calls, 'budget_exhausted')
                 session['llm_calls'] += 1
                 capture_snapshot=self.service.snapshot() if role=='execute' else None
                 wait_started=False;wait_receipt=None;wait_observation=None;wait_images=None
-                if role=='execute' and not review and session.get('timing_mode')=='measured_delay' and not capture_snapshot['observation'].get('episode_finished'):
-                    self.service.call('begin_decision',root=root,request_id=session['llm_calls'],observation_id=capture_snapshot['observation_id'])
-                    wait_started=True
                 tool_router = getattr(self, 'tools_for_request', None)
                 request_tools = tool_router(tools)[0] if callable(tool_router) else tools
                 payload = {'model':settings['model'], 'messages':messages, 'tools':request_tools,
                            'temperature':0, 'parallel_tool_calls':False, 'max_tokens':1600}
                 request = self.request_transport.Request(settings['base_url'].rstrip('/') + '/chat/completions',
                     data=json.dumps(payload).encode(), headers={'Authorization':'Bearer '+settings['api_key'], 'Content-Type':'application/json'})
-                event = self.workspace.event(turn, 'api', '调用模型 API',
-                    {'model': settings['model'], 'provider': urlsplit(settings['base_url']).hostname,
-                     'request_number': index + 1, 'input': '图像与文字' if vision else '文字'})
+                # Validate the model packet before starting a measured wait;
+                # a local tool/schema failure must not leave physics waiting.
+                if role=='execute' and not review and session.get('timing_mode')=='measured_delay' and not capture_snapshot['observation'].get('episode_finished'):
+                    self.service.call('begin_decision',root=root,request_id=session['llm_calls'],observation_id=capture_snapshot['observation_id'])
+                    wait_started=True
                 try:
-                    remaining = deadline - time.monotonic()
-                    if remaining <= 0:
-                        raise TimeoutError('turn deadline')
-                    with self.request_transport.urlopen(request, timeout=min(60, remaining)) as response:
-                        data = json.loads(response.read(8 * 1024 * 1024))
-                        msg = data['choices'][0]['message']
-                        if not isinstance(msg, dict):
-                            raise ValueError('invalid message')
-                    usage = {k:v for k,v in (data.get('usage') or {}).items()
-                             if k in {'prompt_tokens','completion_tokens','total_tokens','prompt_cache_hit_tokens',
-                                      'prompt_cache_miss_tokens','cache_read_input_tokens','cache_creation_input_tokens'} and type(v) is int}
-                    self.workspace.end_event(event, {'model': settings['model'], 'request_number': index+1,
-                        'response_model': data.get('model'), 'usage': usage,
-                        'tool_names': [c.get('function',{}).get('name') for c in msg.get('tool_calls',[])]})
+                    msg = self._model_reply(request, deadline=deadline, turn=turn, settings=settings,
+                                            request_number=index + 1, vision=vision, session=session)
                 except Exception as exc:
                     reason = f'HTTP {exc.code}' if isinstance(exc, urllib.error.HTTPError) else '请求超时或响应格式错误' if isinstance(exc, (TimeoutError,ValueError,KeyError)) else '网络连接失败'
-                    self.workspace.end_event(event, {'model':settings['model'],'error':reason}, 'error')
                     raise RuntimeError('模型 API 请求失败（'+reason+'）；没有切换为脚本执行。') from None
                 finally:
                     if wait_started:
@@ -849,9 +839,67 @@ class Harness:
                 self.workspace.finish(turn, str(exc), 'error')
             raise
         finally:
+            if root and session:
+                try:
+                    receipt = self._release_orphan_decision(root, session.get('llm_calls'))
+                    if receipt is not None:
+                        self.workspace.event(turn, 'timing', '异常请求等待已清理', receipt, 'error')
+                except Exception as cleanup_error:
+                    logging.getLogger(__name__).error('Decision cleanup failed: %s', type(cleanup_error).__name__)
             self.workspace.busy = False
             self.workspace.revision += 1
             self.chat_lock.release()
+
+    def _model_reply(self, request, *, deadline, turn, settings, request_number, vision, session):
+        """Retry only rejected transient HTTP requests; never replay a tool."""
+        for attempt in range(3):
+            remaining = deadline - time.monotonic()
+            if remaining <= 0 or session.get('cancelled'):
+                raise TimeoutError('turn deadline or cancellation')
+            event = self.workspace.event(turn, 'api', '调用模型 API',
+                {'model': settings['model'], 'provider': urlsplit(settings['base_url']).hostname,
+                 'request_number': request_number, 'attempt': attempt + 1,
+                 'input': '图像与文字' if vision else '文字'})
+            try:
+                with self.request_transport.urlopen(request, timeout=min(60, remaining)) as response:
+                    data = json.loads(response.read(8 * 1024 * 1024))
+                    msg = data['choices'][0]['message']
+                    if not isinstance(msg, dict):
+                        raise ValueError('invalid message')
+                usage = {k:v for k,v in (data.get('usage') or {}).items()
+                         if k in {'prompt_tokens','completion_tokens','total_tokens','prompt_cache_hit_tokens',
+                                  'prompt_cache_miss_tokens','cache_read_input_tokens','cache_creation_input_tokens'} and type(v) is int}
+                self.workspace.end_event(event, {'model': settings['model'], 'request_number': request_number,
+                    'attempt': attempt + 1, 'response_model': data.get('model'), 'usage': usage,
+                    'tool_names': [c.get('function',{}).get('name') for c in msg.get('tool_calls',[])]})
+                return msg
+            except Exception as exc:
+                reason = f'HTTP {exc.code}' if isinstance(exc, urllib.error.HTTPError) else type(exc).__name__
+                self.workspace.end_event(event, {'model': settings['model'], 'error': reason,
+                                                'attempt': attempt + 1}, 'error')
+                retry = (isinstance(exc, urllib.error.HTTPError) and exc.code in {429, 502, 503, 504}
+                         and attempt < 2 and session['llm_calls'] + session.get('api_retries', 0) < 32
+                         and not session.get('cancelled'))
+                delay = 1.0 * (attempt + 1)
+                if not retry or deadline - time.monotonic() <= delay:
+                    raise
+                exc.close()
+                session['api_retries'] = session.get('api_retries', 0) + 1
+                self.workspace.event(turn, 'protocol', 'API 短暂错误重试',
+                    {'http_status': exc.code, 'delay_seconds': delay, 'next_attempt': attempt + 2,
+                     'scope': 'same inference request only; no tool or robot action replayed'}, 'completed')
+                until = time.monotonic() + delay
+                while time.monotonic() < until and not session.get('cancelled'):
+                    time.sleep(min(.1, max(0., until - time.monotonic())))
+
+    def _release_orphan_decision(self, root, request_id):
+        snapshot = self.service.snapshot()
+        timing = snapshot.get('decision_timing') or {}
+        if (snapshot.get('state') == 'running' and not snapshot.get('job')
+                and timing.get('root') == root and timing.get('request_id') == request_id):
+            self.service.call('stop')
+            return self.service.call('end_decision', root=root, request_id=request_id)
+        return None
 
     def _remember(self, role, prompt, answer):
         self.history[role].extend([{"role": "user", "content": prompt}, {"role": "assistant", "content": answer}])
