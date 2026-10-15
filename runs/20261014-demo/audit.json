@@ -1,0 +1,70 @@
+{
+  "created_utc": "2026-10-15T02:33:03.846181+00:00",
+  "passed": true,
+  "checks": {
+    "native_mujoco": true,
+    "ready": true,
+    "source_current": true,
+    "no_live_tasks": true,
+    "default_bottle_basket_only": true,
+    "fresh_scene": true,
+    "saved_api": true,
+    "services_active": true,
+    "auto_start_enabled": true,
+    "linger_enabled": true,
+    "sleep_inhibited": true,
+    "parameterized_motion_tools": true,
+    "full_regression": true
+  },
+  "url": "http://127.0.0.1:8767/",
+  "source_revision": "077d304b2ce5bb1343aa13683878ceb522e9fcb17e4fbe8ec82be8378d6ac37b",
+  "code_commit": "27b52625f81ab95a21d41c8d3630fb994a38e6f6",
+  "model": {
+    "configured": true,
+    "model": "deepseek-flash",
+    "vision": true
+  },
+  "services": {
+    "openarm-sim.service": {
+      "exit_code": 0,
+      "text": "MainPID=28151\nNRestarts=0\nActiveState=active\nSubState=running\nActiveEnterTimestamp=Thu 2026-10-15 10:25:22 CST"
+    },
+    "openarm-act.service": {
+      "exit_code": 0,
+      "text": "MainPID=28215\nNRestarts=0\nActiveState=active\nSubState=running\nActiveEnterTimestamp=Thu 2026-10-15 10:25:23 CST"
+    },
+    "openarm-curobo.service": {
+      "exit_code": 0,
+      "text": "MainPID=28172\nNRestarts=0\nActiveState=active\nSubState=running\nActiveEnterTimestamp=Thu 2026-10-15 10:25:22 CST"
+    }
+  },
+  "enabled": {
+    "exit_code": 0,
+    "text": "enabled"
+  },
+  "linger": {
+    "exit_code": 0,
+    "text": "yes"
+  },
+  "sleep_guard": {
+    "exit_code": 0,
+    "text": "WHO                          UID  USER PID   COMM            WHAT                                                     WHY                                                       MODE\nModemManager                 0    root 1243  ModemManager    sleep                                                    ModemManager needs to reset devices                       delay\nNetworkManager               0    root 1033  NetworkManager  sleep                                                    NetworkManager needs to turn off networks                 delay\nUPower                       0    root 1964  upowerd         sleep                                                    Pause device polling                                      delay\nUnattended Upgrades Shutdown 0    root 1441  unattended-upgr shutdown                                                 Stop ongoing upgrades or perform upgrades before shutdown delay\nGNOME Shell                  1000 wsk  2878  gnome-shell     sleep                                                    GNOME 需要锁定屏幕                                        delay\nOpenArmSim                   1000 wsk  28151 systemd-inhibit sleep                                                    OpenArm simulation and experiments are running            block\nclaude-desktop               1000 wsk  4821  claude-desktop  sleep                                                    Application cleanup before suspend                        delay\nwsk                          1000 wsk  3019  gsd-media-keys  handle-power-key:handle-suspend-key:handle-hibernate-key GNOME handling keypresses                                 block\nwsk                          1000 wsk  3019  gsd-media-keys  sleep                                                    GNOME handling keypresses                                 delay\nwsk                          1000 wsk  3020  gsd-power       sleep                                                    GNOME needs to lock the screen                            delay\n\n10 inhibitors listed."
+  },
+  "boot_id": "5fa41642-f15d-416f-a28d-5205e43adbcd",
+  "regression": {
+    "tests": 334,
+    "seconds": 66.55,
+    "log": "checks-final-release.log"
+  },
+  "scene": {
+    "selected": [],
+    "base_scene": [
+      "bottle",
+      "basket",
+      "table"
+    ],
+    "observation_id": "d06aa2aa1bb2:0"
+  },
+  "hardware_access": false,
+  "transfer_ready": false
+}

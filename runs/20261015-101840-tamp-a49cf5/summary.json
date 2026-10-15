@@ -1,0 +1,389 @@
+{
+  "status": "error",
+  "transitions": 101,
+  "wall_seconds": 4.137959577999936,
+  "sim_seconds": 33.376000000012915,
+  "evaluation": {
+    "success": false,
+    "invalid": false,
+    "held": {
+      "left": false,
+      "right": true
+    },
+    "touching": {
+      "left": false,
+      "right": true
+    },
+    "failure_reasons": [],
+    "inside_basket": false,
+    "supported_by_basket": false,
+    "stable_seconds": 0.0,
+    "linear_speed_m_s": 2.7822007459886484e-05,
+    "penetration_m": 0.00038099204180574883,
+    "max_penetration_m": 0.0004139757508115052,
+    "peak_normal_force_N": 14.242438270139548,
+    "robot_contact_count": 0,
+    "contact_window": {
+      "sampling": "every solved physics step plus a zero-duration final-state check",
+      "physics_dt_s": 0.001,
+      "samples": 9,
+      "interval_start_s": 33.367000000012936,
+      "duration_s": 0.009000000000000001,
+      "robot_external_seconds": 0.009000000000000001,
+      "robot_self_seconds": 0.0,
+      "robot_external_impulse_Ns": 0.2521414868795695,
+      "robot_self_impulse_Ns": 0.0,
+      "robot_external_peak_force_N": 28.017163822324655,
+      "robot_self_peak_force_N": 0.0,
+      "endpoint_robot_external_force_N": 28.01533325966022,
+      "endpoint_robot_self_force_N": 0.0,
+      "peak_normal_force_N": 14.242438270139548,
+      "max_penetration_m": 0.00038099204180574883,
+      "hold_seconds": {
+        "left": 0.0,
+        "right": 20.479000000002046
+      },
+      "stable_seconds": 0.0,
+      "placement_seconds": 0.0,
+      "pairs": [
+        {
+          "geoms": [
+            "openarm_right_right_finger_collision",
+            "bottle_cap"
+          ],
+          "bodies": [
+            "openarm_right_right_finger",
+            "task_bottle"
+          ],
+          "robot_external": true,
+          "robot_self": false,
+          "first_time_s": 33.367000000012936,
+          "last_time_s": 33.376000000012915,
+          "duration_s": 0.009000000000000001,
+          "normal_impulse_Ns": 0.1264683832718732,
+          "peak_normal_force_N": 14.242438270139548,
+          "penetration_m": 0.00038099204180574883
+        },
+        {
+          "geoms": [
+            "openarm_right_left_finger_collision",
+            "bottle_cap"
+          ],
+          "bodies": [
+            "openarm_right_left_finger",
+            "task_bottle"
+          ],
+          "robot_external": true,
+          "robot_self": false,
+          "first_time_s": 33.367000000012936,
+          "last_time_s": 33.376000000012915,
+          "duration_s": 0.009000000000000001,
+          "normal_impulse_Ns": 0.12567310360769632,
+          "peak_normal_force_N": 13.998601296840594,
+          "penetration_m": 0.000231456354250295
+        }
+      ]
+    },
+    "placement": {
+      "surface": "basket",
+      "xy_m": [
+        0.474,
+        0.357
+      ],
+      "tolerance_m": 0.025,
+      "stable_seconds": 0.0,
+      "confirmed": false
+    },
+    "evidence_source": "privileged simulator evaluator; not a camera measurement",
+    "transfer_ready": false,
+    "non_target_object_guard": {
+      "source": "native registered-body displacement from task selection; hidden diagnostic",
+      "displacement_m": {},
+      "limit_m": 0.003,
+      "passed": true,
+      "scope": "additional development execution gate; not a measured physical tolerance"
+    }
+  },
+  "duration_sim_seconds": 3.308999999999152,
+  "events": [
+    {
+      "stage": 0,
+      "name": "初始场景",
+      "time": 0.0,
+      "evidence": "environment reset"
+    },
+    {
+      "stage": 1,
+      "name": "右手夹持",
+      "time": 13.02599999999822,
+      "evidence": "two right finger bodies contact bottle, normal force > 0.05 N"
+    },
+    {
+      "stage": 2,
+      "name": "右手抬起",
+      "time": 14.83099999999722,
+      "evidence": "two-finger right contact and bottle bottom > table + 30 mm"
+    }
+  ],
+  "error": "指定放置点未找到兼顾携物外形与夹爪姿态的可达方案",
+  "metrics": {
+    "tamp": {
+      "task": "place_bottle",
+      "status": "error",
+      "planner": "MuJoCo Jacobian IK + joint-space collision search",
+      "scene_source": "simulator_ground_truth",
+      "scope": "oracle manipulation baseline, not visual perception or calibrated transfer",
+      "physics": "native actuator targets and contact; no weld, teleport or qpos overwrite",
+      "native_finger_range": true,
+      "action_bounds": "official simulated finger slide range through candidate motor map; broader than recorded/VLA command range",
+      "hardware_access": false,
+      "transfer_ready": false,
+      "ik_proposals": "audited real left-close poses as IK seeds; receiver orientation from ep0 FK",
+      "arm": "right",
+      "surface": "basket",
+      "target_xy_m": [
+        0.474,
+        0.357
+      ],
+      "parameters": {
+        "object_id": "bottle",
+        "receptacle_id": "basket",
+        "arm": "right",
+        "target_xy_m": [
+          0.474,
+          0.357
+        ],
+        "position_tolerance_m": 0.025,
+        "goal_anchor_observation_id": "a57c9ea486d4:0"
+      },
+      "task_termination": "skill",
+      "object_id": "bottle",
+      "planning_diagnostics": {
+        "arm": "right",
+        "phase": "place",
+        "best_ik": {
+          "cost": 0.33481315725453076,
+          "position_error_m": 0.1496884818251412,
+          "rotation_error_rad": 1.2341645028625972
+        },
+        "blocked_pairs": []
+      },
+      "placement_search": {
+        "rejected": [
+          {
+            "yaw_offset_rad": 0.0,
+            "height_m": 0.114,
+            "failure_code": "ik_unreachable",
+            "diagnostics": {
+              "arm": "right",
+              "phase": "place",
+              "best_ik": {
+                "cost": 0.3152820571636919,
+                "position_error_m": 0.21753781982967066,
+                "rotation_error_rad": 0.651628248893475
+              },
+              "blocked_pairs": []
+            }
+          },
+          {
+            "yaw_offset_rad": -0.25,
+            "height_m": 0.114,
+            "failure_code": "ik_unreachable",
+            "diagnostics": {
+              "arm": "right",
+              "phase": "place",
+              "best_ik": {
+                "cost": 0.37840513081939064,
+                "position_error_m": 0.28504309797364824,
+                "rotation_error_rad": 0.6224135523049492
+              },
+              "blocked_pairs": []
+            }
+          },
+          {
+            "yaw_offset_rad": 0.25,
+            "height_m": 0.114,
+            "failure_code": "ik_unreachable",
+            "diagnostics": {
+              "arm": "right",
+              "phase": "place",
+              "best_ik": {
+                "cost": 0.2947694034394753,
+                "position_error_m": 0.21000822660547322,
+                "rotation_error_rad": 0.5650745122266803
+              },
+              "blocked_pairs": []
+            }
+          },
+          {
+            "yaw_offset_rad": -0.5,
+            "height_m": 0.114,
+            "failure_code": "ik_unreachable",
+            "diagnostics": {
+              "arm": "right",
+              "phase": "place",
+              "best_ik": {
+                "cost": 0.4101677426541502,
+                "position_error_m": 0.2738984475242393,
+                "rotation_error_rad": 0.9084619675327391
+              },
+              "blocked_pairs": []
+            }
+          },
+          {
+            "yaw_offset_rad": 0.5,
+            "height_m": 0.114,
+            "failure_code": "ik_unreachable",
+            "diagnostics": {
+              "arm": "right",
+              "phase": "place",
+              "best_ik": {
+                "cost": 0.25892709080778964,
+                "position_error_m": 0.18288244503921913,
+                "rotation_error_rad": 0.5069643051238033
+              },
+              "blocked_pairs": []
+            }
+          },
+          {
+            "yaw_offset_rad": 0.7853981633974483,
+            "height_m": 0.114,
+            "failure_code": "ik_unreachable",
+            "diagnostics": {
+              "arm": "right",
+              "phase": "place",
+              "best_ik": {
+                "cost": 0.23670803354941283,
+                "position_error_m": 0.198443929971466,
+                "rotation_error_rad": 0.25509402385297886
+              },
+              "blocked_pairs": []
+            }
+          },
+          {
+            "yaw_offset_rad": -0.7853981633974483,
+            "height_m": 0.114,
+            "failure_code": "ik_unreachable",
+            "diagnostics": {
+              "arm": "right",
+              "phase": "place",
+              "best_ik": {
+                "cost": 0.4330939924551871,
+                "position_error_m": 0.23900719865609116,
+                "rotation_error_rad": 1.2939119586606396
+              },
+              "blocked_pairs": []
+            }
+          },
+          {
+            "yaw_offset_rad": 1.5707963267948966,
+            "height_m": 0.114,
+            "failure_code": "ik_unreachable",
+            "diagnostics": {
+              "arm": "right",
+              "phase": "place",
+              "best_ik": {
+                "cost": 0.17566300141765914,
+                "position_error_m": 0.1299902989729158,
+                "rotation_error_rad": 0.3044846829649555
+              },
+              "blocked_pairs": []
+            }
+          },
+          {
+            "yaw_offset_rad": -1.5707963267948966,
+            "height_m": 0.114,
+            "failure_code": "ik_unreachable",
+            "diagnostics": {
+              "arm": "right",
+              "phase": "place",
+              "best_ik": {
+                "cost": 0.54391414089987,
+                "position_error_m": 0.20609207609350788,
+                "rotation_error_rad": 2.2521470987090804
+              },
+              "blocked_pairs": []
+            }
+          },
+          {
+            "yaw_offset_rad": 3.141592653589793,
+            "height_m": 0.114,
+            "failure_code": "ik_unreachable",
+            "diagnostics": {
+              "arm": "right",
+              "phase": "place",
+              "best_ik": {
+                "cost": 0.33481315725453076,
+                "position_error_m": 0.1496884818251412,
+                "rotation_error_rad": 1.2341645028625972
+              },
+              "blocked_pairs": []
+            }
+          }
+        ]
+      },
+      "primitive_success": false,
+      "failure_code": "placement_unreachable",
+      "message": "指定放置点未找到兼顾携物外形与夹爪姿态的可达方案",
+      "stats": {
+        "ik_attempts": 120,
+        "collision_checks": 0,
+        "rrt_nodes": 0
+      },
+      "phase": "place",
+      "planning_timing": {
+        "schema": "planning-timing/1",
+        "method": "single-owner discrete-event integration before proposal dispatch",
+        "scope": "planner construction and each generator resume, including IK, collision search, GPU worker round trips and feedback publishing",
+        "waiting_action": "exact previous applied native target; no new target, reset, weld or state overwrite",
+        "quantization": "cumulative wall duration on the existing 1ms physics grid; final remainder rounded up; bounded by one physics step; command cadence remains 30Hz",
+        "omissions": [
+          "initial LLM planning before first plan declaration",
+          "camera exposure and CAN timing",
+          "real controller/watchdog behavior",
+          "continuous streaming during blocking computation"
+        ],
+        "real_time_validated": false,
+        "transfer_ready": false,
+        "mode": "measured_delay",
+        "delay_source": "measured local planner duration; no injected diagnostic delay",
+        "generator_resumes": 1,
+        "native_commands": 0,
+        "planner_wall_seconds": 3.3087486010000475,
+        "hold_transitions": 101,
+        "hold_physics_steps": 3309,
+        "integrated_hold_seconds": 3.308999999999152,
+        "unintegrated_seconds": 0.0,
+        "rounding_overhead_seconds": 0.0002513989991044241,
+        "last_revalidation": null
+      }
+    },
+    "planning_timing": {
+      "schema": "planning-timing/1",
+      "method": "single-owner discrete-event integration before proposal dispatch",
+      "scope": "planner construction and each generator resume, including IK, collision search, GPU worker round trips and feedback publishing",
+      "waiting_action": "exact previous applied native target; no new target, reset, weld or state overwrite",
+      "quantization": "cumulative wall duration on the existing 1ms physics grid; final remainder rounded up; bounded by one physics step; command cadence remains 30Hz",
+      "omissions": [
+        "initial LLM planning before first plan declaration",
+        "camera exposure and CAN timing",
+        "real controller/watchdog behavior",
+        "continuous streaming during blocking computation"
+      ],
+      "real_time_validated": false,
+      "transfer_ready": false,
+      "mode": "measured_delay",
+      "delay_source": "measured local planner duration; no injected diagnostic delay",
+      "generator_resumes": 1,
+      "native_commands": 0,
+      "planner_wall_seconds": 3.3087486010000475,
+      "hold_transitions": 101,
+      "hold_physics_steps": 3309,
+      "integrated_hold_seconds": 3.308999999999152,
+      "unintegrated_seconds": 0.0,
+      "rounding_overhead_seconds": 0.0002513989991044241,
+      "last_revalidation": null
+    }
+  },
+  "transfer_ready": false
+}

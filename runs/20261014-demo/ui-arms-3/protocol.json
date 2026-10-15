@@ -1,0 +1,22 @@
+{
+  "case": "ui-arms",
+  "prompt": "让右手末端向上移动3厘米，再让左手末端向前移动4厘米，保持各自朝向。",
+  "targets": {
+    "right": [
+      0.3330143698071347,
+      -0.40989893302700603,
+      1.2134267566607349
+    ],
+    "left": [
+      0.4300537335962561,
+      0.3592187868592152,
+      1.238284209358176
+    ]
+  },
+  "initial_observation_id": "d5e029f871f6:0",
+  "source_revision": "077d304b2ce5bb1343aa13683878ceb522e9fcb17e4fbe8ec82be8378d6ac37b",
+  "checker_sha256": "457940814cbbc464b315fb4008da24a6f55f63166da1e14bd7401a729eaba2cd",
+  "reset": "one reset before the goal; no resets or pose edits during execution",
+  "provider": "saved real API; no scripted motion substitution",
+  "hardware_access": false
+}

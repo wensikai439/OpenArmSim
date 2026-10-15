@@ -1,0 +1,459 @@
+{
+  "status": "primitive_completed",
+  "transitions": 333,
+  "wall_seconds": 10.98255842499998,
+  "sim_seconds": 14.121999999997612,
+  "evaluation": {
+    "success": false,
+    "invalid": false,
+    "held": {
+      "left": false,
+      "right": true
+    },
+    "touching": {
+      "left": false,
+      "right": true
+    },
+    "failure_reasons": [],
+    "inside_basket": false,
+    "supported_by_basket": false,
+    "stable_seconds": 0.0,
+    "linear_speed_m_s": 0.0005336546710686454,
+    "penetration_m": 0.00038605284282186233,
+    "max_penetration_m": 0.00041953324715636036,
+    "peak_normal_force_N": 14.163665624502272,
+    "robot_contact_count": 0,
+    "contact_window": {
+      "sampling": "every solved physics step plus a zero-duration final-state check",
+      "physics_dt_s": 0.001,
+      "samples": 1,
+      "interval_start_s": 14.120999999997613,
+      "duration_s": 0.001,
+      "robot_external_seconds": 0.001,
+      "robot_self_seconds": 0.0,
+      "robot_external_impulse_Ns": 0.028255840194272724,
+      "robot_self_impulse_Ns": 0.0,
+      "robot_external_peak_force_N": 28.255853172096963,
+      "robot_self_peak_force_N": 0.0,
+      "endpoint_robot_external_force_N": 28.255853172096963,
+      "endpoint_robot_self_force_N": 0.0,
+      "peak_normal_force_N": 14.163665624502272,
+      "max_penetration_m": 0.00038605284282186233,
+      "hold_seconds": {
+        "left": 0.0,
+        "right": 5.16600000000006
+      },
+      "stable_seconds": 0.0,
+      "placement_seconds": 0.0,
+      "pairs": [
+        {
+          "geoms": [
+            "openarm_right_right_finger_collision",
+            "bottle_cap"
+          ],
+          "bodies": [
+            "openarm_right_right_finger",
+            "task_bottle"
+          ],
+          "robot_external": true,
+          "robot_self": false,
+          "first_time_s": 14.120999999997613,
+          "last_time_s": 14.121999999997612,
+          "duration_s": 0.001,
+          "normal_impulse_Ns": 0.014163659845924253,
+          "peak_normal_force_N": 14.163665624502272,
+          "penetration_m": 0.00038536260557920396
+        },
+        {
+          "geoms": [
+            "openarm_right_left_finger_collision",
+            "bottle_cap"
+          ],
+          "bodies": [
+            "openarm_right_left_finger",
+            "task_bottle"
+          ],
+          "robot_external": true,
+          "robot_self": false,
+          "first_time_s": 14.120999999997613,
+          "last_time_s": 14.121999999997612,
+          "duration_s": 0.001,
+          "normal_impulse_Ns": 0.014092180348348467,
+          "peak_normal_force_N": 14.09218754759469,
+          "penetration_m": 0.00038605284282186233
+        }
+      ]
+    },
+    "placement": {
+      "stable_seconds": 0.0,
+      "confirmed": false
+    },
+    "evidence_source": "privileged simulator evaluator; not a camera measurement",
+    "transfer_ready": false,
+    "non_target_object_guard": {
+      "source": "native registered-body displacement from task selection; hidden diagnostic",
+      "displacement_m": {},
+      "limit_m": 0.003,
+      "passed": true,
+      "scope": "additional development execution gate; not a measured physical tolerance"
+    }
+  },
+  "duration_sim_seconds": 10.888999999997857,
+  "events": [
+    {
+      "stage": 0,
+      "name": "初始场景",
+      "time": 0.0,
+      "evidence": "environment reset"
+    },
+    {
+      "stage": 1,
+      "name": "右手夹持",
+      "time": 9.088000000000402,
+      "evidence": "two right finger bodies contact bottle, normal force > 0.05 N"
+    },
+    {
+      "stage": 2,
+      "name": "右手抬起",
+      "time": 10.853999999999424,
+      "evidence": "two-finger right contact and bottle bottom > table + 30 mm"
+    }
+  ],
+  "error": null,
+  "metrics": {
+    "tamp": {
+      "task": "pick_bottle",
+      "status": "completed",
+      "planner": "MuJoCo Jacobian IK + joint-space collision search",
+      "scene_source": "simulator_ground_truth",
+      "scope": "oracle manipulation baseline, not visual perception or calibrated transfer",
+      "physics": "native actuator targets and contact; no weld, teleport or qpos overwrite",
+      "native_finger_range": true,
+      "action_bounds": "official simulated finger slide range through candidate motor map; broader than recorded/VLA command range",
+      "hardware_access": false,
+      "transfer_ready": false,
+      "ik_proposals": "audited real left-close poses as IK seeds; receiver orientation from ep0 FK",
+      "task_termination": "skill",
+      "grasp_pool_contract": {
+        "schema": "geometric-grasp-pool/1",
+        "source": "simulator_ground_truth",
+        "orientation_sampling": "24 full-circle approach azimuths; pad pitch0,-15,-30,+15degrees",
+        "shape_sampling": "current collision-cylinder centers, highest first; no fixed world grasp position",
+        "composition": "grasp IK -> warm-started pregrasp IK -> native connecting path and approach edge",
+        "native_acceptance": "original IK, collision, target tracking, sustained two-finger contact and lift",
+        "scope": "known upright cylindrical object geometry on candidate OpenArm; no open-object perception",
+        "hardware_access": false,
+        "transfer_ready": false,
+        "reference": "https://moveit.picknik.ai/main/doc/tutorials/pick_and_place_with_moveit_task_constructor/pick_and_place_with_moveit_task_constructor.html"
+      },
+      "object_id": "bottle",
+      "bottle_goal_contract": {
+        "schema": "bottle-goal-routing/1",
+        "source": "simulator_ground_truth",
+        "proposal": "current bottle geometry and grasp relation; goal-conditioned ranking and native connected paths",
+        "planning_clearance_m": 0.012,
+        "carried_object_clearance_m": 0.04,
+        "transport_vertical_clearance_m": 0.08,
+        "transport_proposal_clearance_m": 0.08,
+        "grasp_joint_slack_rad": 0.02,
+        "hardware_access": false,
+        "transfer_ready": false,
+        "scope": "experimental registered upright bottle; original demo retained; not open-object perception"
+      },
+      "ik_pipeline_contract": {
+        "iterations": "mj_kinematics then mj_comPos, scratch MjData only",
+        "acceptance_and_path_edges": "original full native forward/collision/clearance",
+        "proposal_solver_tolerances_joint_bounds_unchanged": true,
+        "live_state_written_by_solver": false,
+        "hardware_access": false,
+        "transfer_ready": false
+      },
+      "margin_proposal_scope": "existing single-arm sampler retained; no relay refinements",
+      "grasp_order": {
+        "source": "native shoulder anchor to current bottle center; placement goal enables high-band hypothesis",
+        "ranking": "higher grasp band first, approach yaw toward bottle from selected arm, level pitch first, normalized lever-arm tie break",
+        "desired_approach_yaw_rad": -0.24498810818048697,
+        "shoulder_xy_m": [
+          0.185,
+          -0.09349999999957836
+        ],
+        "all_original_candidates_retained": true,
+        "scope": "proposal order for registered single-arm bottle table placement; native grasp/hold/transport/place still required"
+      },
+      "private_search_progress": {
+        "source": "scratch native search only; never task success evidence",
+        "IK_calls": 10,
+        "IK_wall_seconds": 0.014114112999777717,
+        "IK_failures": {},
+        "last_accepted_ik": {
+          "arm": "right",
+          "q_rad": [
+            -0.13726241698055067,
+            0.4041200835570816,
+            -0.4306492491529915,
+            1.977878448384411,
+            0.20371445261641746,
+            -0.785398,
+            0.12305029209040015
+          ],
+          "minimum_joint_slack_rad": 0.0,
+          "limiting_joint": "openarm_right_joint6",
+          "source": "accepted scratch IK and native joint limits; not executed motion or physical reachability"
+        }
+      },
+      "grasp_search": {
+        "selected": {
+          "geom": "bottle_cap",
+          "grasp_m": [
+            0.5029969956470934,
+            -0.1730063686794433,
+            1.2049930852530584
+          ],
+          "pregrasp_m": [
+            0.40969611403465417,
+            -0.14800554480796807,
+            1.1791105757903138
+          ],
+          "rotation": [
+            [
+              -0.25001450159285316,
+              -0.2588190449473078,
+              0.9330088161243926
+            ],
+            [
+              0.06695655159562337,
+              -0.9659258257098057,
+              -0.25000823871475236
+            ],
+            [
+              0.9659242046825931,
+              -3.463226037148504e-05,
+              0.25882509462744663
+            ]
+          ],
+          "yaw_rad": -0.2617993877991494,
+          "pitch_rad": 0.2617993877991494,
+          "radius_m": 0.016
+        },
+        "candidate_index": 2,
+        "rejected": [
+          {
+            "index": 0,
+            "candidate": {
+              "geom": "bottle_cap",
+              "grasp_m": [
+                0.5029969956470934,
+                -0.1730063686794433,
+                1.2049930852530584
+              ],
+              "pregrasp_m": [
+                0.406404413025695,
+                -0.1471244641487474,
+                1.204992458943558
+              ],
+              "rotation": [
+                [
+                  -1.5013173777613066e-05,
+                  -0.2588190449473078,
+                  0.9659258262139842
+                ],
+                [
+                  -3.183118644611578e-05,
+                  -0.9659258257098057,
+                  -0.2588190453069587
+                ],
+                [
+                  0.9999999993806902,
+                  -3.463226037148504e-05,
+                  6.263095002142328e-06
+                ]
+              ],
+              "yaw_rad": -0.2617993877991494,
+              "pitch_rad": 0.0,
+              "radius_m": 0.016
+            },
+            "code": "grasp_near_joint_stop",
+            "diagnostics": null
+          },
+          {
+            "index": 1,
+            "candidate": {
+              "geom": "bottle_cap",
+              "grasp_m": [
+                0.5029969956470934,
+                -0.1730063686794433,
+                1.2049930852530584
+              ],
+              "pregrasp_m": [
+                0.40969533689559395,
+                -0.14800719251142416,
+                1.23087438477876
+              ],
+              "rotation": [
+                [
+                  0.2499854983682804,
+                  -0.2588190449473078,
+                  0.9330165875149947
+                ],
+                [
+                  -0.06701804472576282,
+                  -0.9659258257098057,
+                  -0.24999176168019144
+                ],
+                [
+                  0.9659274466991288,
+                  -3.463226037148504e-05,
+                  -0.2588129952570165
+                ]
+              ],
+              "yaw_rad": -0.2617993877991494,
+              "pitch_rad": -0.2617993877991494,
+              "radius_m": 0.016
+            },
+            "code": "grasp_near_joint_stop",
+            "diagnostics": null
+          }
+        ],
+        "pregrasp_q": [
+          -0.3064060905795152,
+          0.1800140319313388,
+          -0.5736232136026953,
+          1.1580810625936493,
+          0.6686387122442919,
+          -0.5884649924651425,
+          1.2465114704961178
+        ],
+        "grasp_q": [
+          -0.03375671368164774,
+          0.25386297860932566,
+          -0.5702064648556566,
+          1.1511880631137066,
+          0.6809956502768688,
+          -0.5900689095387774,
+          0.9751482520853223
+        ]
+      },
+      "future_placement": {
+        "target_xy_m": [
+          0.533,
+          -0.253
+        ],
+        "yaw_rad": 0.0,
+        "transit_height_m": 0.12,
+        "lower_ik_tolerance_m": 0.00105,
+        "source": "scratch-only original-goal endpoint and lowering-edge lookahead at original precision; actual placement still mandatory",
+        "rejected": []
+      },
+      "tracking_feedback": {
+        "position_error_m": 0.001928235963236757,
+        "rotation_error_rad": 0.10416654548907542,
+        "corrections": 1
+      },
+      "arm": "right",
+      "verification_source": "native_two_finger_contact_and_lift",
+      "held_by": "right",
+      "lift_height_m": 0.11772436281467247,
+      "primitive_success": true,
+      "stats": {
+        "ik_attempts": 10,
+        "collision_checks": 174,
+        "rrt_nodes": 0,
+        "kinematic_iterations": 154
+      },
+      "phase": "hold",
+      "planning_timing": {
+        "schema": "planning-timing/1",
+        "method": "single-owner discrete-event integration before proposal dispatch",
+        "scope": "planner construction and each generator resume, including IK, collision search, GPU worker round trips and feedback publishing",
+        "waiting_action": "exact previous applied native target; no new target, reset, weld or state overwrite",
+        "quantization": "cumulative wall duration on the existing 1ms physics grid; final remainder rounded up; bounded by one physics step; command cadence remains 30Hz",
+        "omissions": [
+          "initial LLM planning before first plan declaration",
+          "camera exposure and CAN timing",
+          "real controller/watchdog behavior",
+          "continuous streaming during blocking computation"
+        ],
+        "real_time_validated": false,
+        "transfer_ready": false,
+        "mode": "measured_delay",
+        "delay_source": "measured local planner duration; no injected diagnostic delay",
+        "generator_resumes": 322,
+        "native_commands": 321,
+        "planner_wall_seconds": 0.18828393100056928,
+        "hold_transitions": 12,
+        "hold_physics_steps": 189,
+        "integrated_hold_seconds": 0.18899999999995432,
+        "unintegrated_seconds": 0.0,
+        "rounding_overhead_seconds": 0.0007160689993850333,
+        "last_revalidation": {
+          "accepted": true,
+          "reason": null,
+          "source_tick": 429,
+          "current_tick": 430,
+          "tcp_drift_m": 8.289457137574538e-08,
+          "tcp_rotation_rad": 3.8223729546012693e-07,
+          "joint_drift_rad": 3.885563568117867e-07,
+          "object_drift_m": 5.336546710569968e-07,
+          "object_rotation_rad": 4.063128889931846e-06,
+          "limits": {
+            "tcp_m": 0.005,
+            "tcp_rotation_rad": 0.05,
+            "joint_rad": 0.02,
+            "object_m": 0.003,
+            "object_rotation_rad": 0.05
+          },
+          "source": "simulator_oracle; rejects stale paths, not physical localization accuracy",
+          "hardware_access": false,
+          "transfer_ready": false
+        }
+      }
+    },
+    "planning_timing": {
+      "schema": "planning-timing/1",
+      "method": "single-owner discrete-event integration before proposal dispatch",
+      "scope": "planner construction and each generator resume, including IK, collision search, GPU worker round trips and feedback publishing",
+      "waiting_action": "exact previous applied native target; no new target, reset, weld or state overwrite",
+      "quantization": "cumulative wall duration on the existing 1ms physics grid; final remainder rounded up; bounded by one physics step; command cadence remains 30Hz",
+      "omissions": [
+        "initial LLM planning before first plan declaration",
+        "camera exposure and CAN timing",
+        "real controller/watchdog behavior",
+        "continuous streaming during blocking computation"
+      ],
+      "real_time_validated": false,
+      "transfer_ready": false,
+      "mode": "measured_delay",
+      "delay_source": "measured local planner duration; no injected diagnostic delay",
+      "generator_resumes": 322,
+      "native_commands": 321,
+      "planner_wall_seconds": 0.18828393100056928,
+      "hold_transitions": 12,
+      "hold_physics_steps": 189,
+      "integrated_hold_seconds": 0.18899999999995432,
+      "unintegrated_seconds": 0.0,
+      "rounding_overhead_seconds": 0.0007160689993850333,
+      "last_revalidation": {
+        "accepted": true,
+        "reason": null,
+        "source_tick": 429,
+        "current_tick": 430,
+        "tcp_drift_m": 8.289457137574538e-08,
+        "tcp_rotation_rad": 3.8223729546012693e-07,
+        "joint_drift_rad": 3.885563568117867e-07,
+        "object_drift_m": 5.336546710569968e-07,
+        "object_rotation_rad": 4.063128889931846e-06,
+        "limits": {
+          "tcp_m": 0.005,
+          "tcp_rotation_rad": 0.05,
+          "joint_rad": 0.02,
+          "object_m": 0.003,
+          "object_rotation_rad": 0.05
+        },
+        "source": "simulator_oracle; rejects stale paths, not physical localization accuracy",
+        "hardware_access": false,
+        "transfer_ready": false
+      }
+    }
+  },
+  "transfer_ready": false
+}

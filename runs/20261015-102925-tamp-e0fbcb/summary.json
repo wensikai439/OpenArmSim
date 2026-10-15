@@ -1,0 +1,722 @@
+{
+  "status": "primitive_completed",
+  "transitions": 337,
+  "wall_seconds": 10.311360113000092,
+  "sim_seconds": 35.057000000009,
+  "evaluation": {
+    "success": false,
+    "invalid": false,
+    "held": {
+      "left": false,
+      "right": false
+    },
+    "touching": {
+      "left": false,
+      "right": false
+    },
+    "failure_reasons": [],
+    "inside_basket": false,
+    "supported_by_basket": false,
+    "stable_seconds": 0.0,
+    "linear_speed_m_s": 1.943811849814748e-07,
+    "penetration_m": 7.386245712513212e-06,
+    "max_penetration_m": 0.0004661541639727695,
+    "peak_normal_force_N": 1.410201752294659,
+    "robot_contact_count": 0,
+    "contact_window": {
+      "sampling": "every solved physics step plus a zero-duration final-state check",
+      "physics_dt_s": 0.001,
+      "samples": 1,
+      "interval_start_s": 35.056000000009,
+      "duration_s": 0.001,
+      "robot_external_seconds": 0.0,
+      "robot_self_seconds": 0.0,
+      "robot_external_impulse_Ns": 0.0,
+      "robot_self_impulse_Ns": 0.0,
+      "robot_external_peak_force_N": 0.0,
+      "robot_self_peak_force_N": 0.0,
+      "endpoint_robot_external_force_N": 0.0,
+      "endpoint_robot_self_force_N": 0.0,
+      "peak_normal_force_N": 1.410201752294659,
+      "max_penetration_m": 7.386245712513212e-06,
+      "hold_seconds": {
+        "left": 0.0,
+        "right": 0.0
+      },
+      "stable_seconds": 0.0,
+      "placement_seconds": 1.059999999999994,
+      "pairs": [
+        {
+          "geoms": [
+            "cell_table_col",
+            "bottle_body"
+          ],
+          "bodies": [
+            "world",
+            "task_bottle"
+          ],
+          "robot_external": false,
+          "robot_self": false,
+          "first_time_s": 35.056000000009,
+          "last_time_s": 35.057000000009,
+          "duration_s": 0.001,
+          "normal_impulse_Ns": 0.0053968836165031245,
+          "peak_normal_force_N": 5.396883616503124,
+          "penetration_m": 7.386245712513212e-06
+        }
+      ]
+    },
+    "placement": {
+      "surface": "table",
+      "xy_m": [
+        0.533,
+        -0.253
+      ],
+      "tolerance_m": 0.01,
+      "stable_seconds": 1.06,
+      "confirmed": true
+    },
+    "evidence_source": "privileged simulator evaluator; not a camera measurement",
+    "transfer_ready": false,
+    "non_target_object_guard": {
+      "source": "native registered-body displacement from task selection; hidden diagnostic",
+      "displacement_m": {},
+      "limit_m": 0.003,
+      "passed": true,
+      "scope": "additional development execution gate; not a measured physical tolerance"
+    }
+  },
+  "duration_sim_seconds": 10.235000000001644,
+  "events": [
+    {
+      "stage": 0,
+      "name": "初始场景",
+      "time": 0.0,
+      "evidence": "environment reset"
+    },
+    {
+      "stage": 1,
+      "name": "右手夹持",
+      "time": 9.088000000000402,
+      "evidence": "two right finger bodies contact bottle, normal force > 0.05 N"
+    },
+    {
+      "stage": 2,
+      "name": "右手抬起",
+      "time": 10.853999999999424,
+      "evidence": "two-finger right contact and bottle bottom > table + 30 mm"
+    }
+  ],
+  "error": null,
+  "metrics": {
+    "tamp": {
+      "task": "place_bottle",
+      "status": "completed",
+      "planner": "MuJoCo Jacobian IK + joint-space collision search",
+      "scene_source": "simulator_ground_truth",
+      "scope": "oracle manipulation baseline, not visual perception or calibrated transfer",
+      "physics": "native actuator targets and contact; no weld, teleport or qpos overwrite",
+      "native_finger_range": true,
+      "action_bounds": "official simulated finger slide range through candidate motor map; broader than recorded/VLA command range",
+      "hardware_access": false,
+      "transfer_ready": false,
+      "ik_proposals": "audited real left-close poses as IK seeds; receiver orientation from ep0 FK",
+      "arm": "right",
+      "surface": "table",
+      "target_xy_m": [
+        0.533,
+        -0.253
+      ],
+      "parameters": {
+        "object_id": "bottle",
+        "receptacle_id": "table",
+        "arm": "right",
+        "target_xy_m": [
+          0.533,
+          -0.253
+        ],
+        "position_tolerance_m": 0.01,
+        "goal_anchor_observation_id": "b9f7352e6a55:0"
+      },
+      "task_termination": "skill",
+      "object_id": "bottle",
+      "placement_path_contract": {
+        "source": "native collision geometry and measured hand-object relation",
+        "endpoint_selection": "connected approach plus direct loaded lowering before choosing yaw",
+        "additional_proposal_constraint": "carried bottle axis cosine>=0.98 along joint edges",
+        "original_physics_goal_contact_release_stability_gates_unchanged": true,
+        "scope": "registered upright bottle on table; not a physical calibration",
+        "hardware_access": false,
+        "transfer_ready": false
+      },
+      "preview_servo_contract": {
+        "source": "native object/TCP/encoder feedback; privileged simulation only",
+        "fallback": "after completed native path and settling feedback; never initial search/path failure",
+        "maximum_actuator_increment_rad": 0.008,
+        "prediction_horizon_s": 0.15,
+        "prediction": "original position-PD, limits, gravity compensation,1ms contacts and native free object",
+        "changed_validation": "small biased actuator increments checked by native predicted dynamics, not command-pose FK",
+        "original_geometric_proposals_preserved": true,
+        "original_physics_goal_release_support_stability_gates_preserved": true,
+        "not_deployed": false,
+        "hardware_access": false,
+        "transfer_ready": false
+      },
+      "connected_placement_proposal": {
+        "high_q_rad": [
+          -0.14457356558894152,
+          0.546353129596579,
+          -0.19489105596983897,
+          1.768907252466804,
+          0.4948228824020738,
+          -0.5181412359878947,
+          0.2760557158389398
+        ],
+        "approach_path_nodes": 2,
+        "source": "scratch-only; real loaded motion must still pass",
+        "low_q_rad": [
+          -0.05889304100788864,
+          0.37272738321042875,
+          -0.2586895768048754,
+          1.2393013245511968,
+          0.5213702250145438,
+          -0.345003171181104,
+          0.6927700651271527
+        ],
+        "maximum_descent_joint_change_rad": 0.5296059279156071,
+        "connected_upright_lowering": true
+      },
+      "placement_search": {
+        "yaw_offset_rad": 0.0,
+        "transit_clearance_m": 0.12,
+        "rejected": []
+      },
+      "object_tracking_feedback": [
+        {
+          "iteration": 0,
+          "object_xy_m": [
+            0.5294075847198737,
+            -0.2497386047807594
+          ],
+          "position_error_m": 0.004852024971181676,
+          "bottom_z_m": 1.023617722653459,
+          "held": true,
+          "tolerance_m": 0.003
+        },
+        {
+          "iteration": 3,
+          "object_xy_m": [
+            0.5301531632072262,
+            -0.25004021298013124
+          ],
+          "position_error_m": 0.004106679793662347,
+          "bottom_z_m": 1.0239566735544707,
+          "held": true,
+          "tolerance_m": 0.003
+        },
+        {
+          "iteration": 5,
+          "object_xy_m": [
+            0.5314901661512537,
+            -0.25079775563116363
+          ],
+          "position_error_m": 0.002670108333175223,
+          "bottom_z_m": 1.0245132326178363,
+          "held": true,
+          "tolerance_m": 0.003
+        }
+      ],
+      "pre_release_stability": {
+        "required_endpoints": 6,
+        "linear_speed_limit_m_s": 0.01,
+        "angular_speed_limit_rad_s": 0.15,
+        "samples": [
+          {
+            "iteration": 0,
+            "object_xy_error_m": 0.002670108333175223,
+            "bottom_error_m": -0.01751323261783644,
+            "linear_speed_m_s": 0.028617804629707155,
+            "angular_speed_rad_s": 0.012848229068825996,
+            "stable_endpoints": 0
+          },
+          {
+            "iteration": 1,
+            "object_xy_error_m": 0.0011115553227852553,
+            "bottom_error_m": -0.0182097493134592,
+            "linear_speed_m_s": 0.025920621011078684,
+            "angular_speed_rad_s": 0.030054111879809074,
+            "stable_endpoints": 0
+          },
+          {
+            "iteration": 2,
+            "object_xy_error_m": 0.000442953479652391,
+            "bottom_error_m": -0.01829512120522936,
+            "linear_speed_m_s": 0.017540665726873916,
+            "angular_speed_rad_s": 0.039467066045876034,
+            "stable_endpoints": 0
+          },
+          {
+            "iteration": 3,
+            "object_xy_error_m": 3.648553935815143e-05,
+            "bottom_error_m": -0.0179650109504339,
+            "linear_speed_m_s": 0.017771822648227395,
+            "angular_speed_rad_s": 0.0679431937644547,
+            "stable_endpoints": 0
+          },
+          {
+            "iteration": 4,
+            "object_xy_error_m": 0.00047834999957808814,
+            "bottom_error_m": -0.017121110992398547,
+            "linear_speed_m_s": 0.030997972003556206,
+            "angular_speed_rad_s": 0.11327595751867785,
+            "stable_endpoints": 0
+          },
+          {
+            "iteration": 5,
+            "object_xy_error_m": 0.0012632390671371571,
+            "bottom_error_m": -0.0157407969256258,
+            "linear_speed_m_s": 0.04532357578460163,
+            "angular_speed_rad_s": 0.161284671709132,
+            "stable_endpoints": 0
+          },
+          {
+            "iteration": 6,
+            "object_xy_error_m": 0.0022584585519099584,
+            "bottom_error_m": -0.013967929758464503,
+            "linear_speed_m_s": 0.05602736746757012,
+            "angular_speed_rad_s": 0.20989441834975195,
+            "stable_endpoints": 0
+          },
+          {
+            "iteration": 7,
+            "object_xy_error_m": 0.0033405204986248003,
+            "bottom_error_m": -0.011844751066228065,
+            "linear_speed_m_s": 0.0630160904499457,
+            "angular_speed_rad_s": 0.2493309520027391,
+            "stable_endpoints": 0
+          },
+          {
+            "iteration": 8,
+            "object_xy_error_m": 0.004396734573377238,
+            "bottom_error_m": -0.00946044324743367,
+            "linear_speed_m_s": 0.0641386695999441,
+            "angular_speed_rad_s": 0.2671474781774478,
+            "stable_endpoints": 0
+          },
+          {
+            "iteration": 9,
+            "object_xy_error_m": 0.005369280091166959,
+            "bottom_error_m": -0.006865432283115647,
+            "linear_speed_m_s": 0.05817152201955258,
+            "angular_speed_rad_s": 0.25673074825456416,
+            "stable_endpoints": 0
+          },
+          {
+            "iteration": 10,
+            "object_xy_error_m": 0.00598807728446264,
+            "bottom_error_m": -0.004710433610122466,
+            "linear_speed_m_s": 0.04803301817440731,
+            "angular_speed_rad_s": 0.2312483425965879,
+            "stable_endpoints": 0
+          },
+          {
+            "iteration": 11,
+            "object_xy_error_m": 0.0062373906452425,
+            "bottom_error_m": -0.0029232507862824164,
+            "linear_speed_m_s": 0.035449996548829764,
+            "angular_speed_rad_s": 0.19258462855574066,
+            "stable_endpoints": 0
+          },
+          {
+            "iteration": 12,
+            "object_xy_error_m": 0.00605900016045878,
+            "bottom_error_m": -0.001696973804105495,
+            "linear_speed_m_s": 0.026183801527081333,
+            "angular_speed_rad_s": 0.1495559397568305,
+            "stable_endpoints": 0
+          },
+          {
+            "iteration": 13,
+            "object_xy_error_m": 0.005423551046981979,
+            "bottom_error_m": -0.0009839801970721318,
+            "linear_speed_m_s": 0.024837638573599642,
+            "angular_speed_rad_s": 0.09453673579160697,
+            "stable_endpoints": 0
+          },
+          {
+            "iteration": 14,
+            "object_xy_error_m": 0.004461398649943518,
+            "bottom_error_m": -0.0007938467959260898,
+            "linear_speed_m_s": 0.0300887765106535,
+            "angular_speed_rad_s": 0.048921990862212196,
+            "stable_endpoints": 0
+          },
+          {
+            "iteration": 15,
+            "object_xy_error_m": 0.0033419238392047705,
+            "bottom_error_m": -0.000964644104035628,
+            "linear_speed_m_s": 0.033667915170056587,
+            "angular_speed_rad_s": 0.0288846282496178,
+            "stable_endpoints": 0
+          },
+          {
+            "iteration": 16,
+            "object_xy_error_m": 0.0022009775952919986,
+            "bottom_error_m": -0.0013388563340177573,
+            "linear_speed_m_s": 0.031180799743815036,
+            "angular_speed_rad_s": 0.02005978330250836,
+            "stable_endpoints": 0
+          },
+          {
+            "iteration": 17,
+            "object_xy_error_m": 0.0013474830522977447,
+            "bottom_error_m": -0.0017102783245575015,
+            "linear_speed_m_s": 0.026268200989887344,
+            "angular_speed_rad_s": 0.025539509330061758,
+            "stable_endpoints": 0
+          },
+          {
+            "iteration": 18,
+            "object_xy_error_m": 0.0007302295431134637,
+            "bottom_error_m": -0.0020545049968472284,
+            "linear_speed_m_s": 0.019697959664366944,
+            "angular_speed_rad_s": 0.022244084712245885,
+            "stable_endpoints": 0
+          },
+          {
+            "iteration": 19,
+            "object_xy_error_m": 0.0004995485990777706,
+            "bottom_error_m": -0.002309200336026329,
+            "linear_speed_m_s": 0.013016235121000651,
+            "angular_speed_rad_s": 0.01671971159646674,
+            "stable_endpoints": 0
+          },
+          {
+            "iteration": 20,
+            "object_xy_error_m": 0.0005631906940495607,
+            "bottom_error_m": -0.002453507260263166,
+            "linear_speed_m_s": 0.007158152826143951,
+            "angular_speed_rad_s": 0.006740007323937184,
+            "stable_endpoints": 1
+          },
+          {
+            "iteration": 21,
+            "object_xy_error_m": 0.0006384372413678001,
+            "bottom_error_m": -0.0025002314245896606,
+            "linear_speed_m_s": 0.002490159448430598,
+            "angular_speed_rad_s": 0.001611122386703768,
+            "stable_endpoints": 2
+          },
+          {
+            "iteration": 22,
+            "object_xy_error_m": 0.0006379356180331217,
+            "bottom_error_m": -0.0024628101708215056,
+            "linear_speed_m_s": 0.0025353392653067164,
+            "angular_speed_rad_s": 0.008364535115206522,
+            "stable_endpoints": 3
+          },
+          {
+            "iteration": 23,
+            "object_xy_error_m": 0.0005727838839404116,
+            "bottom_error_m": -0.0023654569958446725,
+            "linear_speed_m_s": 0.004444957182111274,
+            "angular_speed_rad_s": 0.011646051874281194,
+            "stable_endpoints": 4
+          },
+          {
+            "iteration": 24,
+            "object_xy_error_m": 0.00047851484183940985,
+            "bottom_error_m": -0.0022358147076728674,
+            "linear_speed_m_s": 0.0046781897592176784,
+            "angular_speed_rad_s": 0.01279199555859518,
+            "stable_endpoints": 5
+          },
+          {
+            "iteration": 25,
+            "object_xy_error_m": 0.0003908410915347484,
+            "bottom_error_m": -0.0021140345073540345,
+            "linear_speed_m_s": 0.0041254468633249875,
+            "angular_speed_rad_s": 0.011811374841764503,
+            "stable_endpoints": 6
+          }
+        ],
+        "original_target_and_final_gates_unchanged": true
+      },
+      "object_alignment_position_IK": [
+        {
+          "target_m": [
+            0.5341164200631209,
+            -0.25340367981351103,
+            1.2225906035032041
+          ],
+          "predicted_upright_cosine": 0.9993125645547345,
+          "source": "native position/collision IK; actual object release and stability still required"
+        },
+        {
+          "target_m": [
+            0.5348261373264076,
+            -0.253442206523237,
+            1.2232565530437405
+          ],
+          "predicted_upright_cosine": 0.9993717445335382,
+          "source": "native position/collision IK; actual object release and stability still required"
+        },
+        {
+          "target_m": [
+            0.5356612566417087,
+            -0.2537768810551684,
+            1.2233472037746829
+          ],
+          "predicted_upright_cosine": 0.9993382352170331,
+          "source": "native position/collision IK; actual object release and stability still required"
+        },
+        {
+          "target_m": [
+            0.5366913654982027,
+            -0.2542909685290279,
+            1.2230530943810347
+          ],
+          "predicted_upright_cosine": 0.9992351300892206,
+          "source": "native position/collision IK; actual object release and stability still required"
+        },
+        {
+          "target_m": [
+            0.5378507370229223,
+            -0.2548850796213684,
+            1.2222871495713903
+          ],
+          "predicted_upright_cosine": 0.9990345911478448,
+          "source": "native position/collision IK; actual object release and stability still required"
+        },
+        {
+          "target_m": [
+            0.539128324800865,
+            -0.2552175887957207,
+            1.221029667848819
+          ],
+          "predicted_upright_cosine": 0.9987010009487394,
+          "source": "native position/collision IK; actual object release and stability still required"
+        },
+        {
+          "target_m": [
+            0.5403759198234196,
+            -0.25578221985546973,
+            1.2194114507884433
+          ],
+          "predicted_upright_cosine": 0.9982334824388317,
+          "source": "native position/collision IK; actual object release and stability still required"
+        },
+        {
+          "target_m": [
+            0.5416540082137371,
+            -0.25648539248282765,
+            1.217647758250437
+          ],
+          "predicted_upright_cosine": 0.9976479367215935,
+          "source": "native position/collision IK; actual object release and stability still required"
+        },
+        {
+          "target_m": [
+            0.5426587126683977,
+            -0.2572352490590769,
+            1.2170344630037797
+          ],
+          "predicted_upright_cosine": 0.997324961340047,
+          "source": "native position/collision IK; actual object release and stability still required"
+        },
+        {
+          "target_m": [
+            0.5438058821769374,
+            -0.2578797209973943,
+            1.2159358757222498
+          ],
+          "predicted_upright_cosine": 0.9968414671754079,
+          "source": "native position/collision IK; actual object release and stability still required"
+        },
+        {
+          "target_m": [
+            0.5450455050690134,
+            -0.25828806258226283,
+            1.2147298625500709
+          ],
+          "predicted_upright_cosine": 0.9962915930403694,
+          "source": "native position/collision IK; actual object release and stability still required"
+        },
+        {
+          "target_m": [
+            0.5459529585468775,
+            -0.25860625183008495,
+            1.213426512848481
+          ],
+          "predicted_upright_cosine": 0.9957310167013275,
+          "source": "native position/collision IK; actual object release and stability still required"
+        },
+        {
+          "target_m": [
+            0.5465674561216401,
+            -0.25875937366494206,
+            1.212266205444342
+          ],
+          "predicted_upright_cosine": 0.9952418260092449,
+          "source": "native position/collision IK; actual object release and stability still required"
+        },
+        {
+          "target_m": [
+            0.5471081454059479,
+            -0.25874940854188244,
+            1.2112290371275796
+          ],
+          "predicted_upright_cosine": 0.9948107801519988,
+          "source": "native position/collision IK; actual object release and stability still required"
+        },
+        {
+          "target_m": [
+            0.5475994699179312,
+            -0.2587191369656566,
+            1.2105429871771634
+          ],
+          "predicted_upright_cosine": 0.994518928300939,
+          "source": "native position/collision IK; actual object release and stability still required"
+        },
+        {
+          "target_m": [
+            0.5480905824951625,
+            -0.2587837554769525,
+            1.2102197406836814
+          ],
+          "predicted_upright_cosine": 0.9943656303773475,
+          "source": "native position/collision IK; actual object release and stability still required"
+        }
+      ],
+      "tracking_feedback": {
+        "position_error_m": 0.0011497875209955798,
+        "rotation_error_rad": 0.006530163167695221,
+        "corrections": 0
+      },
+      "retreat_delta_m": [
+        -0.0944654098530541,
+        0.024090354280215966,
+        -0.022269736683404928
+      ],
+      "retreat_search": [],
+      "verification_source": "native_support_release_and_stability",
+      "held_by": null,
+      "actual_bottle_position_m": [
+        0.5343913789536617,
+        -0.252663624490108,
+        1.0049931327731092
+      ],
+      "placement": {
+        "surface": "table",
+        "xy_m": [
+          0.533,
+          -0.253
+        ],
+        "tolerance_m": 0.01,
+        "stable_seconds": 1.059,
+        "confirmed": true
+      },
+      "position_error_m": 0.0014314621463202765,
+      "primitive_success": true,
+      "stats": {
+        "ik_attempts": 30,
+        "collision_checks": 177,
+        "rrt_nodes": 0
+      },
+      "phase": "settle",
+      "planning_timing": {
+        "schema": "planning-timing/1",
+        "method": "single-owner discrete-event integration before proposal dispatch",
+        "scope": "planner construction and each generator resume, including IK, collision search, GPU worker round trips and feedback publishing",
+        "waiting_action": "exact previous applied native target; no new target, reset, weld or state overwrite",
+        "quantization": "cumulative wall duration on the existing 1ms physics grid; final remainder rounded up; bounded by one physics step; command cadence remains 30Hz",
+        "omissions": [
+          "initial LLM planning before first plan declaration",
+          "camera exposure and CAN timing",
+          "real controller/watchdog behavior",
+          "continuous streaming during blocking computation"
+        ],
+        "real_time_validated": false,
+        "transfer_ready": false,
+        "mode": "measured_delay",
+        "delay_source": "measured local planner duration; no injected diagnostic delay",
+        "generator_resumes": 301,
+        "native_commands": 300,
+        "planner_wall_seconds": 0.23464243899843495,
+        "hold_transitions": 37,
+        "hold_physics_steps": 235,
+        "integrated_hold_seconds": 0.23499999999991417,
+        "unintegrated_seconds": 0.0,
+        "rounding_overhead_seconds": 0.0003575610014792119,
+        "last_revalidation": {
+          "accepted": true,
+          "reason": null,
+          "source_tick": 1087,
+          "current_tick": 1088,
+          "tcp_drift_m": 9.966425797756065e-08,
+          "tcp_rotation_rad": 2.8585383434967613e-07,
+          "joint_drift_rad": 2.1136416741840414e-07,
+          "object_drift_m": 1.9438120603518065e-10,
+          "object_rotation_rad": 7.598131170262078e-08,
+          "limits": {
+            "tcp_m": 0.005,
+            "tcp_rotation_rad": 0.05,
+            "joint_rad": 0.02,
+            "object_m": 0.003,
+            "object_rotation_rad": 0.05
+          },
+          "source": "simulator_oracle; rejects stale paths, not physical localization accuracy",
+          "hardware_access": false,
+          "transfer_ready": false
+        }
+      }
+    },
+    "planning_timing": {
+      "schema": "planning-timing/1",
+      "method": "single-owner discrete-event integration before proposal dispatch",
+      "scope": "planner construction and each generator resume, including IK, collision search, GPU worker round trips and feedback publishing",
+      "waiting_action": "exact previous applied native target; no new target, reset, weld or state overwrite",
+      "quantization": "cumulative wall duration on the existing 1ms physics grid; final remainder rounded up; bounded by one physics step; command cadence remains 30Hz",
+      "omissions": [
+        "initial LLM planning before first plan declaration",
+        "camera exposure and CAN timing",
+        "real controller/watchdog behavior",
+        "continuous streaming during blocking computation"
+      ],
+      "real_time_validated": false,
+      "transfer_ready": false,
+      "mode": "measured_delay",
+      "delay_source": "measured local planner duration; no injected diagnostic delay",
+      "generator_resumes": 301,
+      "native_commands": 300,
+      "planner_wall_seconds": 0.23464243899843495,
+      "hold_transitions": 37,
+      "hold_physics_steps": 235,
+      "integrated_hold_seconds": 0.23499999999991417,
+      "unintegrated_seconds": 0.0,
+      "rounding_overhead_seconds": 0.0003575610014792119,
+      "last_revalidation": {
+        "accepted": true,
+        "reason": null,
+        "source_tick": 1087,
+        "current_tick": 1088,
+        "tcp_drift_m": 9.966425797756065e-08,
+        "tcp_rotation_rad": 2.8585383434967613e-07,
+        "joint_drift_rad": 2.1136416741840414e-07,
+        "object_drift_m": 1.9438120603518065e-10,
+        "object_rotation_rad": 7.598131170262078e-08,
+        "limits": {
+          "tcp_m": 0.005,
+          "tcp_rotation_rad": 0.05,
+          "joint_rad": 0.02,
+          "object_m": 0.003,
+          "object_rotation_rad": 0.05
+        },
+        "source": "simulator_oracle; rejects stale paths, not physical localization accuracy",
+        "hardware_access": false,
+        "transfer_ready": false
+      }
+    }
+  },
+  "transfer_ready": false
+}

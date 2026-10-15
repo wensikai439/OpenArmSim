@@ -5,7 +5,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / 'runs/20261014-demo'
-CASES = [('ui-arms-2', '页面输入：双臂定向移动'), ('point-2', '瓶子放到指定桌面坐标'),
+CASES = [('ui-arms-3', '页面输入：双臂定向移动'), ('point-2', '瓶子放到指定桌面坐标'),
          ('basket-5', '自主恢复并放入篮子')]
 
 
@@ -27,7 +27,8 @@ def main():
             'checks': {**data['checks'], 'task_window_not_exhausted': budget_ok},
             'api_calls': data['actual_api_calls'], 'model_verdict': data['plan'].get('verdict'),
             'position_error_mm': round(max((x for x in errors if x is not None), default=0) * 1000, 3),
-            'receipts': [{'skill': r['tool'], 'run_id': r['run_id'], 'passed': r['passed']}
+            'receipts': [{'skill': r['tool'], 'run_id': r['run_id'], 'passed': r['passed'],
+                          'planner': (r.get('arguments') or {}).get('planner', 'tamp')}
                          for r in data['native_receipts']]})
     audit = json.loads((OUT / 'audit.json').read_text()) if (OUT / 'audit.json').exists() else {}
     report = {'scope': 'Fixed development demonstrations through the saved real API; not a generalization benchmark or sim-to-real proof',
@@ -36,7 +37,7 @@ def main():
     (OUT / 'summary.json').write_text(json.dumps(report, ensure_ascii=False, indent=2) + '\n')
     rows = []
     for case in cases:
-        receipts = ' · '.join(f'<a href="../{html.escape(r["run_id"])}/summary.json">{html.escape(r["skill"])}{" ✓" if r["passed"] else " 未通过"}</a>'
+        receipts = ' · '.join(f'<a href="../{html.escape(r["run_id"])}/summary.json">{html.escape(r["skill"])} / {html.escape(r["planner"])}{" ✓" if r["passed"] else " 未通过"}</a>'
                               for r in case.get('receipts', []))
         rows.append(f'<tr><td><a href="{case["folder"]}/result.json">{case["label"]}</a></td>'
                     f'<td>{case["status"]}</td><td>{case.get("api_calls", "—")}</td>'
