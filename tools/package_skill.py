@@ -41,6 +41,23 @@ def build(destination, upstream):
         package=json.loads((ROOT/'PACKAGE-MANIFEST.json').read_text())
         names=[entry['path'] for entry in package['entries']]
     files={name:(ROOT/name).read_bytes() for name in names if name and eligible(name) and (ROOT/name).is_file()}
+    # git ls-files in the parent lists a submodule only as its directory.
+    # Export its tracked working-tree files explicitly, without .git/history.
+    submodules={}
+    if (ROOT/'.git').exists():
+        staged=subprocess.check_output(['git','ls-files','--stage','-z'],cwd=ROOT).decode().split('\0')
+        for entry in staged:
+            if not entry.startswith('160000 '):continue
+            metadata,name=entry.split('\t',1)
+            submodules[name]=metadata.split()[1]
+            child=ROOT/name
+            children=subprocess.check_output(['git','-C',str(child),'ls-files','-z']).decode().split('\0')
+            for item in children:
+                relative=name+'/'+item
+                path=child/item
+                if item and eligible(relative) and path.is_file():files[relative]=path.read_bytes()
+    else:
+        submodules=package.get('submodules',{})
     if 'skills/bottle_relay/program.py' not in files:raise ValueError('stage the admitted skill before packaging')
     # Read only the transitive runtime dependencies. Archiving all of
     # cap_harness can trigger lazy fetching of unrelated real-robot assets.
@@ -67,6 +84,7 @@ def build(destination, upstream):
     manifest={'schema':'openarmsim-colleague-package/2','files':len(entries),'entries':entries,
         'source_commit':(subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip()
             if (ROOT/'.git').exists() else package.get('source_commit')),
+        'submodules':submodules,
         'hardware_driver_included':False,'hardware_enabled':False,'transfer_ready':False}
     files['PACKAGE-MANIFEST.json']=(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n').encode()
     destination=destination.resolve();destination.parent.mkdir(parents=True,exist_ok=True)
