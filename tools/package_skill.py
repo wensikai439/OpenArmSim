@@ -6,15 +6,16 @@ not contain an operational hardware driver.
 """
 import argparse
 import hashlib
-import io
 import json
 from pathlib import Path, PurePosixPath
 import subprocess
-import tarfile
 import zipfile
 
 ROOT=Path(__file__).resolve().parents[1]
 UPSTREAM_REV='fa00f0ef2bc1d91d594b9aa502c22133c9f538f7'
+RUNTIME_FILES=('src/cap_harness/__init__.py','src/cap_harness/runtime.py',
+    'src/cap_harness/registry.py','src/cap_harness/contracts.py','src/cap_harness/errors.py',
+    'LICENSE','NOTICE','pyproject.toml')
 
 
 def eligible(name):
@@ -29,19 +30,32 @@ def eligible(name):
 def build(destination, upstream):
     from harness.aspire.runtime import SOURCE
     upstream=(upstream or SOURCE).resolve()
-    revision=subprocess.check_output(['git','-C',str(upstream),'rev-parse','HEAD'],text=True).strip()
+    origin_path=upstream/'ORIGIN.json'
+    origin=json.loads(origin_path.read_text()) if origin_path.exists() else None
+    revision=(origin['revision'] if origin else subprocess.check_output(
+        ['git','-C',str(upstream),'rev-parse','HEAD'],text=True).strip())
     if revision!=UPSTREAM_REV:raise ValueError('ASPIRE revision differs from validated runtime')
-    names=subprocess.check_output(['git','ls-files','-z'],cwd=ROOT).decode().split('\0')
+    if (ROOT/'.git').exists():
+        names=subprocess.check_output(['git','ls-files','-z'],cwd=ROOT).decode().split('\0')
+    else:
+        package=json.loads((ROOT/'PACKAGE-MANIFEST.json').read_text())
+        names=[entry['path'] for entry in package['entries']]
     files={name:(ROOT/name).read_bytes() for name in names if name and eligible(name) and (ROOT/name).is_file()}
     if 'skills/bottle_relay/program.py' not in files:raise ValueError('stage the admitted skill before packaging')
-    # Use Git objects, not potentially edited/untracked third-party files.
-    archive=subprocess.check_output(['git','-C',str(upstream),'archive',UPSTREAM_REV,
-        'src/cap_harness','LICENSE','NOTICE','pyproject.toml'])
-    with tarfile.open(fileobj=io.BytesIO(archive)) as tar:
-        for member in tar.getmembers():
-            if member.isfile():files['third_party/aspire/'+member.name]=tar.extractfile(member).read()
+    # Read only the transitive runtime dependencies. Archiving all of
+    # cap_harness can trigger lazy fetching of unrelated real-robot assets.
+    runtime_hashes={}
+    for name in RUNTIME_FILES:
+        data=((upstream/name).read_bytes() if origin else subprocess.check_output(
+            ['git','-C',str(upstream),'show',UPSTREAM_REV+':'+name]))
+        digest=hashlib.sha256(data).hexdigest()
+        if origin and origin.get('files',{}).get(name)!=digest:
+            raise ValueError('bundled official runtime hash mismatch: '+name)
+        files['third_party/aspire/'+name]=data
+        runtime_hashes[name]=digest
     files['third_party/aspire/ORIGIN.json']=(json.dumps({'url':'https://github.com/NVlabs/ASPIRE',
-        'revision':UPSTREAM_REV,'scope':'official cap_harness source, license and metadata; no robot backend/models'},indent=2)+'\n').encode()
+        'revision':UPSTREAM_REV,'files':runtime_hashes,
+        'scope':'official ProgramExecutor and transitive runtime dependencies, license and metadata; no robot backends/models'},indent=2)+'\n').encode()
     # Include concise measured evidence; native large recordings stay local.
     for name in ('protocol.json','assessment.json','audit.json','model-review.json'):
         path=ROOT/'runs/20261024-relay'/name
@@ -51,7 +65,8 @@ def build(destination, upstream):
     entries=[{'path':name,'bytes':len(data),'sha256':hashlib.sha256(data).hexdigest()}
         for name,data in sorted(files.items())]
     manifest={'schema':'openarmsim-colleague-package/2','files':len(entries),'entries':entries,
-        'source_commit':subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),
+        'source_commit':(subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip()
+            if (ROOT/'.git').exists() else package.get('source_commit')),
         'hardware_driver_included':False,'hardware_enabled':False,'transfer_ready':False}
     files['PACKAGE-MANIFEST.json']=(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n').encode()
     destination=destination.resolve();destination.parent.mkdir(parents=True,exist_ok=True)
