@@ -1,0 +1,44 @@
+{
+  "purpose": "predeclared broader position generalization check after user correction; frozen program, no further debugging",
+  "cases": [
+    "/home/wsk/gpt+vla/OpenArmSim/runs/20261023-aspire/cases/wide/301.json",
+    "/home/wsk/gpt+vla/OpenArmSim/runs/20261023-aspire/cases/wide/302.json",
+    "/home/wsk/gpt+vla/OpenArmSim/runs/20261023-aspire/cases/wide/303.json",
+    "/home/wsk/gpt+vla/OpenArmSim/runs/20261023-aspire/cases/wide/304.json",
+    "/home/wsk/gpt+vla/OpenArmSim/runs/20261023-aspire/cases/wide/305.json",
+    "/home/wsk/gpt+vla/OpenArmSim/runs/20261023-aspire/cases/wide/306.json",
+    "/home/wsk/gpt+vla/OpenArmSim/runs/20261023-aspire/cases/wide/307.json",
+    "/home/wsk/gpt+vla/OpenArmSim/runs/20261023-aspire/cases/wide/308.json",
+    "/home/wsk/gpt+vla/OpenArmSim/runs/20261023-aspire/cases/wide/309.json",
+    "/home/wsk/gpt+vla/OpenArmSim/runs/20261023-aspire/cases/wide/310.json",
+    "/home/wsk/gpt+vla/OpenArmSim/runs/20261023-aspire/cases/wide/311.json",
+    "/home/wsk/gpt+vla/OpenArmSim/runs/20261023-aspire/cases/wide/312.json",
+    "/home/wsk/gpt+vla/OpenArmSim/runs/20261023-aspire/cases/wide/313.json",
+    "/home/wsk/gpt+vla/OpenArmSim/runs/20261023-aspire/cases/wide/314.json",
+    "/home/wsk/gpt+vla/OpenArmSim/runs/20261023-aspire/cases/wide/315.json",
+    "/home/wsk/gpt+vla/OpenArmSim/runs/20261023-aspire/cases/wide/316.json"
+  ],
+  "region_m": {
+    "x": [
+      0.41,
+      0.59
+    ],
+    "y": [
+      -0.29,
+      -0.09
+    ]
+  },
+  "methods": [
+    "fixed successful nominal command replay",
+    "existing parameterized geometry tools",
+    "Haiku generated guarded program"
+  ],
+  "source_nominal": "development/v01/051",
+  "nominal_reproduction_required": true,
+  "relabel_original_baseline": "existing parameterized geometry tool composition, NOT fixed demo",
+  "no_filtering_failed_cases": true,
+  "no_new_model_or_physics_parameters": true,
+  "no_feedback_to_actor": true,
+  "per_trial_wall_budget_s": 60,
+  "timed_out_trials_count_as_failure": true
+}

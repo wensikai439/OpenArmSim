@@ -1,0 +1,39 @@
+{
+  "frozen_source_files_changed": [],
+  "program_sha256_matches": true,
+  "floating_coordinate_constants_in_generated_program": [],
+  "nonempty_pick_sequences_checked": 36,
+  "distinct_nonempty_pick_command_sequences": 36,
+  "failed_wide_cases": [
+    {
+      "case": {
+        "seed": 313,
+        "bottle_xy_m": [
+          0.59,
+          -0.29
+        ]
+      },
+      "failure_code": "start_collision",
+      "failure_stage": "place"
+    }
+  ],
+  "fixed_nominal_reproduced": true,
+  "full_regression_tests": {
+    "passed": 338,
+    "total": 338
+  },
+  "api_including_text_probe": {
+    "requests": 6,
+    "total_reported_tokens": 36044
+  },
+  "interpretation": "Position adaptation is observed but is inherited from geometric primitives. No measured ASPIRE success gain or new recovery strategy.",
+  "adapter_tests": {
+    "passed": 4,
+    "total": 4
+  },
+  "command_smoke": {
+    "command": "./run aspire test --x 0.515 --y -0.187",
+    "passed": true,
+    "run": "runs/20261023-234815-bottle-skill"
+  }
+}

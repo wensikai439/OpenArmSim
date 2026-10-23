@@ -1,0 +1,72 @@
+{
+  "schema": "openarm-aspire/1",
+  "upstream_commit": "fa00f0ef2bc1d91d594b9aa502c22133c9f538f7",
+  "upstream_modules": {
+    "runtime.py": "afc71d2d9c693666b9171dfc5c6e82d5e921050c0a4f0f94f8542816a760f1fa",
+    "registry.py": "2523f7466d298b3227cf2a6bdd62c3381f599793cc9e4e398c5ca9bd60321850"
+  },
+  "task": "right bottle pick -> right-to-left handover -> left basket placement",
+  "adapter": "custom OpenArm geometry-oracle tools with actual NVIDIA ProgramExecutor/ToolRegistry",
+  "partitions": {
+    "development": [
+      "/home/wsk/gpt+vla/OpenArmSim/runs/20261023-aspire/cases/development/051.json",
+      "/home/wsk/gpt+vla/OpenArmSim/runs/20261023-aspire/cases/development/052.json",
+      "/home/wsk/gpt+vla/OpenArmSim/runs/20261023-aspire/cases/development/053.json",
+      "/home/wsk/gpt+vla/OpenArmSim/runs/20261023-aspire/cases/development/054.json",
+      "/home/wsk/gpt+vla/OpenArmSim/runs/20261023-aspire/cases/development/055.json"
+    ],
+    "unseen": [
+      "/home/wsk/gpt+vla/OpenArmSim/runs/20261023-aspire/cases/unseen/066.json",
+      "/home/wsk/gpt+vla/OpenArmSim/runs/20261023-aspire/cases/unseen/067.json",
+      "/home/wsk/gpt+vla/OpenArmSim/runs/20261023-aspire/cases/unseen/068.json",
+      "/home/wsk/gpt+vla/OpenArmSim/runs/20261023-aspire/cases/unseen/069.json",
+      "/home/wsk/gpt+vla/OpenArmSim/runs/20261023-aspire/cases/unseen/070.json"
+    ],
+    "heldout": [
+      "/home/wsk/gpt+vla/OpenArmSim/runs/20261023-aspire/cases/heldout/001.json",
+      "/home/wsk/gpt+vla/OpenArmSim/runs/20261023-aspire/cases/heldout/002.json",
+      "/home/wsk/gpt+vla/OpenArmSim/runs/20261023-aspire/cases/heldout/003.json",
+      "/home/wsk/gpt+vla/OpenArmSim/runs/20261023-aspire/cases/heldout/004.json",
+      "/home/wsk/gpt+vla/OpenArmSim/runs/20261023-aspire/cases/heldout/005.json",
+      "/home/wsk/gpt+vla/OpenArmSim/runs/20261023-aspire/cases/heldout/006.json",
+      "/home/wsk/gpt+vla/OpenArmSim/runs/20261023-aspire/cases/heldout/007.json",
+      "/home/wsk/gpt+vla/OpenArmSim/runs/20261023-aspire/cases/heldout/008.json",
+      "/home/wsk/gpt+vla/OpenArmSim/runs/20261023-aspire/cases/heldout/009.json",
+      "/home/wsk/gpt+vla/OpenArmSim/runs/20261023-aspire/cases/heldout/010.json",
+      "/home/wsk/gpt+vla/OpenArmSim/runs/20261023-aspire/cases/heldout/011.json",
+      "/home/wsk/gpt+vla/OpenArmSim/runs/20261023-aspire/cases/heldout/012.json",
+      "/home/wsk/gpt+vla/OpenArmSim/runs/20261023-aspire/cases/heldout/013.json",
+      "/home/wsk/gpt+vla/OpenArmSim/runs/20261023-aspire/cases/heldout/014.json",
+      "/home/wsk/gpt+vla/OpenArmSim/runs/20261023-aspire/cases/heldout/015.json",
+      "/home/wsk/gpt+vla/OpenArmSim/runs/20261023-aspire/cases/heldout/016.json",
+      "/home/wsk/gpt+vla/OpenArmSim/runs/20261023-aspire/cases/heldout/017.json",
+      "/home/wsk/gpt+vla/OpenArmSim/runs/20261023-aspire/cases/heldout/018.json",
+      "/home/wsk/gpt+vla/OpenArmSim/runs/20261023-aspire/cases/heldout/019.json",
+      "/home/wsk/gpt+vla/OpenArmSim/runs/20261023-aspire/cases/heldout/020.json"
+    ]
+  },
+  "bottle_workspace_m": {
+    "x": [
+      0.468,
+      0.538
+    ],
+    "y": [
+      -0.213,
+      -0.133
+    ]
+  },
+  "fixture": "synthetic upright reset only; no pose edits after first control command",
+  "budget": {
+    "actor_versions": 6,
+    "verifier_versions": 2,
+    "api_requests": 24,
+    "api_tokens": 60000,
+    "per_trial_sim_seconds": 120,
+    "per_trial_wall_seconds": 200
+  },
+  "original_paper_protocol": false,
+  "hardware_access": false,
+  "transfer_ready": false,
+  "control_mode": "paused simulation; model coding latency is outside the executed robot program",
+  "baseline": "same existing TAMP primitives, straight-line call sequence; not supplied to the actor"
+}

@@ -1,0 +1,54 @@
+"""Short local entry point: ./run aspire test --x .50 --y -.17."""
+import argparse
+import getpass
+import hashlib
+import json
+from pathlib import Path
+import time
+
+ROOT=Path(__file__).resolve().parents[2]
+
+
+def main():
+    parser=argparse.ArgumentParser(description='OpenArm 抓瓶技能与 ASPIRE 实验')
+    commands=parser.add_subparsers(dest='command',required=True)
+    configure=commands.add_parser('configure',help='单独保存实验 API，不覆盖主页面配置')
+    configure.add_argument('--base-url',required=True)
+    configure.add_argument('--model',required=True)
+    train=commands.add_parser('train',help='新建有预算限制的 ASPIRE 技能发现实验')
+    train.add_argument('--output',default='runs/'+time.strftime('%Y%m%d-%H%M%S')+'-aspire')
+    test=commands.add_parser('test',help='独立仿真测试已验证的抓瓶交接技能，不连接真机')
+    test.add_argument('--x',type=float,default=.503)
+    test.add_argument('--y',type=float,default=-.173)
+    test.add_argument('--seed',type=int,default=0)
+    args=parser.parse_args()
+    if args.command=='configure':
+        from harness.llm import ModelSettings
+        from harness.vault import SecretStore
+        settings=ModelSettings(store=SecretStore(namespace='openarm-aspire'))
+        settings.configure({'base_url':args.base_url,'model':args.model,'api_key':getpass.getpass('API Key：'),
+                            'vision':True})
+        print('实验 API 已保存到系统密钥环。')
+        return 0
+    if args.command=='train':
+        from .campaign import run
+        output=(ROOT/args.output).resolve()
+        if not output.is_relative_to(ROOT/'runs'):parser.error('实验输出必须放在 runs 内')
+        run(output)
+        return 0
+    folder=ROOT/'skills/bottle_relay'
+    program=folder/'program.py'
+    if not program.exists() or not (folder/'manifest.json').exists():
+        parser.error('抓瓶技能尚未通过复验并入库，请先查看实验结果')
+    manifest=json.loads((folder/'manifest.json').read_text())
+    if hashlib.sha256(program.read_bytes()).hexdigest()!=manifest['program_sha256']:
+        parser.error('技能程序已改变，原验收结果不再适用；请重新验证')
+    output=ROOT/'runs'/(time.strftime('%Y%m%d-%H%M%S')+'-bottle-skill')
+    from .runtime import run,validate_case
+    case=validate_case({'seed':args.seed,'bottle_xy_m':[args.x,args.y]})
+    result=run(program,case,output)
+    print('完整记录：'+str(output))
+    return result
+
+
+if __name__=='__main__':raise SystemExit(main())

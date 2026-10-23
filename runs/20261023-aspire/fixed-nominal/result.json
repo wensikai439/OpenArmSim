@@ -1,0 +1,134 @@
+{
+  "case": {
+    "seed": 51,
+    "bottle_xy_m": [
+      0.503,
+      -0.173
+    ]
+  },
+  "task_success": true,
+  "method": "fixed nominal actuator-command replay",
+  "replanning": false,
+  "uses_current_bottle_pose_for_control": false,
+  "source_nominal": "runs/20261023-aspire/development/v01/051",
+  "sources": [
+    {
+      "native_run": "native/20261023-230810-tamp-883604",
+      "transitions_sha256": "be14ca7ca7220938153c4662b3d7797e56155f5d0c823fdc26bc7307509e5db2"
+    },
+    {
+      "native_run": "native/20261023-230814-tamp-967293",
+      "transitions_sha256": "64ec262f0065d7e5c51118d445fa27480f4fd058fa291b05089387f18b465382"
+    },
+    {
+      "native_run": "native/20261023-230820-tamp-fb2458",
+      "transitions_sha256": "b3b6c4224403a6df3079cd7f4d0c13d35e497c907228afaf5de9b65ee8030bc8"
+    }
+  ],
+  "stages": [
+    {
+      "tool": "pick",
+      "ok": true,
+      "tick": 395
+    },
+    {
+      "tool": "handover",
+      "ok": true,
+      "tick": 1111
+    },
+    {
+      "tool": "place",
+      "ok": true,
+      "tick": 1440
+    }
+  ],
+  "hardware_access": false,
+  "transfer_ready": false,
+  "steps": 1440,
+  "sim_seconds": 47.99999999997883,
+  "evaluation": {
+    "success": true,
+    "invalid": false,
+    "held": {
+      "left": false,
+      "right": false
+    },
+    "touching": {
+      "left": false,
+      "right": false
+    },
+    "failure_reasons": [],
+    "inside_basket": true,
+    "supported_by_basket": true,
+    "stable_seconds": 2.607,
+    "linear_speed_m_s": 1.704898633484387e-06,
+    "penetration_m": 0.00012167134311330922,
+    "max_penetration_m": 0.004670131756590685,
+    "peak_normal_force_N": 1.605027527861069,
+    "robot_contact_count": 0,
+    "contact_window": {
+      "sampling": "every solved physics step plus a zero-duration final-state check",
+      "physics_dt_s": 0.001,
+      "samples": 33,
+      "interval_start_s": 47.96699999997891,
+      "duration_s": 0.03300000000000002,
+      "robot_external_seconds": 0.0,
+      "robot_self_seconds": 0.0,
+      "robot_external_impulse_Ns": 0.0,
+      "robot_self_impulse_Ns": 0.0,
+      "robot_external_peak_force_N": 0.0,
+      "robot_self_peak_force_N": 0.0,
+      "endpoint_robot_external_force_N": 0.0,
+      "endpoint_robot_self_force_N": 0.0,
+      "peak_normal_force_N": 1.605027527861069,
+      "max_penetration_m": 0.00012167134311330922,
+      "hold_seconds": {
+        "left": 0.0,
+        "right": 0.0
+      },
+      "stable_seconds": 2.606999999999824,
+      "placement_seconds": 2.606999999999824,
+      "pairs": [
+        {
+          "geoms": [
+            "bottle_body",
+            "box_floor"
+          ],
+          "bodies": [
+            "task_bottle",
+            "target_box"
+          ],
+          "robot_external": false,
+          "robot_self": false,
+          "first_time_s": 47.96699999997891,
+          "last_time_s": 47.99999999997883,
+          "duration_s": 0.03300000000000002,
+          "normal_impulse_Ns": 0.17804395265475043,
+          "peak_normal_force_N": 5.398305553839936,
+          "penetration_m": 0.00012167134311330922
+        }
+      ]
+    },
+    "placement": {
+      "surface": "basket",
+      "xy_m": [
+        0.474,
+        0.357
+      ],
+      "tolerance_m": 0.025,
+      "stable_seconds": 2.607,
+      "confirmed": true
+    },
+    "evidence_source": "privileged simulator evaluator; not a camera measurement",
+    "transfer_ready": false,
+    "non_target_object_guard": {
+      "source": "native registered-body displacement from task selection; hidden diagnostic",
+      "displacement_m": {},
+      "limit_m": 0.003,
+      "passed": true,
+      "scope": "additional development execution gate; not a measured physical tolerance"
+    }
+  },
+  "completed_all_commands": true,
+  "final_robot_state_error_to_nominal_rad": 0.0
+}

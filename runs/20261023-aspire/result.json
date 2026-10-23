@@ -1,0 +1,115 @@
+{
+  "complete": true,
+  "development": {
+    "passes": 5,
+    "total": 5
+  },
+  "unseen": {
+    "passes": 5,
+    "total": 5
+  },
+  "heldout": {
+    "passes": 20,
+    "total": 20
+  },
+  "baseline": {
+    "passes": 20,
+    "total": 20
+  },
+  "verification": "verified",
+  "api": {
+    "model": "claude-haiku-5-5",
+    "base_url": "https://zzq.si/v1",
+    "requests": 5,
+    "total_tokens": 35506,
+    "limits": {
+      "requests": 24,
+      "tokens": 60000
+    },
+    "usage": [
+      {
+        "request": 1,
+        "seconds": 2.2412094339961186,
+        "response_model": "claude-haiku-5-5",
+        "tokens": {
+          "prompt_tokens": 1804,
+          "completion_tokens": 220,
+          "total_tokens": 2024,
+          "prompt_tokens_details": {
+            "cache_creation_tokens": 1784
+          }
+        }
+      },
+      {
+        "request": 2,
+        "seconds": 7.444734224001877,
+        "response_model": "claude-haiku-5-5",
+        "tokens": {
+          "prompt_tokens": 1780,
+          "completion_tokens": 258,
+          "total_tokens": 2038,
+          "prompt_tokens_details": {
+            "cached_tokens": 841,
+            "cache_creation_tokens": 919
+          }
+        }
+      },
+      {
+        "request": 3,
+        "seconds": 5.035436215926893,
+        "response_model": "claude-haiku-5-5",
+        "tokens": {
+          "prompt_tokens": 4430,
+          "completion_tokens": 1103,
+          "total_tokens": 5533,
+          "prompt_tokens_details": {
+            "cache_creation_tokens": 4410
+          }
+        }
+      },
+      {
+        "request": 4,
+        "seconds": 12.010145870037377,
+        "response_model": "claude-haiku-5-5",
+        "tokens": {
+          "prompt_tokens": 16199,
+          "completion_tokens": 2232,
+          "total_tokens": 18431,
+          "prompt_tokens_details": {
+            "cache_creation_tokens": 16178
+          }
+        }
+      },
+      {
+        "request": 5,
+        "seconds": 5.903533954988234,
+        "response_model": "claude-haiku-5-5",
+        "tokens": {
+          "prompt_tokens": 6323,
+          "completion_tokens": 1157,
+          "total_tokens": 7480,
+          "prompt_tokens_details": {
+            "cache_creation_tokens": 6303
+          }
+        }
+      }
+    ]
+  },
+  "frozen": {
+    "program_sha256": "969f202c7adcb531a4f02124c967c7dd42e898fac369fcb96cbd3cf719b0201e",
+    "selected_version": 1,
+    "development_passes": 5,
+    "frozen_before_unseen_and_heldout": true,
+    "source_sha256": {
+      "harness/aspire/__init__.py": "a93730f009485ea513d70d0a9810c841b3cfbedfbb9bbc4bd842310c892e0d5c",
+      "harness/aspire/campaign.py": "47db2ad2376ee01600b954c1086a0ad94df8dcb24a619703e9ba97af9b4012eb",
+      "harness/aspire/client.py": "1ad2b2244d2bcc4a1c6aef785fceabccf857cd3c2962c477c3f591fb2bcec3dd",
+      "harness/aspire/runtime.py": "6205442578a68a6420e2725f0a4fecc2956b758ecd7c7b4d077a7608befbbf1d",
+      "harness/aspire/runtime_checks.py": "8be49cb12154987bd258602c87ee7d0b31576a3292cd08bb20448b3516f04595"
+    }
+  },
+  "oracle_geometry": true,
+  "vision_only": false,
+  "hardware_access": false,
+  "transfer_ready": false
+}
