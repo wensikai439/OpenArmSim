@@ -245,6 +245,8 @@ def build_backend(*, harness_context=True, stable_hold=True, transit_hints=True)
     if stable_hold:
         from harness.settled_hold import compose_planner as settling
         composed_tamp_planner=_run_layer('planner_layers','harness.settled_hold',settling,composed_tamp_planner)
+    from sim.relay_place import compose_planner as shape_basket
+    composed_tamp_planner=_run_layer('planner_layers','sim.relay_place',shape_basket,composed_tamp_planner)
     composed_relocation_planner = _run_layer('planner_layers', 'relocation.native_primitives',
         bind_relocation_primitives, composed_relocation_planner, composed_tamp_planner)
     factory=_run_layer('factory_layers','sim.service.TampPlanner+RelocationPlanner+CuRoboPlanner',bind_tamp_planner,

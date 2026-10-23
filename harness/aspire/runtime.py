@@ -18,7 +18,8 @@ import mujoco
 import numpy as np
 
 ROOT = Path(__file__).resolve().parents[2]
-SOURCE = Path(os.environ.get('OPENARM_ASPIRE_SOURCE', '/home/wsk/ASPIRE/libero-pro/source'))
+_BUNDLED = ROOT/'third_party/aspire'
+SOURCE = Path(os.environ.get('OPENARM_ASPIRE_SOURCE', str(_BUNDLED if _BUNDLED.exists() else Path('/home/wsk/ASPIRE/libero-pro/source'))))
 sys.path.insert(0, str(SOURCE/'src'))
 from cap_harness.runtime import ProgramExecutor
 from cap_harness.registry import ToolRegistry
@@ -111,8 +112,11 @@ class PublicTrace:
 
 
 class OpenArmTrial:
+    validate_case = staticmethod(validate_case)
+    fixture_environment = staticmethod(fixture_environment)
+
     def __init__(self, case, output):
-        self.case=validate_case(case); self.output=output
+        self.case=self.validate_case(case); self.output=output
         self.stages=[]; self.native_paths={}; self.motion_calls=0
         self.service=None
         os.environ['OPENARM_SCENE_OBJECTS']='[]'
@@ -120,7 +124,7 @@ class OpenArmTrial:
         from sim.recording import Recorder
         import sim.scene_library as library
         factory,_=build_backend()
-        env_type=fixture_environment(library.LibraryEnv,case)
+        env_type=self.fixture_environment(library.LibraryEnv,case)
         owner=self
         class TrialRecorder(Recorder):
             def __init__(self, env, kind, **kwargs):
@@ -195,17 +199,23 @@ class OpenArmTrial:
             params['next_handover']=dict(next_handover)
         return self.execute('pick','pick_bottle',params)
 
-    def handover(self, from_arm='right', to_arm='left', hold_seconds=2):
+    def handover(self, from_arm='right', to_arm='left', hold_seconds=2, placement_aware=False):
         if (from_arm not in ('left','right') or to_arm not in ('left','right') or from_arm==to_arm
             or type(hold_seconds) not in (int,float) or not 2<=hold_seconds<=10):
             raise ValueError('handover requires distinct arms and2..10hold_seconds')
-        return self.execute('handover','handover_bottle',{'object_id':'bottle',
-            'from_arm':from_arm,'to_arm':to_arm,'hold_seconds':hold_seconds})
+        if type(placement_aware) is not bool: raise ValueError('placement_aware must be boolean')
+        params={'object_id':'bottle','from_arm':from_arm,'to_arm':to_arm,'hold_seconds':hold_seconds}
+        if placement_aware: params['placement_aware']=True
+        return self.execute('handover','handover_bottle',params)
 
-    def place(self, arm='left', receptacle_id='basket'):
+    def place(self, arm='left', receptacle_id='basket', shape_clearance=False):
         if arm not in ('left','right') or receptacle_id!='basket':
             raise ValueError('this task requires placement into the original basket')
-        return self.execute('place','place_bottle',{'object_id':'bottle','arm':arm,'receptacle_id':receptacle_id})
+        if type(shape_clearance) is not bool:
+            raise ValueError('shape_clearance must be boolean')
+        params={'object_id':'bottle','arm':arm,'receptacle_id':receptacle_id}
+        if shape_clearance: params['shape_clearance']=True
+        return self.execute('place','place_bottle',params)
 
     def move_relative(self, arm, x_m, y_m, z_m):
         xyz=[x_m,y_m,z_m]
@@ -226,7 +236,7 @@ class OpenArmTrial:
         if self.service:self.service.close()
 
 
-def run(program, case, output):
+def run(program, case, output, *, host_type=OpenArmTrial):
     output.mkdir(parents=True,exist_ok=False)
     (output/'program.py').write_bytes(program.read_bytes())
     dump(output/'case.json',case)
@@ -236,7 +246,7 @@ def run(program, case, output):
             'oracle_geometry':True,'vision_only':False,'hardware_access':False,'transfer_ready':False,
             'program_sha256':hashlib.sha256(program.read_bytes()).hexdigest()}
     try:
-        host=OpenArmTrial(case,output)
+        host=host_type(case,output)
         execution=ProgramExecutor(host.registry(),recorder=PublicTrace(output/'trace.jsonl')).execute_program(program.read_text())
         evaluation=host.service.snapshot()['diagnostics']['evaluation']
         grade=evaluate_route(host.stages,evaluation,program_ok=execution.ok)

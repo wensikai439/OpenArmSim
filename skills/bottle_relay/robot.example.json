@@ -1,0 +1,20 @@
+{
+  "schema": "openarm-real-contract/1",
+  "hardware_enabled": false,
+  "adapter": {"implementation": null, "tested_skill_sha256": null},
+  "joint_names": [],
+  "grippers": {
+    "left": {"open_command": null, "close_command": null, "command_min": null, "command_max": null},
+    "right": {"open_command": null, "close_command": null, "command_min": null, "command_max": null}
+  },
+  "observation": {"source": "UNCONFIGURED", "frame": "robot_base", "max_age_ms": 200,
+    "max_position_uncertainty_m": 0.005, "pose_limits_are_provisional": true},
+  "control": {"watchdog_verified": false, "command_hz": null, "max_joint_step_rad": null},
+  "evidence": {
+    "kinematics": {"path": null, "sha256": null},
+    "cameras": {"path": null, "sha256": null},
+    "controller": {"path": null, "sha256": null},
+    "bottle_basket": {"path": null, "sha256": null},
+    "paired_trials": {"path": null, "sha256": null}
+  }
+}

@@ -631,20 +631,26 @@ class TampPlanner:
         if not self.env.evaluation['success']:
             raise PlanningFailure('placement_not_confirmed','释放后未满足完整外形入篮、篮底支撑和持续稳定条件')
 
+    def _placement_upright(self):
+        return self.placement_surface == 'table'
+
+    def _placement_yaws(self):
+        return (0.,-.25,.25,-.50,.50,np.pi/4,-np.pi/4,np.pi/2,-np.pi/2,np.pi)
+
     def _place(self):
         """Ground target in support geometry, keep a measured grasp transform.
 
         Planning attachments remain scratch-only. Release is permitted only
         after the carried body reaches the declared support region.
         """
-        side=self.place_arm;self._arm(side,True);self.strict_orientation=self.placement_surface=='table'
+        side=self.place_arm;self._arm(side,True);self.strict_orientation=self._placement_upright()
         surface=self.env.placement_surface(self.placement_surface)
         base=np.r_[self.placement_xy,surface['top_z']]
         self._phase('place')
         measured=self.env.data.xmat[self.env.bottle_id].reshape(3,3)
         yaw=np.arctan2(measured[1,0],measured[0,0])
         rotation=(np.array([[np.cos(yaw),-np.sin(yaw),0],[np.sin(yaw),np.cos(yaw),0],[0,0,1.]])
-                  if self.placement_surface=='table' else measured.copy())
+                  if self._placement_upright() else measured.copy())
         self.rotation=rotation@self.carried[1].T
         offset=self.rotation@(self.local_point-self.carried[0])
         # Search alternative upright yaw about the object's vertical axis.
@@ -656,7 +662,7 @@ class TampPlanner:
         lower_height=.020 if self.placement_surface=='table' else .019
         heights=(.12,.08,.05) if self.placement_surface=='table' else (.114,)
         for height in heights:
-            for angle in (0.,-.25,.25,-.50,.50,np.pi/4,-np.pi/4,np.pi/2,-np.pi/2,np.pi):
+            for angle in self._placement_yaws():
                 turn=np.array([[np.cos(angle),-np.sin(angle),0],[np.sin(angle),np.cos(angle),0],[0,0,1.]])
                 self.rotation=turn@rotation@self.carried[1].T
                 offset=self.rotation@(self.local_point-self.carried[0])

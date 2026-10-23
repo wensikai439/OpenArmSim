@@ -21,7 +21,17 @@ def main():
     test.add_argument('--x',type=float,default=.503)
     test.add_argument('--y',type=float,default=-.173)
     test.add_argument('--seed',type=int,default=0)
+    prepare=commands.add_parser('prepare',help='只检查本地真机接口准备情况，不连接或移动真机')
+    prepare.add_argument('--config',type=Path,default=ROOT/'skills/bottle_relay/robot.example.json')
+    package=commands.add_parser('package',help='生成不含密钥和权重的仿真/技能交接包')
+    package.add_argument('--output',type=Path,default=ROOT/'handoff/OpenArmSkill-20261024.zip')
     args=parser.parse_args()
+    if args.command=='prepare':
+        from tools.prepare_robot import main as prepare_robot
+        return prepare_robot(['--config',str(args.config)])
+    if args.command=='package':
+        from tools.package_skill import main as package_skill
+        return package_skill(['--output',str(args.output)])
     if args.command=='configure':
         from harness.llm import ModelSettings
         from harness.vault import SecretStore

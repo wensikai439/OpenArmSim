@@ -64,9 +64,9 @@ class ObjectHandoverPlanner(ObjectPlanner):
         self.next_place = params.get('next_place')
         if self.next_place is not None:
             goal = self.next_place
-            if (set(goal) != {'surface', 'target_xy_m'} or goal['surface'] != 'table'
+            if (set(goal) != {'surface', 'target_xy_m'} or goal['surface'] not in ('table','basket')
                 or np.asarray(goal['target_xy_m']).shape != (2,) or not np.isfinite(goal['target_xy_m']).all()):
-                raise ValueError('handover lookahead needs the original finite table target')
+                raise ValueError('handover lookahead needs an original finite table/basket target')
         self.result.update(object_id=ident, task='handover_object', selected_object=env.selection(), handover_contract=CONTRACT)
 
     @staticmethod
@@ -121,21 +121,22 @@ class ObjectHandoverPlanner(ObjectPlanner):
             self.carried = (hand.T @ (self.data.xpos[self.env.bottle_id] - self.data.xpos[self.body]), hand.T @ object_rotation)
             yaw = np.arctan2(object_rotation[1, 0], object_rotation[0, 0])
             upright = np.array([[np.cos(yaw), -np.sin(yaw), 0], [np.sin(yaw), np.cos(yaw), 0], [0, 0, 1.]])
-            base = np.r_[self.next_place['target_xy_m'], self.env.placement_surface('table')['top_z']]
+            surface = self.next_place['surface']
+            base = np.r_[self.next_place['target_xy_m'], self.env.placement_surface(surface)['top_z']]
             for angle in (0., -.25, .25, -.50, .50, np.pi/4, -np.pi/4, np.pi/2, -np.pi/2, np.pi):
                 turn = np.array([[np.cos(angle), -np.sin(angle), 0], [np.sin(angle), np.cos(angle), 0], [0, 0, 1.]])
                 self.rotation = turn @ upright @ self.carried[1].T
                 offset = self.rotation @ (self.local_point - self.carried[0])
                 try:
-                    lower = self._ik(base + [0, 0, .020] + offset, True)
+                    lower = self._ik(base + [0, 0, .020 if surface=='table' else .019] + offset, True)
                     lower_clearance = self._unselected_clearance(lower)
                     if lower_clearance < .005:
                         raise PlanningFailure('next_place_clearance', 'Predicted lower pose needs5mm clearance from unselected objects')
-                    for height in (.12, .08, .05):
+                    for height in ((.12, .08, .05) if surface=='table' else (.114,)):
                         try:
                             upper = self._ik(base + [0, 0, height] + offset, True)
                             if not self._edge(upper, lower, True): raise PlanningFailure('next_place_edge_collision', 'Predicted lower segment collides')
-                            return {'target_xy_m': list(self.next_place['target_xy_m']), 'surface': 'table',
+                            return {'target_xy_m': list(self.next_place['target_xy_m']), 'surface': surface,
                                 'donor_retreat': retreat,
                                 'unselected_lower_clearance_m': lower_clearance,
                                 'yaw_offset_rad': angle, 'clearance_m': height, 'upper_q': upper.tolist(), 'lower_q': lower.tolist(),
