@@ -64,3 +64,11 @@ cd /home/wsk/gpt+vla/OpenArmSim
 独立检查：`.venv/bin/python -B -m unittest harness.aspire.runtime_checks`。完整平台检查仍为 `./run check`。
 
 参考：[官方仓库](https://github.com/NVlabs/ASPIRE)、[迭代调试流程](https://github.com/NVlabs/ASPIRE/blob/main/.claude/skills/iterative-debugging/SKILL.md)、[论文](https://arxiv.org/html/2607.00272)。
+
+## 抓瓶交接 v2（2026-10-24）
+
+新增下游放篮约束的交接搜索，以及直立瓶体与连接下降的放置工具。旧TAMP演示与v1技能保留。24组新条件、48次成对执行：旧版15/24，新版22/24；位置10/12→12/12，组合压力5/12→10/12。新版修复9例，同时在组合压力813（放置IK）和817（交接搜索）有2例退步。所有失败保留，不宣称任意位置或真机泛化。
+
+348项回归通过。142段原生执行的模型参数与计分已核对；同一对案例的编译模型和运行参数相同。测试使用仿真几何与paused规划时间，改进归因于工程规划后端及模型生成的状态检查组合，未训练神经权重。
+
+[泛化报告](../runs/20261024-relay/index.html) · [冻结协议](../runs/20261024-relay/protocol.json) · [审计](../runs/20261024-relay/audit.json) · [真机部署](真机部署.md)。`./run aspire prepare`只检查本地接口清单；`./run aspire package`生成不含密钥/权重的交接包。真机感知和驱动适配器尚需实现与验收。

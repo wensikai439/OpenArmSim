@@ -1,0 +1,15 @@
+{
+  "schema": "relay-fixture/2",
+  "seed": 818,
+  "bottle_xy_m": [
+    0.577455,
+    -0.276788
+  ],
+  "bottle_yaw_rad": 2.738862,
+  "basket_offset_m": [
+    0.005076,
+    0.00867
+  ],
+  "bottle_mass_scale": 1.016306,
+  "bottle_friction_scale": 0.921275
+}

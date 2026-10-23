@@ -1,0 +1,527 @@
+{
+  "program_ok": true,
+  "task_success": true,
+  "protocol_success": true,
+  "source": "NVIDIA ASPIRE ProgramExecutor with custom OpenArm oracle adapter",
+  "oracle_geometry": true,
+  "vision_only": false,
+  "hardware_access": false,
+  "transfer_ready": false,
+  "program_sha256": "71a58d3bce5437eedede0bcfa78278bd5522edd02f0f326d3d3c27ce84bb315a",
+  "grade": {
+    "directed_route": true,
+    "stable_released_basket": true,
+    "program_completed": true,
+    "task_success": true
+  },
+  "end_evaluation": {
+    "success": true,
+    "invalid": false,
+    "held": {
+      "left": false,
+      "right": false
+    },
+    "touching": {
+      "left": false,
+      "right": false
+    },
+    "failure_reasons": [],
+    "inside_basket": true,
+    "supported_by_basket": true,
+    "stable_seconds": 5.252,
+    "linear_speed_m_s": 1.7243640764463551e-06,
+    "penetration_m": 0.00012062997366613795,
+    "max_penetration_m": 0.004015088562629063,
+    "peak_normal_force_N": 1.5732230123107775,
+    "robot_contact_count": 0,
+    "contact_window": {
+      "sampling": "every solved physics step plus a zero-duration final-state check",
+      "physics_dt_s": 0.001,
+      "samples": 34,
+      "interval_start_s": 58.73299999995382,
+      "duration_s": 0.03400000000000002,
+      "robot_external_seconds": 0.0,
+      "robot_self_seconds": 0.0,
+      "robot_external_impulse_Ns": 0.0,
+      "robot_self_impulse_Ns": 0.0,
+      "robot_external_peak_force_N": 0.0,
+      "robot_self_peak_force_N": 0.0,
+      "endpoint_robot_external_force_N": 0.0,
+      "endpoint_robot_self_force_N": 0.0,
+      "peak_normal_force_N": 1.5732230123107775,
+      "max_penetration_m": 0.00012062997366613795,
+      "hold_seconds": {
+        "left": 0.0,
+        "right": 0.0
+      },
+      "stable_seconds": 5.252000000000089,
+      "placement_seconds": 5.252000000000089,
+      "pairs": [
+        {
+          "geoms": [
+            "bottle_body",
+            "box_floor"
+          ],
+          "bodies": [
+            "task_bottle",
+            "target_box"
+          ],
+          "robot_external": false,
+          "robot_self": false,
+          "first_time_s": 58.73299999995382,
+          "last_time_s": 58.76699999995374,
+          "duration_s": 0.03400000000000002,
+          "normal_impulse_Ns": 0.18344807212163466,
+          "peak_normal_force_N": 5.396893389666672,
+          "penetration_m": 0.00012062997366613795
+        }
+      ]
+    },
+    "placement": {
+      "surface": "basket",
+      "xy_m": [
+        0.474,
+        0.357
+      ],
+      "tolerance_m": 0.025,
+      "stable_seconds": 5.252,
+      "confirmed": true
+    },
+    "evidence_source": "privileged simulator evaluator; not a camera measurement",
+    "transfer_ready": false,
+    "non_target_object_guard": {
+      "source": "native registered-body displacement from task selection; hidden diagnostic",
+      "displacement_m": {},
+      "limit_m": 0.003,
+      "passed": true,
+      "scope": "additional development execution gate; not a measured physical tolerance"
+    }
+  },
+  "stages": [
+    {
+      "tool": "pick",
+      "arguments": {
+        "object_id": "bottle",
+        "arm": "right",
+        "hold_seconds": 2,
+        "next_handover": {
+          "to_arm": "left"
+        }
+      },
+      "before": {
+        "source": "simulation_geometry_oracle",
+        "held_by": [],
+        "bottle_center_m": [
+          0.573519,
+          -0.289844,
+          1.005
+        ],
+        "upright": true,
+        "tick": 0,
+        "sim_seconds": 0.0
+      },
+      "ok": true,
+      "steps": 390,
+      "native_run": "native/20261024-002619-tamp-ab48a8",
+      "failure_code": null,
+      "phase": "hold",
+      "error": null,
+      "after": {
+        "source": "simulation_geometry_oracle",
+        "held_by": [
+          "right"
+        ],
+        "bottle_center_m": [
+          0.5649840175706816,
+          -0.2877228505225285,
+          1.1247757762765382
+        ],
+        "upright": true,
+        "tick": 390,
+        "sim_seconds": 12.999999999998234
+      },
+      "wall_seconds": 3.718977315002121
+    },
+    {
+      "tool": "handover",
+      "arguments": {
+        "object_id": "bottle",
+        "from_arm": "right",
+        "to_arm": "left",
+        "hold_seconds": 2,
+        "placement_aware": true
+      },
+      "before": {
+        "source": "simulation_geometry_oracle",
+        "held_by": [
+          "right"
+        ],
+        "bottle_center_m": [
+          0.5649840175706816,
+          -0.2877228505225285,
+          1.1247757762765382
+        ],
+        "upright": true,
+        "tick": 390,
+        "sim_seconds": 12.999999999998234
+      },
+      "ok": true,
+      "steps": 857,
+      "native_run": "native/20261024-002623-tamp-7a6ad8",
+      "failure_code": null,
+      "phase": "retreat",
+      "error": null,
+      "after": {
+        "source": "simulation_geometry_oracle",
+        "held_by": [
+          "left"
+        ],
+        "bottle_center_m": [
+          0.516771372027686,
+          -0.04796766134290734,
+          1.1384804170728424
+        ],
+        "upright": true,
+        "tick": 1247,
+        "sim_seconds": 41.566999999993826
+      },
+      "wall_seconds": 14.672196466010064
+    },
+    {
+      "tool": "place",
+      "arguments": {
+        "object_id": "bottle",
+        "arm": "left",
+        "receptacle_id": "basket",
+        "shape_clearance": true
+      },
+      "before": {
+        "source": "simulation_geometry_oracle",
+        "held_by": [
+          "left"
+        ],
+        "bottle_center_m": [
+          0.516771372027686,
+          -0.04796766134290734,
+          1.1384804170728424
+        ],
+        "upright": true,
+        "tick": 1247,
+        "sim_seconds": 41.566999999993826
+      },
+      "ok": true,
+      "steps": 516,
+      "native_run": "native/20261024-002638-tamp-8899fd",
+      "failure_code": null,
+      "phase": "settle",
+      "error": null,
+      "after": {
+        "source": "simulation_geometry_oracle",
+        "held_by": [],
+        "bottle_center_m": [
+          0.47582730272804663,
+          0.3563698454862857,
+          1.0208914550051544
+        ],
+        "upright": true,
+        "tick": 1763,
+        "sim_seconds": 58.76699999995374
+      },
+      "wall_seconds": 7.001780551974662
+    }
+  ],
+  "calls": [
+    {
+      "index": 0,
+      "tool": "get_observation",
+      "ok": true,
+      "duration_s": 0.0006349150789901614,
+      "positional_count": 0,
+      "keyword_names": [],
+      "inputs_summary": {
+        "positional": [],
+        "keywords": {}
+      },
+      "outputs_summary": {
+        "type": "mappingproxy",
+        "keys": [
+          "bottle_center_m",
+          "held_by",
+          "sim_seconds",
+          "source",
+          "tick",
+          "upright"
+        ]
+      },
+      "provider": null,
+      "frame": null,
+      "failure_code": null,
+      "result_type": "mappingproxy",
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "index": 1,
+      "tool": "pick",
+      "ok": true,
+      "duration_s": 3.720967254950665,
+      "positional_count": 0,
+      "keyword_names": [
+        "arm",
+        "hold_seconds",
+        "next_handover"
+      ],
+      "inputs_summary": {
+        "positional": [],
+        "keywords": {
+          "arm": {
+            "type": "str",
+            "length": 5
+          },
+          "hold_seconds": {
+            "type": "int",
+            "value": 2
+          },
+          "next_handover": {
+            "type": "dict",
+            "keys": [
+              "to_arm"
+            ]
+          }
+        }
+      },
+      "outputs_summary": {
+        "type": "ExecutionResult",
+        "ok": true,
+        "steps_executed": 390,
+        "terminated": false,
+        "truncated": false,
+        "status": "success",
+        "final_errors": {}
+      },
+      "provider": null,
+      "frame": null,
+      "failure_code": null,
+      "result_type": "ExecutionResult",
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "index": 2,
+      "tool": "get_observation",
+      "ok": true,
+      "duration_s": 0.0004136870848014951,
+      "positional_count": 0,
+      "keyword_names": [],
+      "inputs_summary": {
+        "positional": [],
+        "keywords": {}
+      },
+      "outputs_summary": {
+        "type": "mappingproxy",
+        "keys": [
+          "bottle_center_m",
+          "held_by",
+          "sim_seconds",
+          "source",
+          "tick",
+          "upright"
+        ]
+      },
+      "provider": null,
+      "frame": null,
+      "failure_code": null,
+      "result_type": "mappingproxy",
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "index": 3,
+      "tool": "handover",
+      "ok": true,
+      "duration_s": 14.678119558026083,
+      "positional_count": 0,
+      "keyword_names": [
+        "from_arm",
+        "hold_seconds",
+        "placement_aware",
+        "to_arm"
+      ],
+      "inputs_summary": {
+        "positional": [],
+        "keywords": {
+          "from_arm": {
+            "type": "str",
+            "length": 5
+          },
+          "hold_seconds": {
+            "type": "int",
+            "value": 2
+          },
+          "placement_aware": {
+            "type": "bool",
+            "value": true
+          },
+          "to_arm": {
+            "type": "str",
+            "length": 4
+          }
+        }
+      },
+      "outputs_summary": {
+        "type": "ExecutionResult",
+        "ok": true,
+        "steps_executed": 857,
+        "terminated": false,
+        "truncated": false,
+        "status": "success",
+        "final_errors": {}
+      },
+      "provider": null,
+      "frame": null,
+      "failure_code": null,
+      "result_type": "ExecutionResult",
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "index": 4,
+      "tool": "get_observation",
+      "ok": true,
+      "duration_s": 0.003898701979778707,
+      "positional_count": 0,
+      "keyword_names": [],
+      "inputs_summary": {
+        "positional": [],
+        "keywords": {}
+      },
+      "outputs_summary": {
+        "type": "mappingproxy",
+        "keys": [
+          "bottle_center_m",
+          "held_by",
+          "sim_seconds",
+          "source",
+          "tick",
+          "upright"
+        ]
+      },
+      "provider": null,
+      "frame": null,
+      "failure_code": null,
+      "result_type": "mappingproxy",
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "index": 5,
+      "tool": "get_observation",
+      "ok": true,
+      "duration_s": 0.003857150091789663,
+      "positional_count": 0,
+      "keyword_names": [],
+      "inputs_summary": {
+        "positional": [],
+        "keywords": {}
+      },
+      "outputs_summary": {
+        "type": "mappingproxy",
+        "keys": [
+          "bottle_center_m",
+          "held_by",
+          "sim_seconds",
+          "source",
+          "tick",
+          "upright"
+        ]
+      },
+      "provider": null,
+      "frame": null,
+      "failure_code": null,
+      "result_type": "mappingproxy",
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "index": 6,
+      "tool": "place",
+      "ok": true,
+      "duration_s": 7.014390348922461,
+      "positional_count": 0,
+      "keyword_names": [
+        "arm",
+        "receptacle_id",
+        "shape_clearance"
+      ],
+      "inputs_summary": {
+        "positional": [],
+        "keywords": {
+          "arm": {
+            "type": "str",
+            "length": 4
+          },
+          "receptacle_id": {
+            "type": "str",
+            "length": 6
+          },
+          "shape_clearance": {
+            "type": "bool",
+            "value": true
+          }
+        }
+      },
+      "outputs_summary": {
+        "type": "ExecutionResult",
+        "ok": true,
+        "steps_executed": 516,
+        "terminated": false,
+        "truncated": false,
+        "status": "success",
+        "final_errors": {}
+      },
+      "provider": null,
+      "frame": null,
+      "failure_code": null,
+      "result_type": "ExecutionResult",
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "index": 7,
+      "tool": "get_observation",
+      "ok": true,
+      "duration_s": 0.0004526139236986637,
+      "positional_count": 0,
+      "keyword_names": [],
+      "inputs_summary": {
+        "positional": [],
+        "keywords": {}
+      },
+      "outputs_summary": {
+        "type": "mappingproxy",
+        "keys": [
+          "bottle_center_m",
+          "held_by",
+          "sim_seconds",
+          "source",
+          "tick",
+          "upright"
+        ]
+      },
+      "provider": null,
+      "frame": null,
+      "failure_code": null,
+      "result_type": "mappingproxy",
+      "error_type": null,
+      "error_message": null
+    }
+  ],
+  "error": null,
+  "native_runs": [
+    "native/20261024-002619-tamp-ab48a8",
+    "native/20261024-002623-tamp-7a6ad8",
+    "native/20261024-002638-tamp-8899fd"
+  ],
+  "failure_stage": null,
+  "failure_code": null
+}

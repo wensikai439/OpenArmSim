@@ -1,4 +1,14 @@
-# OpenArm Lab 同事交接包
+# OpenArm 技能交接包
+
+当前技能包：`OpenArmSkill-20261024.zip`，校验文件：`OpenArmSkill-20261024.sha256`。
+
+请先阅读项目 [真机部署说明](../docs/真机部署.md)。新包包含抓瓶交接v2、harness、MuJoCo模型和固定版本ASPIRE运行时；不含真实硬件驱动、密钥或模型权重。它可用于本地仿真复现及真机适配开发，不能解压后直接操作OpenArm。
+
+重新打包：在项目目录运行 `./run aspire package`。已有同名文件时拒绝覆盖，可用 `--output handoff/其他名称.zip` 生成新版本。
+
+---
+
+# 旧版同事包说明（2026-10-13）
 
 这是可解压运行的 OpenArm 仿真与 harness 源码快照。使用 Ubuntu 22.04/24.04、Python 3.11；不需要连接真机。包内含 OpenArm MuJoCo 模型、当前 TAMP/harness、网页工作台和少量只读真机参考数据，不含 Git 历史。
 
