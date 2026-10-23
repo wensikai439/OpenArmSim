@@ -144,6 +144,7 @@ def main():
         tests.addTests(unittest.defaultTestLoader.loadTestsFromName('sim.grasp_feedback_checks'))
         tests.addTests(unittest.defaultTestLoader.loadTestsFromName('harness.relay_checks'))
         tests.addTests(unittest.defaultTestLoader.loadTestsFromName('tools.platform_checks'))
+        tests.addTests(unittest.defaultTestLoader.loadTestsFromName('sim.feedback_checks'))
         raise SystemExit(not unittest.TextTestRunner(verbosity=2).run(tests).wasSuccessful())
     raise SystemExit(replay(args))
 

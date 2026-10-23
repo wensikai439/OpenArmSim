@@ -338,16 +338,23 @@ class OpenArmEnv(gym.Env):
                     raise ValueError("applied command exceeds per-arm 7-D L2 measured-state jump limit")
         return a
 
-    def prepare_policy_action(self, action):
+    def prepare_policy_action(self, action, *, native_fingers=False):
         """Match the reviewed deployment's order: L2 cap, then joint bounds.
 
-        The gripper's device-side saturation remains unverified. Retain the
-        explicit command-range guard there instead of inventing a motor limit.
+        The default keeps the historical recorded-data guard. An explicitly
+        selected simulation adapter may instead validate the mapped native
+        finger range; this is NOT a measured hardware motor limit. Neither
+        mode clips a gripper prediction or changes its normalization.
         """
         requested = np.asarray(action, np.float32)
         if requested.shape != (16,) or not np.isfinite(requested).all():
             raise ValueError("policy action must contain 16 finite numbers")
-        if np.any(requested[[7,15]] < self.action_space.low[[7,15]] - 1e-5) or np.any(requested[[7,15]] > self.action_space.high[[7,15]] + 1e-5):
+        low, high = self.action_space.low[[7,15]].copy(), self.action_space.high[[7,15]].copy()
+        if native_fingers:
+            for i, side in enumerate(SIDES):
+                bounds = self.grippers[side].to_motor(self.fingers[side][0].range)
+                low[i], high[i] = min(bounds), max(bounds)
+        if np.any(requested[[7,15]] < low - 1e-5) or np.any(requested[[7,15]] > high + 1e-5):
             raise ValueError("gripper output outside the verified command convention")
         applied = requested.copy()
         state = self.state()
@@ -362,6 +369,11 @@ class OpenArmEnv(gym.Env):
             report[side] = {"requested_distance_l2_rad": distance, "step_limited": distance > cap,
                             "joint_limit_clipped": bool(np.any(applied[sl] != limited))}
         return applied, report
+
+    def step_policy(self, action, *, native_fingers=False):
+        """Explicit policy adapter; identical solver, arm and termination gates."""
+        return self._advance(action, (self.tick+1)/self.profile['control_hz']+
+            getattr(self,'_periodic_offset',0.), 'periodic', native_fingers=native_fingers)
 
     def _set_command(self, action, *, update_controller=True):
         for i, side in enumerate(SIDES):

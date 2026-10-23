@@ -44,6 +44,13 @@ class Recorder:
                          "format": "native transitions, not yet a LeRobot dataset",
                          "status": "running", "started_at_unix": time.time()}
         dump(self.path / "manifest.json", self.manifest)
+        self._internal = None
+        try:
+            from .feedback import FeedbackLog
+            self._internal = FeedbackLog(self.path, env)
+            self._environment = env
+        except Exception as exc:
+            self.event({'type':'internal_feedback_error','error':str(exc)})
 
     def observation(self, env):
         obs = {"state": env.state(), "tick": env.tick, "sim_time": float(env.data.time)}
@@ -65,6 +72,13 @@ class Recorder:
                "wall_elapsed_s": time.monotonic() - self.started}
         self.file.write(json.dumps(row, default=serial, allow_nan=False) + "\n")
         self.count += 1
+        if self._internal is not None:
+            try:
+                self._internal.read(self._environment, action)
+            except Exception as exc:
+                self._internal.stream.close()
+                self._internal = None
+                self.event({'type':'internal_feedback_error','error':str(exc)})
 
     def event(self, event):
         with (self.path / "events.jsonl").open("a") as stream:
@@ -75,6 +89,11 @@ class Recorder:
             return
         self.file.close()
         self._closed = True
+        if self._internal is not None:
+            try:
+                self._internal.finish()
+            except Exception as exc:
+                self.event({'type':'internal_feedback_error','error':str(exc)})
         summary = {"status": status, "transitions": self.count,
                    "wall_seconds": time.monotonic() - self.started,
                    "sim_seconds": info["sim_time"], "evaluation": info["evaluation"],
