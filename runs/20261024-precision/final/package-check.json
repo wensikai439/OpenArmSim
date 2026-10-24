@@ -1,0 +1,45 @@
+{
+  "package_sha256": "8932708c97f063f964131562f63c0ce4d940b2e6052380b0b4bf8ff0093cfd71",
+  "source_commit": "6da6dcb52167aaccc95bc9338d3430ee26025092",
+  "fresh_dependency_environment": true,
+  "checks": {
+    "bundled_runtime": {
+      "exit": 0
+    },
+    "integrity": {
+      "exit": 0
+    },
+    "real_preflight": {
+      "exit": 0
+    },
+    "real_recorded_replay": {
+      "exit": 0
+    },
+    "shadow_template_blocks": {
+      "exit": 2
+    },
+    "shadow_fixture": {
+      "exit": 0
+    },
+    "admitted_skill": {
+      "exit": 0
+    },
+    "tampered_runtime_blocks": {
+      "exit": 2
+    },
+    "repackage_without_git": {
+      "exit": 0
+    }
+  },
+  "credential_scan": {
+    "passed": true,
+    "existing_sanitization_test_sentinels": 1
+  },
+  "hardware_access": false,
+  "remote_operations": 0,
+  "shadow_motion_commands": 0,
+  "shadow_native_steps": 0,
+  "package_schema_fix_targeted_tests": 3,
+  "repackage_byte_identical": true,
+  "temporary_environment_removed": true
+}

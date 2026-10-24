@@ -1,0 +1,38 @@
+{
+  "status": "planned_execution_disabled",
+  "program_ok": false,
+  "program_stop": "execution_failed: program execution failed: ValueError: pregrasp failed: shadow_execution_disabled",
+  "source": "synthetic_fixture",
+  "plans": [
+    {
+      "tool": "pregrasp",
+      "grasp_id": "g0-000",
+      "joint_path_rad": [
+        [
+          -0.5979629755020142,
+          0.9672309756278992,
+          -0.393110990524292,
+          0.8100630044937134,
+          0.8485919833183289,
+          0.3740369975566864,
+          1.3250550031661987
+        ],
+        [
+          -0.4826149887843906,
+          0.30705739196155196,
+          -0.5891701544551984,
+          1.657524721980249,
+          0.5172582804568443,
+          -0.785398,
+          0.7168009525269545
+        ]
+      ],
+      "path_is_execution_command": false,
+      "planning_model_calibrated": false
+    }
+  ],
+  "hardware_access": false,
+  "motion_commands": 0,
+  "native_physics_steps": 0,
+  "transfer_ready": false
+}

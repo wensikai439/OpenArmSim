@@ -1,0 +1,18 @@
+{
+  "status": "blocked",
+  "missing": [
+    "expected measured_perception; simulator truth cannot impersonate a measured camera pose",
+    "finite timestamp required",
+    "state must be finite left7,left_gripper,right7,right_gripper",
+    "bottle measured position missing",
+    "bottle unit quaternion missing",
+    "bottle pose uncertainty missing or excessive",
+    "basket measured position missing",
+    "basket unit quaternion missing",
+    "basket pose uncertainty missing or excessive",
+    "left fresh empty-hand evidence required for this entry skill",
+    "right fresh empty-hand evidence required for this entry skill"
+  ],
+  "hardware_access": false,
+  "motion_commands": 0
+}
