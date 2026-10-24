@@ -2,6 +2,8 @@
 
 用户已明确更正：公司电脑不能放仿真平台。当前应使用 `OpenArmRobot-20261024.zip`，说明见 `deploy/ROBOT.md`。该包只含 API harness、v3技能程序和固定官方ASPIRE执行器；不含仿真、网页、模型资产或仿真依赖。真实感知与动作工具服务尚缺，API连通也不代表已能真机抓瓶。此前公司目录仿真包已撤回，只保留以下历史说明。
 
+已在指定目录完成纯真机包安装，包SHA256为 `0e06b1d5733cb96ca6a00ee2ab5acdf9d13bcb193fd13ab94e6692bce689aafb`，来源代码提交 `7455ef4`。远程API连通、agent真实调用 `get_status`、官方执行器和缺失服务阻断检查通过；没有操作硬件。环境只有NumPy，MuJoCo/Gymnasium/GLFW/SciPy均未安装。175项原文件检查无变化，其中171项内容校验、4项大权重元数据校验。回执在 `runs/20261024-deploy/receipt.json`，公司端为 `records/receipt.json`。此前完整仿真包的远程28项检查有2个临时目录清理错误，未通过；它已撤回，不能算作本次真机包验收结果。
+
 # 已撤回的 v3 仿真目录包
 
 `OpenArmSkill-20261024-v3-remote.zip` 是限定目录的公司版，包含最新瓶身抓取和14工具恢复技能。仅在 `/home/sj/Desktop/wuji/lerobot_20260116/LLMHarness/` 内安装、保存环境及运行记录；既有模型和控制代码只读。安装与离线通过不代表真实运动已接通。入口及边界见 `deploy/REMOTE.md`，SHA256见同名 `.sha256`。
