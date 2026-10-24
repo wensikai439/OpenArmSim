@@ -1,110 +1,14 @@
 {
-  "schema": "openarm-feedback-skill/3",
-  "version": 3,
+  "schema": "openarm-feedback-skill/4",
+  "version": 4,
   "admitted": true,
+  "admission_scope": "candidate simulation only; real tools unavailable",
   "program_sha256": "2b377f56486904e0a5367c542de512c64c3a8f3f0787d161ebc9f2baf12e7e90",
-  "runtime_sha256": "5d3b737ccdd310793a58b805f61658a305385aa1152fc001e4d4d4233776269b",
-  "campaign": "runs/20261024-body/final",
-  "upstream": "https://github.com/NVlabs/ASPIRE",
-  "upstream_revision": "fa00f0ef2bc1d91d594b9aa502c22133c9f538f7",
-  "requested_model": "claude-haiku-5-5",
-  "contribution": "engineering repair: right lower body / left upper body; native contact-zone gate and supported release recovery; bounded payload reference compensation; no extra LLM calls or neural training",
-  "development": {
-    "previous_failure_regressions": {
-      "passed": 3,
-      "total": 3
-    },
-    "initial_body_candidate_passed": 9,
-    "initial_body_candidate_total": 12,
-    "initial_candidate_admitted": false
-  },
-  "heldout": {
-    "nominal": {
-      "passed": 6,
-      "total": 6
-    },
-    "combined": {
-      "passed": 6,
-      "total": 6
-    }
-  },
-  "heldout_position_count": 6,
-  "heldout_condition_count": 12,
-  "native_trial_count": 16,
-  "known_failures": [],
-  "skill_text_reconstruction": {
-    "version1_passed": 3,
-    "version1_total": 3,
-    "version3_repeated": false,
-    "program_and_public_API_changed": true
-  },
-  "regression_tests": 368,
-  "native_transitions_audited": 31409,
-  "scope": {
-    "task": "right pick -> right-left transfer -> left basket",
-    "object": "same registered upright bottle",
-    "pose_source": "simulator_geometry_oracle",
-    "tested_positions_m": [
-      [
-        0.4844,
-        -0.252782
-      ],
-      [
-        0.488671,
-        -0.228678
-      ],
-      [
-        0.537366,
-        -0.263878
-      ],
-      [
-        0.517694,
-        -0.199508
-      ],
-      [
-        0.507327,
-        -0.263422
-      ],
-      [
-        0.477764,
-        -0.197035
-      ]
-    ],
-    "continuous_domain_certified": false,
-    "faults": [
-      "one-shot right closure command loss",
-      "one-shot receiver closure command loss",
-      "perceived-height error sampled .043-.067m and cleared after first failure",
-      "grasp-region mismatch: table-supported opening and physical retreat before re-grasp"
-    ],
-    "checkpoints": "physical empty-hand TCP retreat, not world snapshot restore",
-    "resume_arbitrary_midstate": false,
-    "runtime_needs_api": false,
-    "realtime_validated": false,
-    "hardware_access": false,
-    "transfer_ready": false,
-    "position_domain_m": {
-      "x": [
-        0.46,
-        0.54
-      ],
-      "y": [
-        -0.27,
-        -0.16
-      ]
-    },
-    "combined_stress": "basket +/-12mm, yaw, mass/friction0.9-1.1, one-shot actuator/perception faults; engineering ranges, not measured real distributions",
-    "public_tool_count": 14,
-    "right_grasp": "lower bottle body; no cap or neck",
-    "left_grasp": "upper bottle body; no cap or neck",
-    "stationary_drop_limit_m": 0.005
-  },
-  "budgets": {
-    "adapter_calls_including_internal_advances": 64,
-    "sim_seconds": 120
-  },
-  "entrypoint": "./run aspire recover --fault stale_grasp",
+  "program_unchanged_from_v3": true,
+  "runtime_backend": "placement",
   "motion_profile": "precision",
+  "entrypoint": "./run aspire recover",
+  "public_tool_count": 14,
   "runtime_sources": {
     "harness/act_adapter.py": "a1501aba56a0041befd5fb4f826fc79ee67d236e5bc1708f4684ab3ad8ee7b55",
     "harness/agent.py": "411ba9f2b5fbefa0a6920715a2cf82680568759123e8df8b30730b1269b5d5fc",
@@ -146,7 +50,7 @@
     "harness/policy_trace_checks.py": "9d90de26bafde0de7b63cca990c2e75f93cffa3077c2cebe485b555b11e30201",
     "harness/poses.py": "f4f7e257bba078984f01e41d16091c9d6db3231514971a8e212155725413813a",
     "harness/provider.py": "c725cc0dcd94669c7f6a5bbe17c5dc5ff920050d18983c58adc5fa2731911991",
-    "harness/real.py": "3c7a8f0110d83ff1f36cd62a95adfaf120c67369353f2137e358983287f738af",
+    "harness/real.py": "1434182e48cd1b9836b89f28b80263e394a11e43a19c2529a35e48246f5806a0",
     "harness/real_checks.py": "72c26e86cef8a1df770e1dcad3d0f6d249bb9292d0ac9539b309cd0b2c1b5646",
     "harness/relay_checks.py": "32fc10f7d5ac5e316bfa37bcbafc6186d84bedceabb02e7c71b62b77f3f7e827",
     "harness/runtime_composition_checks.py": "600837a72828889dfd676be3a8a58d6024beba1a39fcc6d5ff809a2a2665e2bf",
@@ -179,7 +83,7 @@
     "sim/calibration_checks.py": "5ac61ed4df5b9c935c900330d3cc7170a2cae6d189a1a62f148f07e9d24d1dae",
     "sim/cartesian_place.py": "04da5b027c85055eec57e3aff4baa35050b3408813b81abb415ecb3dec915e0b",
     "sim/checks.py": "134fc6b4085041518743adcf5aed11eb0d9890942cf5c0eabac5597f126b84fa",
-    "sim/cli.py": "c6a4df4304d60ee1489149e08477f35d173d86744967973a5692cb4e647a4c88",
+    "sim/cli.py": "0d55674edc859afbbb9d4bf03140c7602ebe89ab9c8e12cc759df7b1108f041c",
     "sim/connected_place.py": "d87aac712cc37a71c215b5ac9a264e04e0874a129fa1fd92158f36dceff6b62f",
     "sim/constrained_place.py": "9b1afb0fdc16e81522f549303cbaf4dbc9b5b76e51cfb60b22d8734fb6fa7c5a",
     "sim/contact_checks.py": "a7005df13bf76e213dfeda404b2407eca7b0b4c4046836253a327f16cbbd336e",
@@ -263,42 +167,82 @@
     "skills/bottle_recovery/program.py": "2b377f56486904e0a5367c542de512c64c3a8f3f0787d161ebc9f2baf12e7e90",
     "tools/body_eval.py": "b4e29daad7b1cb7364088148b4e3f6118dba05f5757308d7031558eafbe7413d",
     "tools/object_workbench.py": "77228ced55771f58b3feb000d53630966cd0a3c45924198bd45abc199d02e214",
-    "harness/aspire/__main__.py": "8f87e1b9d871faa20832010de079422146387b1ef039fdc7e34cca4493e8e071"
+    "harness/aspire/__main__.py": "e5b40aad3aa0f181dfa098cf0ab2c27ba05daf1885719fb0e91a51bd75645e23",
+    "harness/aspire/robust.py": "615c29dde5f43873f2c5f9be40533079962febd146e37fb66f55556a7a956784",
+    "harness/aspire/placement.py": "7d1f696f13fb92d45180c57c7204086c35a5fce4d0d5728e66a90b9ad6770403"
   },
-  "previous_version": "history/v2",
-  "deployment": {
-    "hardware_execution_available": false,
-    "perception_service_included": false,
-    "modes": [
-      "recorded_state_replay",
-      "snapshot_shadow_planning"
-    ],
-    "remote_operations_this_round": 0
-  },
-  "runtime_backend": "body",
-  "max_left_handover_drop_m": 0.0031990274144158004,
-  "matched_no_compensation_control": {
-    "drop_m": 0.032648252360075514,
-    "native_task_success": true,
-    "stationary_hold_passed": false
-  },
-  "body_control_pair": {
-    "case": 1400,
-    "same_initial_geometry_and_physics": true,
-    "with_compensation_drop_m": 0.0017561098449492274,
-    "without_compensation_drop_m": 0.032648252360075514
-  },
-  "deployment_revision": {
-    "scope": "body v3 skill and physics unchanged; shadow adapter now uses body backend; verify runtime hashes before connection checks",
-    "changed_sources": {
-      "harness/real.py": {
-        "before": "356c24c4c21012dc37b229f472c1ca153d50524c296843575d7c111d8f16a46d",
-        "after": "3c7a8f0110d83ff1f36cd62a95adfaf120c67369353f2137e358983287f738af"
-      },
-      "harness/aspire/__main__.py": {
-        "before": "d7854db95d5bb78f8d85f29cda68b2573a001a765e0736826b958c79b810afc6",
-        "after": "8f87e1b9d871faa20832010de079422146387b1ef039fdc7e34cca4493e8e071"
-      }
+  "upstream": "https://github.com/NVlabs/ASPIRE",
+  "upstream_revision": "fa00f0ef2bc1d91d594b9aa502c22133c9f538f7",
+  "contribution": "every donor contact below body half; supported release/regrasp; native fixed-center upright axial-yaw alternatives for loaded placement",
+  "development": {
+    "round1_before": {
+      "passed": 11,
+      "total": 12
+    },
+    "round1_after": {
+      "passed": 12,
+      "total": 12
+    },
+    "round2_reused_counterexamples": {
+      "passed": 4,
+      "total": 4
     }
-  }
+  },
+  "heldout": {
+    "round1": {
+      "baseline": {
+        "passed": 30,
+        "total": 32
+      },
+      "lower_half": {
+        "passed": 30,
+        "total": 32
+      },
+      "positions": 16
+    },
+    "round2": {
+      "lower_half": {
+        "passed": 16,
+        "total": 16
+      },
+      "free_yaw": {
+        "passed": 16,
+        "total": 16
+      },
+      "positions": 8
+    }
+  },
+  "heldout_interpretation": "no paired heldout success-rate improvement demonstrated; counterexamples fixed with stricter semantic gate and valid planning alternatives",
+  "known_failures": "round1 cases2207/2215 reused as round2 development, never relabeled as new heldout successes",
+  "evidence": [
+    "runs/20261024-robust/protocol.json",
+    "runs/20261024-robust/round1-assessment.json",
+    "runs/20261024-robust/refine/protocol.json",
+    "runs/20261024-robust/refine/candidate-frozen.json"
+  ],
+  "budgets": {
+    "tool_calls": 64,
+    "sim_seconds": 120,
+    "wall_seconds": 240
+  },
+  "scope": {
+    "geometry": "simulation oracle",
+    "object": "registered upright bottle, unchanged shape",
+    "perturbations": "initial positions, full-circle yaw, basket +-23mm, mass/friction x0.8-1.2, one-shot command or sensed-height faults",
+    "timing": "paused planning, not realtime",
+    "hardware_access": false,
+    "transfer_ready": false
+  },
+  "deployment": {
+    "type": "real_only",
+    "simulator_included": false,
+    "perception_service_connected": false,
+    "motion_service_connected": false,
+    "robot_contract": "openarm-body-v4/1",
+    "right_contact_fraction_max": 0.5
+  },
+  "previous_version": "history/v3/manifest.json",
+  "neural_weights_trained": false,
+  "development_api_requests": 1,
+  "development_api_tokens": 3620
 }

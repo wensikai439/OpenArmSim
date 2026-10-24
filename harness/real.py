@@ -109,12 +109,12 @@ def shadow(config,observation,output,*,fixture=False):
     from .aspire.runtime import dump, ProgramExecutor, ToolRegistry, PublicTrace
     gaps=validate(config,observation,fixture=fixture)
     if gaps:return {'status':'blocked','missing':gaps,'hardware_access':False,'motion_commands':0}
-    from .aspire.body import BodyWorld
+    from .aspire.placement import PlacementWorld
     from .aspire.recovery import SegmentPlanner
     import mujoco
     from scipy.spatial.transform import Rotation
     from sim.alignment import recorded_pose
-    class ShadowWorld(BodyWorld):
+    class ShadowWorld(PlacementWorld):
         def capture(self,label):pass
     m=np.asarray(config['T_world_from_base']);poses={}
     for ident,p in observation['objects'].items():
@@ -150,7 +150,7 @@ def shadow(config,observation,output,*,fixture=False):
             path=p._path(goal)
             planned.append({'tool':'pregrasp','grasp_id':grasp_id,'joint_path_rad':[q.tolist() for q in path],
                 'path_is_execution_command':False,'planning_model_calibrated':False,
-                'skill_backend':'body','grasp_region':'lower_body'})
+                'skill_backend':'placement','grasp_region':'lower_body'})
             return {'ok':False,'done':True,'error_code':'shadow_execution_disabled'}
         def disabled(*args,**kwargs):return {'ok':False,'done':True,'error_code':'shadow_execution_disabled'}
         registry=ToolRegistry(shared_public_names=world.PUBLIC,public_extension_allowlist=())

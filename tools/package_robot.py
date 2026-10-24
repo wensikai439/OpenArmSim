@@ -9,7 +9,9 @@ from .package_skill import ROOT,UPSTREAM_REV,RUNTIME_FILES
 
 
 def main():
-    destination=ROOT/'handoff/OpenArmRobot-20261024.zip'
+    existing=json.loads((ROOT/'skills/bottle_recovery/manifest.json').read_text())
+    version=existing['version']
+    destination=ROOT/f'handoff/OpenArmRobot-20261024-v{version}.zip'
     if destination.exists():raise ValueError('refuse overwriting an existing robot package')
     upstream=Path('/home/wsk/ASPIRE/libero-pro/source')
     files={
@@ -18,16 +20,19 @@ def main():
         'harness/robot.py':(ROOT/'deploy/robot.py').read_bytes(),
         'skills/bottle_recovery/program.py':(ROOT/'skills/bottle_recovery/program.py').read_bytes(),
         'skills/bottle_recovery/SKILL.md':(ROOT/'deploy/ROBOTSKILL.md').read_bytes(),
+        'docs/试运行.md':(ROOT/'deploy/试运行.md').read_bytes(),
     }
     program_hash=hashlib.sha256(files['skills/bottle_recovery/program.py']).hexdigest()
-    existing=json.loads((ROOT/'skills/bottle_recovery/manifest.json').read_text())
     if program_hash!=existing['program_sha256']:raise ValueError('admitted skill hash mismatch')
     config={'schema':'openarm-real-harness/1','robot_service':None,'program_sha256':program_hash,
-            'skill_version':3,'real_validation_passed':False,'api_storage':'.private/api.json'}
+            'skill_version':version,'robot_contract':'openarm-body-v4/1',
+            'right_contact_fraction_max':.5,'real_validation_passed':False,'api_storage':'.private/api.json'}
     files['config.json']=(json.dumps(config,indent=2)+'\n').encode()
     files['skills/bottle_recovery/manifest.json']=(json.dumps({
-        'version':3,'program_sha256':program_hash,'admitted_in':'candidate simulation only',
+        'version':version,'program_sha256':program_hash,'admitted_in':'candidate simulation only',
         'real_validation_passed':False,'real_tool_implementations_included':False,
+        'robot_contract':'openarm-body-v4/1','right_contact_fraction_max':.5,
+        'placement_contract':'object center and upright axis preserved; checked axial-yaw alternatives',
         'simulation_backend_included':False},indent=2)+'\n').encode()
     hashes={}
     for name in RUNTIME_FILES:
