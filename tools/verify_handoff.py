@@ -12,7 +12,7 @@ sys.path.insert(0, str(ROOT))
 def verify_manifest():
     manifest_path = ROOT / 'PACKAGE-MANIFEST.json'
     manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
-    if manifest.get('schema') != 'openarmsim-colleague-package/2':
+    if manifest.get('schema') not in ('openarmsim-colleague-package/2','openarmsim-colleague-package/3'):
         raise RuntimeError('unsupported handoff manifest schema')
     entries = manifest.get('entries')
     if not isinstance(entries, list) or manifest.get('files') != len(entries):
