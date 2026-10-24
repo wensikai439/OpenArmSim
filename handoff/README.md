@@ -1,71 +1,13 @@
-# 公司电脑只部署真机包 · 2026-10-24
+# 真机接入包 v4
 
-用户已明确更正：公司电脑不能放仿真平台。当前应使用 `OpenArmRobot-20261024.zip`，说明见 `deploy/ROBOT.md`。该包只含 API harness、v3技能程序和固定官方ASPIRE执行器；不含仿真、网页、模型资产或仿真依赖。真实感知与动作工具服务尚缺，API连通也不代表已能真机抓瓶。此前公司目录仿真包已撤回，只保留以下历史说明。
+当前使用 `OpenArmRobot-20261024-v4.zip` 和同名 `.sha256`。包内源码约47KB，来源提交 `5d41e3a`。SHA256：`423aa4153b23f9b8376d3ac738e153deb13ac7a85c85a9fc6e40f600e9ca3c65`。
 
-已在指定目录完成纯真机包安装，包SHA256为 `0e06b1d5733cb96ca6a00ee2ab5acdf9d13bcb193fd13ab94e6692bce689aafb`，来源代码提交 `7455ef4`。远程API连通、agent真实调用 `get_status`、官方执行器和缺失服务阻断检查通过；没有操作硬件。环境只有NumPy，MuJoCo/Gymnasium/GLFW/SciPy均未安装。175项原文件检查无变化，其中171项内容校验、4项大权重元数据校验。回执在 `runs/20261024-deploy/receipt.json`，公司端为 `records/receipt.json`。此前完整仿真包的远程28项检查有2个临时目录清理错误，未通过；它已撤回，不能算作本次真机包验收结果。
+公司只在 `/home/sj/Desktop/wuji/lerobot_20260116/LLMHarness/` 中部署API agent、技能程序/契约和官方ASPIRE执行器。包不含仿真、模型资产、权重、密钥或虚拟环境。其他公司目录只读，原ACT、DP、π0.5不动。真实感知和动作工具服务仍缺，不能把部署完成当成已能真机抓瓶。
 
-# 已撤回的 v3 仿真目录包
+纯真机v4已更新，原API配置保留，17项包完整性与175项原部署文件检查通过，实际运动为0。回执在公司端 `records/receipt-v4.json`，本地 `runs/20261024-robust/deployment.json`。
 
-`OpenArmSkill-20261024-v3-remote.zip` 是限定目录的公司版，包含最新瓶身抓取和14工具恢复技能。仅在 `/home/sj/Desktop/wuji/lerobot_20260116/LLMHarness/` 内安装、保存环境及运行记录；既有模型和控制代码只读。安装与离线通过不代表真实运动已接通。入口及边界见 `deploy/REMOTE.md`，SHA256见同名 `.sha256`。
+本地本轮完成159次原生实验、1次默认CLI整任务和381项平台回归。历史32条件回归由30/32修复为32/32；另8个新位置×2条件为16/16，同组对照也是16/16，不能称总体留出成功率已提高。数据与可视化见 `runs/20261024-robust/`。
 
-以下为旧v2交付记录。
+使用说明见 `docs/真机部署.md`，客户端契约见 `deploy/ROBOT.md`，首次真机准备见 `deploy/试运行.md`。重打包命令为 `.venv/bin/python -B -m tools.package_robot`；已有文件不覆盖。ASPIRE固定版本和逐文件校验由包内 `third_party/aspire/ORIGIN.json`、`MANIFEST.json` 记录。
 
-# v2 接入包 · 2026-10-24
-
-`OpenArmSkill-20261024-v2.zip`（约34.8MB）与同名 `.sha256` 是本轮交付。解压后先看 `OpenArmSim/README-FIRST.md`。
-
-新版在6个新瓶位、12条件的成对测试中由6/12提高到12/12；365项回归及3项包校验测试通过。已用全新隔离依赖环境完成解压、仿真skill、回放、影子规划、拒绝过期/缺失接口和离线再打包检查。当前包没有真实三维感知服务或真机执行适配器，运动默认禁用；本轮没有连接、上传或修改真机电脑。
-
-本轮ZIP SHA-256：`8932708c97f063f964131562f63c0ce4d940b2e6052380b0b4bf8ff0093cfd71`。
-
-以下保留历史交付说明。
-
-# OpenArm 技能交接包
-
-当前技能包：`OpenArmSkill-20261024.zip`，校验文件：`OpenArmSkill-20261024.sha256`。
-
-请先阅读项目 [真机部署说明](../docs/真机部署.md)。新包包含抓瓶交接v2、harness、MuJoCo模型和固定版本ASPIRE运行时；不含真实硬件驱动、密钥或模型权重。它可用于本地仿真复现及真机适配开发，不能解压后直接操作OpenArm。
-
-重新打包：在项目目录运行 `./run aspire package`。已有同名文件时拒绝覆盖，可用 `--output handoff/其他名称.zip` 生成新版本。
-
----
-
-# 旧版同事包说明（2026-10-13）
-
-这是可解压运行的 OpenArm 仿真与 harness 源码快照。使用 Ubuntu 22.04/24.04、Python 3.11；不需要连接真机。包内含 OpenArm MuJoCo 模型、当前 TAMP/harness、网页工作台和少量只读真机参考数据，不含 Git 历史。
-
-## 安装与启动
-
-将 ZIP 与 `SHA256SUMS-20261013.txt` 放在同一目录，先运行 `sha256sum -c SHA256SUMS-20261013.txt`，再解压。进入解压出的 `OpenArmSim` 目录：
-
-```sh
-chmod +x run
-python3.11 -m venv .venv
-.venv/bin/python -m pip install --upgrade pip
-.venv/bin/python -m pip install -r sim/requirements.txt
-./run start
-```
-
-浏览器访问 http://127.0.0.1:8767/ 。`./run start` 会把当前解压位置写入用户级 systemd 服务配置；以后用 `./run status` 查看、`./run logs` 查日志、`./run stop` 停止。若只想前台运行，可用 `./run objects --foreground`，按 Ctrl+C 退出；可用 `OPENARM_PORT=18765 ./run objects --foreground` 启动独立开发实例。EGL 初始化失败时，在有桌面会话的机器上试 `MUJOCO_GL=glfw ./run objects --foreground`。
-
-页面不配置 API 也可启动和查看仿真。需要模型 API 时，在页面里填入团队自己的兼容 API 配置；此包不含密钥。不要把密钥提交进 Git 或交接包。
-
-## 离线验收
-
-首次启动前可运行以下只读物理 smoke 和固定 TAMP 案例：
-
-```sh
-.venv/bin/python -B tools/verify_handoff.py
-./run tamp --task pick_bottle
-```
-
-`verify_handoff.py` 会核对包内文件清单与哈希、检查采集帧/时钟数据，并只在 MuJoCo 中推进一个参考状态。第二条命令是固定场景的仿真抓取案例。两者都不调用模型 API、不访问远程主机，也不代表任意物体泛化或真机迁移通过。输出记录保存在本地 `runs/`。
-
-## 能力范围
-
-- 页面包括对话、场景相机、阶段和关键帧；LLM 可按注册契约选择当前支持的 TAMP 技能。
-- TAMP 以仿真场景几何作为 oracle，技能只覆盖代码声明的机器人、物体、姿态和起始条件；它不是通用视觉抓取器。
-- ACT 与 π0.5 权重、训练数据及独立推理环境没有打包。cuRobo 也需要单独准备兼容 CUDA 环境。后端不可用时会显示未就绪，不会把失败静默切换成其他算法。
-- 包含的三段真机参考轨迹和相机帧用于对照与回归；它们不是独立机械参数标定，也不能证明 sim-to-real。
-
-交接包清单 `PACKAGE-MANIFEST.json` 逐文件记录大小与 SHA-256。代码和上游模型资产各自保留来源版本；导出的内部参考资料仅供团队按权限使用，请勿公开上传。包中不含训练权重、个人 API 配置、数据库、虚拟环境、缓存或历史大型实验目录。
+旧仿真交接ZIP保留作本地历史快照；公司端完整仿真部署已撤回并清理，禁止再上传。旧纯真机v3源码备份在公司端 `records/versions/v3.zip`，不含API密钥。
