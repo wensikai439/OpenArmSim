@@ -6,6 +6,7 @@ separate real-robot service supplies calibrated measurements and tool adapters.
 import argparse
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -48,6 +49,7 @@ def request(url,body=None,*,key=None,timeout=15):
 class Robot:
     def __init__(self,config,*,execute=False,transport=request):
         self.config=config;self.execute=execute;self.transport=transport;self.calls=0
+        self.motion_requests_attempted=0
         self.base=config.get('robot_service')
         if self.base:
             p=urllib.parse.urlsplit(self.base)
@@ -61,7 +63,7 @@ class Robot:
         try:info=self.transport(self.base+'/status',timeout=5)
         except RuntimeError:return {'ready':False,'missing':['real robot service unreachable']}
         missing=[]
-        for key,value in [('contract','openarm-body-v3/1'),('source','real_robot'),
+        for key,value in [('contract',self.config.get('robot_contract','openarm-body-v4/1')),('source','real_robot'),
                           ('calibration_verified',True),('hardware_execution_available',True)]:
             if info.get(key)!=value:missing.append(key+' not verified')
         if not set(TOOLS)<=set(info.get('tools',[])):missing.append('14 real tool implementations required')
@@ -78,8 +80,44 @@ class Robot:
         self.calls+=1
         if self.calls>64:raise RuntimeError('real tool call budget exceeded')
         # Revalidate a fresh real measurement before EVERY tool, not just start.
-        self.observe()
-        return self.transport(self.base+'/tools/'+name,{'args':args,'kwargs':kwargs},timeout=60)
+        state=self.observe()
+        if state['terminal'] is not False or state['invalid'] is not False:
+            raise RuntimeError('terminal or invalid measured state; motion refused')
+        required={'lift':{'right'},'start_transfer':{'right'},
+                  'finish_transfer':{'right','left'},'start_place':{'left'}}
+        if name in required and set(state['held_by'])!=required[name]:
+            raise RuntimeError('measured hold precondition not satisfied for '+name)
+        if name in ('lift','start_transfer'):
+            error=right_region_error(state)
+            if error:return {'ok':False,'done':True,'error_code':error}
+        if name=='release_on_support':
+            support=state.get('support_evidence',{}).get('table',{})
+            if support.get('verified') is not True or support.get('stationary') is not True or 'left' in state['held_by']:
+                return {'ok':False,'done':True,'error_code':'supported_release_required'}
+        if (name=='advance' and (state.get('operation') or {}).get('phase')=='release_right'
+            and 'left' not in state['held_by']):
+            raise RuntimeError('donor release requires measured receiver hold')
+        if name not in ('propose_grasps','verify_hold'):self.motion_requests_attempted+=1
+        result=self.transport(self.base+'/tools/'+name,{'args':args,'kwargs':kwargs},timeout=60)
+        if name=='close_gripper' and kwargs.get('arm','right')=='right' and result.get('ok') is True:
+            after=self.observe()
+            if 'right' not in after['held_by']:return {'ok':False,'done':True,'error_code':'grasp_not_confirmed'}
+            error=right_region_error(after)
+            if error:return {'ok':False,'done':True,'error_code':error}
+        return result
+
+
+def right_region_error(state):
+    """Measured region interval includes uncertainty; a predicted grasp is insufficient."""
+    region=state.get('grasp_region_evidence',{}).get('right',{})
+    if (region.get('verified') is not True or region.get('source')!='measured_geometry'
+        or region.get('part')!='body'):
+        return 'grasp_region_unverified'
+    low,high=region.get('fraction_min'),region.get('fraction_max')
+    if (type(low) not in (int,float) or type(high) not in (int,float)
+        or not math.isfinite(low) or not math.isfinite(high) or low>high):
+        return 'grasp_region_unverified'
+    return None if 0.<=low<=high<=.5 else 'grasp_region_mismatch'
 
 
 def validate_observation(o,*,now=None):
@@ -93,8 +131,11 @@ def validate_observation(o,*,now=None):
               'current_grasp_id','last_failure','completed_steps','operation',
               'remaining_seconds','terminal','invalid')
     if any(k not in o for k in required):raise ValueError('incomplete real observation contract')
-    if not o.get('hold_evidence_verified') or not o.get('object_pose_verified'):
+    if o.get('hold_evidence_verified') is not True or o.get('object_pose_verified') is not True:
         raise ValueError('measured object poses and independent hold evidence required')
+    if (not isinstance(o['held_by'],list) or any(v not in ('left','right') for v in o['held_by'])
+        or len(set(o['held_by']))!=len(o['held_by']) or type(o['terminal']) is not bool or type(o['invalid']) is not bool):
+        raise ValueError('invalid holder or terminal-state evidence')
     return o
 
 
@@ -121,6 +162,7 @@ def run_skill(robot,folder):
     data={'status':'program_finished' if result.ok else 'program_failed',
           'program_ok':result.ok,'error':str(result.error) if result.error else None,
           'tool_calls':len(result.calls),'task_success':None,
+          'motion_requests_attempted':robot.motion_requests_attempted,
           'note':'real task verdict requires independent hold, release and basket support evidence'}
     (folder/'skill-result.json').write_text(json.dumps(clean(data),ensure_ascii=False,indent=2)+'\n')
     return data
@@ -168,7 +210,9 @@ def chat(task,robot,folder):
                 elif name=='run_bottle_skill' and not attempted:
                     attempted=True;value=run_skill(robot,folder)
                 else:raise ValueError('unavailable or repeated tool')
-            except (RuntimeError,ValueError) as exc:value={'status':'blocked','reason':str(exc),'motion_commands':0}
+            except (RuntimeError,ValueError) as exc:value={'status':'blocked','reason':str(exc),
+                'motion_requests_attempted':robot.motion_requests_attempted,
+                'execution_outcome_unknown':robot.motion_requests_attempted>0}
             value=clean(value);trace.append({'tool':name,'result':value})
             messages.append({'role':'tool','tool_call_id':c['id'],'content':json.dumps(value,ensure_ascii=False)})
     raise RuntimeError('agent turn budget exhausted')

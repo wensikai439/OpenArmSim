@@ -30,7 +30,11 @@ API 使用与本地技能实验相同的地址、模型和密钥。密钥不进�
 
 `config.json` 的 `robot_service` 在真实服务验收前保持null。缺少服务时，agent会报告缺项，`./run skill --execute` 也返回blocked、0运动命令，不假装动作已完成。没有自动启动任何相机、CAN或机械臂。
 
-真实服务只接受显式配置的本机HTTP地址：`GET /status` 应返回契约 `openarm-body-v3/1`、`source=real_robot`、标定已验收和14个工具；`GET /observation` 应提供 `source=measured_perception`、基座坐标系、200ms内时间戳、实测物体位姿/夹持证据及技能需要的状态。`POST /tools/工具名` 需要实现原技能的参数、前置条件和回执，真实动作由确定性控制器执行。这个API服务目前没有实现，不能把接口客户端说成驱动。
+真实服务只接受显式配置的本机HTTP地址：`GET /status` 应返回契约 `openarm-body-v4/1`、`source=real_robot`、标定已验收和14个工具；`GET /observation` 应提供 `source=measured_perception`、基座坐标系、200ms内时间戳、实测物体位姿/夹持证据及技能需要的状态。`POST /tools/工具名` 需要实现原技能的参数、前置条件和回执，真实动作由确定性控制器执行。这个API服务目前没有实现，不能把接口客户端说成驱动。
+
+右手闭爪成功后，服务还必须给出同一新鲜实测观测中的 `grasp_region_evidence.right`：`verified=true`、`source=measured_geometry`、`part=body`，以及包含定位不确定度的 `fraction_min/fraction_max`。只有整个区间位于瓶身自底向上的 `[0,0.5]` 内，才允许抬升或交接；预测抓姿、仅有闭爪反馈或未知区域都不够。超出下半部返回 `grasp_region_mismatch`，无测量则返回 `grasp_region_unverified` 并停下。该实测区间可以来自标定后的瓶体/夹爪几何与视觉、编码器及独立夹持证据，不能用仿真力接触坐标冒充真机测量。
+
+区域错误后的释放需要观测给出 `support_evidence.table.verified=true`、`stationary=true` 且左手未持瓶，之后控制服务仍需自行核验支撑。`terminal/invalid` 状态禁止继续运动，供物手释放前要求实测接收手持瓶。HTTP超时后记录已尝试的运动请求及未知结果，不再误报“0运动”，也不自动重发。这些是客户端前置条件，不能替代实时控制器和看门狗。
 
 实现和验证服务之后，操作员在场时才能使用 `./run chat "抓瓶子并交接入篮" --execute` 或 `./run skill --execute`。本次部署没有执行这两条命令。LLM只选工具，冻结程序由官方ASPIRE执行器调用14个真实工具；没有通过大模型直接发关节、CAN或高频指令。程序结束也不自动等于真实成功，还需要独立的释放、持瓶和篮底支撑证据。
 
