@@ -1,0 +1,9 @@
+{
+  "seed": 1006,
+  "bottle_xy_m": [
+    0.542365,
+    -0.275746
+  ],
+  "fault": "stale_grasp",
+  "pose_bias_m": 0.045
+}

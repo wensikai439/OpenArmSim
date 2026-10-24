@@ -1,0 +1,259 @@
+{
+  "task_success": false,
+  "route": [
+    "lift",
+    "handover"
+  ],
+  "native_failures": {
+    "code": "grasp_lost",
+    "tool": "place",
+    "tick": 1377
+  },
+  "stages": [
+    {
+      "tool": "pregrasp",
+      "ok": true,
+      "failure_code": null,
+      "message": null,
+      "start_tick": 0,
+      "end_tick": 125,
+      "phase": "approach",
+      "native": "native/20261024-102737-recovery-837723"
+    },
+    {
+      "tool": "approach",
+      "ok": true,
+      "failure_code": null,
+      "message": null,
+      "start_tick": 125,
+      "end_tick": 164,
+      "phase": "grasp",
+      "native": "native/20261024-102738-recovery-dc0d99"
+    },
+    {
+      "tool": "close_right",
+      "ok": false,
+      "failure_code": "grasp_not_confirmed",
+      "message": "No sustained two-finger hold after closure",
+      "start_tick": 164,
+      "end_tick": 209,
+      "phase": "close",
+      "native": "native/20261024-102738-recovery-9288e3"
+    },
+    {
+      "tool": "open_right",
+      "ok": true,
+      "failure_code": null,
+      "message": null,
+      "start_tick": 209,
+      "end_tick": 254,
+      "phase": "gripper",
+      "native": "native/20261024-102739-recovery-0049a4"
+    },
+    {
+      "tool": "retreat",
+      "ok": true,
+      "failure_code": null,
+      "message": null,
+      "start_tick": 254,
+      "end_tick": 293,
+      "phase": "move",
+      "native": "native/20261024-102739-recovery-8b7682"
+    },
+    {
+      "tool": "pregrasp",
+      "ok": true,
+      "failure_code": null,
+      "message": null,
+      "start_tick": 293,
+      "end_tick": 377,
+      "phase": "approach",
+      "native": "native/20261024-102740-recovery-17f4af"
+    },
+    {
+      "tool": "approach",
+      "ok": true,
+      "failure_code": null,
+      "message": null,
+      "start_tick": 377,
+      "end_tick": 416,
+      "phase": "grasp",
+      "native": "native/20261024-102741-recovery-d5c2fc"
+    },
+    {
+      "tool": "close_right",
+      "ok": true,
+      "failure_code": null,
+      "message": null,
+      "start_tick": 416,
+      "end_tick": 461,
+      "phase": "close",
+      "native": "native/20261024-102741-recovery-79a189"
+    },
+    {
+      "tool": "lift",
+      "ok": true,
+      "failure_code": null,
+      "message": null,
+      "start_tick": 461,
+      "end_tick": 615,
+      "phase": "hold",
+      "native": "native/20261024-102741-recovery-ebd4b1"
+    },
+    {
+      "tool": "handover",
+      "ok": true,
+      "failure_code": null,
+      "message": null,
+      "start_tick": 615,
+      "end_tick": 1332,
+      "phase": "retreat",
+      "native": "native/20261024-102742-recovery-084df7"
+    },
+    {
+      "tool": "place",
+      "ok": false,
+      "failure_code": "grasp_lost",
+      "message": "暂停路径 300 ms 后仍未恢复持续双指夹持；停止后续操作",
+      "start_tick": 1332,
+      "end_tick": 1377,
+      "phase": "place",
+      "native": "native/20261024-102757-recovery-4cce7f"
+    }
+  ],
+  "fault_used": [],
+  "pose_error_cleared": true,
+  "sim_seconds": 45.89999999998373,
+  "calls": 38,
+  "evaluation": {
+    "success": false,
+    "invalid": false,
+    "held": {
+      "left": false,
+      "right": false
+    },
+    "touching": {
+      "left": true,
+      "right": false
+    },
+    "failure_reasons": [],
+    "inside_basket": false,
+    "supported_by_basket": false,
+    "stable_seconds": 0.0,
+    "linear_speed_m_s": 0.010359189954179367,
+    "penetration_m": 0.0009768262271333612,
+    "max_penetration_m": 0.002821530556002688,
+    "peak_normal_force_N": 38.41525688297368,
+    "robot_contact_count": 0,
+    "contact_window": {
+      "sampling": "every solved physics step plus a zero-duration final-state check",
+      "physics_dt_s": 0.001,
+      "samples": 33,
+      "interval_start_s": 45.866999999983804,
+      "duration_s": 0.03300000000000002,
+      "robot_external_seconds": 0.03300000000000002,
+      "robot_self_seconds": 0.0,
+      "robot_external_impulse_Ns": 1.6729536146030932,
+      "robot_self_impulse_Ns": 0.0,
+      "robot_external_peak_force_N": 55.33729332308072,
+      "robot_self_peak_force_N": 0.0,
+      "endpoint_robot_external_force_N": 51.13544050830309,
+      "endpoint_robot_self_force_N": 0.0,
+      "peak_normal_force_N": 38.41525688297368,
+      "max_penetration_m": 0.0009768262271333612,
+      "hold_seconds": {
+        "left": 0.03000000000000002,
+        "right": 0.0
+      },
+      "stable_seconds": 0.0,
+      "placement_seconds": 0.0,
+      "pairs": [
+        {
+          "geoms": [
+            "openarm_left_right_finger_collision",
+            "bottle_body"
+          ],
+          "bodies": [
+            "openarm_left_right_finger",
+            "task_bottle"
+          ],
+          "robot_external": true,
+          "robot_self": false,
+          "first_time_s": 45.866999999983804,
+          "last_time_s": 45.89999999998373,
+          "duration_s": 0.03300000000000002,
+          "normal_impulse_Ns": 0.7118627070359168,
+          "peak_normal_force_N": 38.41525688297368,
+          "penetration_m": 0.0005556372065840091
+        },
+        {
+          "geoms": [
+            "openarm_left_left_finger_collision",
+            "bottle_body"
+          ],
+          "bodies": [
+            "openarm_left_left_finger",
+            "task_bottle"
+          ],
+          "robot_external": true,
+          "robot_self": false,
+          "first_time_s": 45.866999999983804,
+          "last_time_s": 45.89999999998373,
+          "duration_s": 0.03200000000000002,
+          "normal_impulse_Ns": 0.9610909075671765,
+          "peak_normal_force_N": 41.60160856450953,
+          "penetration_m": 0.0009768262271333612
+        },
+        {
+          "geoms": [
+            "bottle_body",
+            "box_right"
+          ],
+          "bodies": [
+            "task_bottle",
+            "target_box"
+          ],
+          "robot_external": false,
+          "robot_self": false,
+          "first_time_s": 45.866999999983804,
+          "last_time_s": 45.89999999998373,
+          "duration_s": 0.03200000000000002,
+          "normal_impulse_Ns": 0.30159839715559045,
+          "peak_normal_force_N": 19.92878080373184,
+          "penetration_m": 0.00032712030157510996
+        }
+      ]
+    },
+    "placement": {
+      "surface": "basket",
+      "xy_m": [
+        0.474,
+        0.357
+      ],
+      "tolerance_m": 0.025,
+      "stable_seconds": 0.0,
+      "confirmed": false
+    },
+    "evidence_source": "privileged simulator evaluator; not a camera measurement",
+    "transfer_ready": false,
+    "non_target_object_guard": {
+      "source": "native registered-body displacement from task selection; hidden diagnostic",
+      "displacement_m": {},
+      "limit_m": 0.003,
+      "passed": true,
+      "scope": "additional development execution gate; not a measured physical tolerance"
+    }
+  },
+  "hardware_access": false,
+  "transfer_ready": false,
+  "reset_count": 1,
+  "post_start_pose_restores": 0,
+  "source_sha256": "08af7827af7cc7e27699f97dff4ac050fdd74ddf3078348b99750c1191582cd5",
+  "physical_task_success": false,
+  "program_ok": false,
+  "mode": "fixed",
+  "error": "grasp_lost",
+  "executions": [],
+  "wall_seconds": 25.037116699037142,
+  "program_sha256": "5366df75a227bf2f06531614755001eb34d81e41aa24be0d4991008bb0ee2725"
+}

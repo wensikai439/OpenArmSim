@@ -1,0 +1,172 @@
+{
+  "schema": "openarm-feedback-skill/1",
+  "version": 1,
+  "admitted": true,
+  "program_sha256": "663a993ae02f1d915d20af2cca4a99e25b5d501c2b9cebeb6679c1948b0ebc46",
+  "runtime_sha256": "08af7827af7cc7e27699f97dff4ac050fdd74ddf3078348b99750c1191582cd5",
+  "campaign": "runs/20261024-recovery",
+  "upstream": "https://github.com/NVlabs/ASPIRE",
+  "upstream_revision": "fa00f0ef2bc1d91d594b9aa502c22133c9f538f7",
+  "requested_model": "claude-haiku-5-5",
+  "contribution": "model-generated bounded program; human-engineered tools, feedback and expert corrections; no neural-weight training or RL",
+  "development": {
+    "frozen_skill_passed": 3,
+    "frozen_skill_total": 3,
+    "online_model_recovery_passed": 2,
+    "online_model_recovery_total": 3,
+    "interface_rejected_drafts_retained": true
+  },
+  "heldout": {
+    "no_recovery": {
+      "none": {
+        "passed": 2,
+        "total": 3
+      },
+      "right_close_loss": {
+        "passed": 0,
+        "total": 3
+      },
+      "stale_grasp": {
+        "passed": 0,
+        "total": 3
+      },
+      "receiver_close_loss": {
+        "passed": 0,
+        "total": 3
+      }
+    },
+    "fixed": {
+      "none": {
+        "passed": 2,
+        "total": 3
+      },
+      "right_close_loss": {
+        "passed": 2,
+        "total": 3
+      },
+      "stale_grasp": {
+        "passed": 2,
+        "total": 3
+      },
+      "receiver_close_loss": {
+        "passed": 2,
+        "total": 3
+      }
+    },
+    "condensed": {
+      "none": {
+        "passed": 2,
+        "total": 3
+      },
+      "right_close_loss": {
+        "passed": 2,
+        "total": 3
+      },
+      "stale_grasp": {
+        "passed": 2,
+        "total": 3
+      },
+      "receiver_close_loss": {
+        "passed": 2,
+        "total": 3
+      }
+    }
+  },
+  "heldout_position_count": 3,
+  "heldout_condition_count": 12,
+  "native_trial_count": 36,
+  "known_failures": [
+    {
+      "seed": 1002,
+      "xy_m": [
+        0.480002,
+        -0.214409
+      ],
+      "failure": {
+        "code": "grasp_lost",
+        "tool": "place",
+        "tick": 1148
+      }
+    },
+    {
+      "seed": 1005,
+      "xy_m": [
+        0.480002,
+        -0.214409
+      ],
+      "failure": {
+        "code": "grasp_lost",
+        "tool": "place",
+        "tick": 1192
+      }
+    },
+    {
+      "seed": 1008,
+      "xy_m": [
+        0.480002,
+        -0.214409
+      ],
+      "failure": {
+        "code": "grasp_lost",
+        "tool": "place",
+        "tick": 1377
+      }
+    },
+    {
+      "seed": 1011,
+      "xy_m": [
+        0.480002,
+        -0.214409
+      ],
+      "failure": {
+        "code": "goal_collision",
+        "tool": "finish_transfer",
+        "tick": 1047
+      }
+    }
+  ],
+  "skill_text_reconstruction": {
+    "passed": 3,
+    "total": 3,
+    "split": "development faults, not extra heldout cases"
+  },
+  "regression_tests": 357,
+  "native_transitions_audited": 45055,
+  "scope": {
+    "task": "right pick -> right-left transfer -> left basket",
+    "object": "same registered upright bottle",
+    "pose_source": "simulator_geometry_oracle",
+    "tested_positions_m": [
+      [
+        0.542365,
+        -0.275746
+      ],
+      [
+        0.55864,
+        -0.265449
+      ],
+      [
+        0.480002,
+        -0.214409
+      ]
+    ],
+    "continuous_domain_certified": false,
+    "faults": [
+      "one-shot right closure command loss",
+      "one-shot receiver closure command loss",
+      "perceived bottle height +.045/.055/.065m cleared at first failure"
+    ],
+    "checkpoints": "physical empty-hand TCP retreat, not world snapshot restore",
+    "resume_arbitrary_midstate": false,
+    "runtime_needs_api": false,
+    "realtime_validated": false,
+    "hardware_access": false,
+    "transfer_ready": false
+  },
+  "budgets": {
+    "adapter_calls_including_internal_advances": 64,
+    "sim_seconds": 120
+  },
+  "fixed_baseline_identity": "executed recovery_campaign.fixed_policy pinned in protocol; per-trial program_sha256 records unused initial.py argument, not executed baseline body",
+  "entrypoint": "./run aspire recover --fault stale_grasp"
+}

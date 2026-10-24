@@ -1,0 +1,186 @@
+{
+  "task_success": true,
+  "route": [
+    "lift",
+    "handover",
+    "place"
+  ],
+  "native_failures": {
+    "code": "grasp_not_confirmed",
+    "tool": "close_right",
+    "tick": 209
+  },
+  "stages": [
+    {
+      "tool": "pregrasp",
+      "ok": true,
+      "failure_code": null,
+      "message": null,
+      "start_tick": 0,
+      "end_tick": 125,
+      "phase": "approach",
+      "native": "native/20261024-102521-recovery-70be3d"
+    },
+    {
+      "tool": "approach",
+      "ok": true,
+      "failure_code": null,
+      "message": null,
+      "start_tick": 125,
+      "end_tick": 164,
+      "phase": "grasp",
+      "native": "native/20261024-102522-recovery-38a06f"
+    },
+    {
+      "tool": "close_right",
+      "ok": false,
+      "failure_code": "grasp_not_confirmed",
+      "message": "No sustained two-finger hold after closure",
+      "start_tick": 164,
+      "end_tick": 209,
+      "phase": "close",
+      "native": "native/20261024-102522-recovery-157d92"
+    },
+    {
+      "tool": "close_right",
+      "ok": true,
+      "failure_code": null,
+      "message": null,
+      "start_tick": 209,
+      "end_tick": 254,
+      "phase": "close",
+      "native": "native/20261024-102523-recovery-1be15f"
+    },
+    {
+      "tool": "lift",
+      "ok": true,
+      "failure_code": null,
+      "message": null,
+      "start_tick": 254,
+      "end_tick": 407,
+      "phase": "hold",
+      "native": "native/20261024-102523-recovery-aedd4f"
+    },
+    {
+      "tool": "handover",
+      "ok": true,
+      "failure_code": null,
+      "message": null,
+      "start_tick": 407,
+      "end_tick": 1276,
+      "phase": "retreat",
+      "native": "native/20261024-102524-recovery-7b416e"
+    },
+    {
+      "tool": "place",
+      "ok": true,
+      "failure_code": null,
+      "message": null,
+      "start_tick": 1276,
+      "end_tick": 1734,
+      "phase": "settle",
+      "native": "native/20261024-102536-recovery-629f87"
+    }
+  ],
+  "fault_used": [
+    "right"
+  ],
+  "pose_error_cleared": true,
+  "sim_seconds": 57.79999999995599,
+  "calls": 31,
+  "evaluation": {
+    "success": true,
+    "invalid": false,
+    "held": {
+      "left": false,
+      "right": false
+    },
+    "touching": {
+      "left": false,
+      "right": false
+    },
+    "failure_reasons": [],
+    "inside_basket": true,
+    "supported_by_basket": true,
+    "stable_seconds": 2.251,
+    "linear_speed_m_s": 6.71906325087736e-06,
+    "penetration_m": 0.00012137949249151426,
+    "max_penetration_m": 0.00400885346485773,
+    "peak_normal_force_N": 1.5950433101954233,
+    "robot_contact_count": 0,
+    "contact_window": {
+      "sampling": "every solved physics step plus a zero-duration final-state check",
+      "physics_dt_s": 0.001,
+      "samples": 33,
+      "interval_start_s": 57.76699999995607,
+      "duration_s": 0.03300000000000002,
+      "robot_external_seconds": 0.0,
+      "robot_self_seconds": 0.0,
+      "robot_external_impulse_Ns": 0.0,
+      "robot_self_impulse_Ns": 0.0,
+      "robot_external_peak_force_N": 0.0,
+      "robot_self_peak_force_N": 0.0,
+      "endpoint_robot_external_force_N": 0.0,
+      "endpoint_robot_self_force_N": 0.0,
+      "peak_normal_force_N": 1.5950433101954233,
+      "max_penetration_m": 0.00012137949249151426,
+      "hold_seconds": {
+        "left": 0.0,
+        "right": 0.0
+      },
+      "stable_seconds": 2.250999999999863,
+      "placement_seconds": 2.250999999999863,
+      "pairs": [
+        {
+          "geoms": [
+            "bottle_body",
+            "box_floor"
+          ],
+          "bodies": [
+            "task_bottle",
+            "target_box"
+          ],
+          "robot_external": false,
+          "robot_self": false,
+          "first_time_s": 57.76699999995607,
+          "last_time_s": 57.79999999995599,
+          "duration_s": 0.03300000000000002,
+          "normal_impulse_Ns": 0.17805737614682124,
+          "peak_normal_force_N": 5.397477409013076,
+          "penetration_m": 0.00012137949249151426
+        }
+      ]
+    },
+    "placement": {
+      "surface": "basket",
+      "xy_m": [
+        0.474,
+        0.357
+      ],
+      "tolerance_m": 0.025,
+      "stable_seconds": 2.251,
+      "confirmed": true
+    },
+    "evidence_source": "privileged simulator evaluator; not a camera measurement",
+    "transfer_ready": false,
+    "non_target_object_guard": {
+      "source": "native registered-body displacement from task selection; hidden diagnostic",
+      "displacement_m": {},
+      "limit_m": 0.003,
+      "passed": true,
+      "scope": "additional development execution gate; not a measured physical tolerance"
+    }
+  },
+  "hardware_access": false,
+  "transfer_ready": false,
+  "reset_count": 1,
+  "post_start_pose_restores": 0,
+  "source_sha256": "08af7827af7cc7e27699f97dff4ac050fdd74ddf3078348b99750c1191582cd5",
+  "physical_task_success": true,
+  "program_ok": true,
+  "mode": "fixed",
+  "error": null,
+  "executions": [],
+  "wall_seconds": 20.599787437007762,
+  "program_sha256": "5366df75a227bf2f06531614755001eb34d81e41aa24be0d4991008bb0ee2725"
+}

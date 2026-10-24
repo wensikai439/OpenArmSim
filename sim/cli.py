@@ -147,6 +147,7 @@ def main():
         tests.addTests(unittest.defaultTestLoader.loadTestsFromName('sim.feedback_checks'))
         tests.addTests(unittest.defaultTestLoader.loadTestsFromName('harness.aspire.runtime_checks'))
         tests.addTests(unittest.defaultTestLoader.loadTestsFromName('harness.aspire.relay_checks'))
+        tests.addTests(unittest.defaultTestLoader.loadTestsFromName('harness.aspire.recovery_checks'))
         raise SystemExit(not unittest.TextTestRunner(verbosity=2).run(tests).wasSuccessful())
     raise SystemExit(replay(args))
 

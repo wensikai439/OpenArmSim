@@ -1,0 +1,25 @@
+{
+  "model": "claude-haiku-5-5",
+  "base_url": "https://zzq.si/v1",
+  "requests": 1,
+  "total_tokens": 7069,
+  "limits": {
+    "requests": 2,
+    "tokens": 10000
+  },
+  "usage": [
+    {
+      "request": 1,
+      "seconds": 5.351758989971131,
+      "response_model": "claude-haiku-5-5",
+      "tokens": {
+        "prompt_tokens": 5910,
+        "completion_tokens": 1159,
+        "total_tokens": 7069,
+        "prompt_tokens_details": {
+          "cache_creation_tokens": 5888
+        }
+      }
+    }
+  ]
+}

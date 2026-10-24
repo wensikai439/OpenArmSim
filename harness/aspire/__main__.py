@@ -21,6 +21,12 @@ def main():
     test.add_argument('--x',type=float,default=.503)
     test.add_argument('--y',type=float,default=-.173)
     test.add_argument('--seed',type=int,default=0)
+    recover=commands.add_parser('recover',help='独立仿真运行反馈恢复技能；不访问真机、不调用 API')
+    recover.add_argument('--x',type=float,default=.59)
+    recover.add_argument('--y',type=float,default=-.29)
+    recover.add_argument('--seed',type=int,default=0)
+    recover.add_argument('--fault',choices=('none','right_close_loss','receiver_close_loss','stale_grasp'),default='none')
+    recover.add_argument('--pose-bias',type=float,default=.05,help='诊断用感知高度偏差，.04 至 .07 米')
     prepare=commands.add_parser('prepare',help='只检查本地真机接口准备情况，不连接或移动真机')
     prepare.add_argument('--config',type=Path,default=ROOT/'skills/bottle_relay/robot.example.json')
     package=commands.add_parser('package',help='生成不含密钥和权重的仿真/技能交接包')
@@ -46,6 +52,18 @@ def main():
         if not output.is_relative_to(ROOT/'runs'):parser.error('实验输出必须放在 runs 内')
         run(output)
         return 0
+    if args.command=='recover':
+        folder=ROOT/'skills/bottle_recovery';program=folder/'program.py'
+        if not (folder/'manifest.json').exists():parser.error('恢复技能尚未验收')
+        manifest=json.loads((folder/'manifest.json').read_text())
+        if not manifest.get('admitted') or hashlib.sha256(program.read_bytes()).hexdigest()!=manifest['program_sha256']:
+            parser.error('技能未验收或程序已改变；请重新验证')
+        from .recovery_campaign import run_trial
+        case={'seed':args.seed,'bottle_xy_m':[args.x,args.y],'fault':args.fault,'pose_bias_m':args.pose_bias}
+        output=ROOT/'runs'/(time.strftime('%Y%m%d-%H%M%S')+'-bottle-recovery')
+        result=run_trial(case,output,program,'frozen')
+        print('完整记录：'+str(output))
+        return 0 if result['task_success'] else 1
     folder=ROOT/'skills/bottle_relay'
     program=folder/'program.py'
     if not program.exists() or not (folder/'manifest.json').exists():

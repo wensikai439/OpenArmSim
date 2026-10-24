@@ -1,0 +1,79 @@
+{
+  "groups": [
+    {
+      "path": "development/901/api/usage.json",
+      "requests": 2,
+      "tokens": 13851,
+      "seconds": 12.38739892304875,
+      "response_models": [
+        "claude-haiku-5-5"
+      ]
+    },
+    {
+      "path": "development-v2/902/api/usage.json",
+      "requests": 2,
+      "tokens": 14665,
+      "seconds": 11.120594564941712,
+      "response_models": [
+        "claude-haiku-5-5"
+      ]
+    },
+    {
+      "path": "development-v2/901/api/usage.json",
+      "requests": 1,
+      "tokens": 7069,
+      "seconds": 5.351758989971131,
+      "response_models": [
+        "claude-haiku-5-5"
+      ]
+    },
+    {
+      "path": "development-v2/903/api/usage.json",
+      "requests": 2,
+      "tokens": 13126,
+      "seconds": 11.004759376053698,
+      "response_models": [
+        "claude-haiku-5-5"
+      ]
+    },
+    {
+      "path": "api/verifier/usage.json",
+      "requests": 1,
+      "tokens": 6797,
+      "seconds": 8.691176287014969,
+      "response_models": [
+        "claude-haiku-5-5"
+      ]
+    },
+    {
+      "path": "api/correct/usage.json",
+      "requests": 1,
+      "tokens": 6739,
+      "seconds": 9.237165502971038,
+      "response_models": [
+        "claude-haiku-5-5"
+      ]
+    },
+    {
+      "path": "api/distill/usage.json",
+      "requests": 1,
+      "tokens": 10349,
+      "seconds": 10.294454657007009,
+      "response_models": [
+        "claude-haiku-5-5"
+      ]
+    },
+    {
+      "path": "api/actor/usage.json",
+      "requests": 2,
+      "tokens": 8511,
+      "seconds": 8.077423722017556,
+      "response_models": [
+        "claude-haiku-5-5"
+      ]
+    }
+  ],
+  "requests": 12,
+  "tokens": 81107,
+  "api_wait_seconds": 76.16473202302586
+}
