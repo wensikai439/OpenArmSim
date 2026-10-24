@@ -44,6 +44,8 @@ def main():
         parser.error('output must be a new directory under runs/')
     from PIL import Image, ImageDraw, ImageFont
     from harness.aspire.precision import PrecisionWorld
+    if json.loads((source/'case.json').read_text()).get('grasp_region')=='body':
+        from harness.aspire.body import BodyWorld as PrecisionWorld
     from harness.aspire.recovery_campaign import run_trial
     from harness.aspire.runtime import dump
 

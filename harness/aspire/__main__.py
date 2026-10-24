@@ -22,8 +22,8 @@ def main():
     test.add_argument('--y',type=float,default=-.173)
     test.add_argument('--seed',type=int,default=0)
     recover=commands.add_parser('recover',help='独立仿真运行反馈恢复技能；不访问真机、不调用 API')
-    recover.add_argument('--x',type=float,default=.59)
-    recover.add_argument('--y',type=float,default=-.29)
+    recover.add_argument('--x',type=float,default=.50)
+    recover.add_argument('--y',type=float,default=-.21)
     recover.add_argument('--seed',type=int,default=0)
     recover.add_argument('--fault',choices=('none','right_close_loss','receiver_close_loss','stale_grasp'),default='none')
     recover.add_argument('--pose-bias',type=float,default=.05,help='诊断用感知高度偏差，.04 至 .07 米')
@@ -67,7 +67,10 @@ def main():
         case={'seed':args.seed,'bottle_xy_m':[args.x,args.y],'fault':args.fault,'pose_bias_m':args.pose_bias}
         output=ROOT/'runs'/(time.strftime('%Y%m%d-%H%M%S')+'-bottle-recovery')
         world_type=None
-        if manifest.get('motion_profile')=='precision':
+        if manifest.get('runtime_backend')=='body':
+            from .body import BodyWorld
+            world_type=BodyWorld;case.update(motion_profile='precision',grasp_region='body')
+        elif manifest.get('motion_profile')=='precision':
             from .precision import PrecisionWorld
             world_type=PrecisionWorld;case['motion_profile']='precision'
         result=run_trial(case,output,program,'frozen',world_type=world_type)

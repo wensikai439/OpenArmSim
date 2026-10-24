@@ -352,7 +352,8 @@ class BottleHandoverPlanner(ObjectHandoverPlanner):
         self._arm(self.receiver);self.planning_qpos=snapshot.copy()
         for finger in self.env.fingers[self.receiver]:self.planning_qpos[finger.qposadr[0]]=max(finger.range)
         self._sync();seed=copy.deepcopy(self.ik_seeds[self.receiver]);rejected=[]
-        values=list(receiver_candidates(self.env,self.data,self.donor,self.receiver))
+        values=list(receiver_candidates(self.env,self.data,self.donor,self.receiver,
+            self.parameters.get('receiver_grasp_region')))
         # Search order changes only; no candidate, mesh, path or acceptance gate
         # is removed. Prefer axial room away from the actual donor grasp before
         # band height: a high donor cannot share the neck/cap with the receiver.

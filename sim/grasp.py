@@ -30,6 +30,18 @@ def cylinder_bands(model,data,body):
     return sorted(rows,key=lambda b:-b['center_m'][2])
 
 
+def body_bands(model,data,body,region):
+    """Axial bottle-body zones; cap/neck are never fallback candidates."""
+    if region not in ('lower_body','upper_body'):raise ValueError('unknown bottle body zone')
+    bands=cylinder_bands(model,data,body)
+    if not bands:raise PlanningFailure('bottle_body_missing','No cylindrical body geometry')
+    body_band=max(bands,key=lambda b:(b['radius_m'],b['half_height_m']))
+    fractions=(.40,.45,.30) if region=='lower_body' else (.80,.88,.72)
+    return [{**body_band,'center_m':body_band['center_m']+body_band['axis']*
+             ((fraction-.5)*2*body_band['half_height_m']),
+             'axial_fraction':fraction,'grasp_region':region} for fraction in fractions]
+
+
 def frames(axis,theta,pitch):
     base=TampPlanner._grasp_frame(axis,theta)
     c,s=np.cos(pitch),np.sin(pitch)

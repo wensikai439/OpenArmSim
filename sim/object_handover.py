@@ -9,7 +9,7 @@ import time
 import mujoco
 import numpy as np
 
-from .grasp import GeometricPlanner, cylinder_bands, candidates as cylinder_candidates
+from .grasp import GeometricPlanner, cylinder_bands, body_bands, candidates as cylinder_candidates
 from .object_planner import ObjectPlanner, candidates as primitive_candidates
 from .tamp import PlanningFailure
 
@@ -23,11 +23,12 @@ CONTRACT = {'schema': 'registered-object-handover/1', 'source': 'simulator_groun
     'hardware_access': False, 'transfer_ready': False}
 
 
-def receiver_candidates(env, data, donor, receiver):
+def receiver_candidates(env, data, donor, receiver, region=None):
     hand = data.xmat[env.ee_ids[donor]].reshape(3, 3)
     donor_tcp = data.xpos[env.ee_ids[donor]] + hand @ np.array([0, .006, .075])
     opening = sum(max(j.range) - min(j.range) for j in env.fingers[receiver])
-    proposals = (cylinder_candidates(cylinder_bands(env.model, data, env.bottle_id))
+    proposals = (cylinder_candidates(body_bands(env.model,data,env.bottle_id,region)
+        if region else cylinder_bands(env.model, data, env.bottle_id))
         if env.object_id == 'bottle' else primitive_candidates(env, data))
     for value in proposals:
         geom = env.model.geom(value['geom']).id; axis = data.geom_xmat[geom].reshape(3, 3)[:, 2]
@@ -158,7 +159,8 @@ class ObjectHandoverPlanner(ObjectPlanner):
         self._arm(self.receiver); self.planning_qpos = snapshot.copy()
         for finger in self.env.fingers[self.receiver]: self.planning_qpos[finger.qposadr[0]] = max(finger.range)
         self._sync(); seed = copy.deepcopy(self.ik_seeds[self.receiver]); rejected = []
-        values = list(receiver_candidates(self.env, self.data, self.donor, self.receiver))
+        values = list(receiver_candidates(self.env, self.data, self.donor, self.receiver,
+            self.parameters.get('receiver_grasp_region')))
         if self.next_place:
             # A low grasp may transfer but place its palm below the table.
             # Prioritize high bands; actual full meshes decide feasibility.

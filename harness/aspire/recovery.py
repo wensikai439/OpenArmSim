@@ -146,6 +146,9 @@ class RecoveryWorld:
             'operation':None if not self.active else {'kind':self.active['kind'],'phase':self.active.get('phase')},
             'remaining_seconds':self.env.task_window()['remaining_seconds']}
 
+    def _grasp_bands(self,planner):
+        return cylinder_bands(self.env.model,planner.data,self.env.bottle_id)
+
     def propose_grasps(self, exclude_ids=()):
         self._guard()
         if self.active:raise ValueError('finish or recover current operation first')
@@ -155,7 +158,7 @@ class RecoveryWorld:
         blocked={self.catalogue[x]['signature'] for x in exclude_ids if x in self.catalogue
             and self.catalogue[x]['pose_revision']==self.pose_revision}
         planner=SegmentPlanner(self.env,mode='pregrasp');planner._sync()
-        bands=cylinder_bands(self.env.model,planner.data,self.env.bottle_id)
+        bands=self._grasp_bands(planner)
         before=self.env.data.qpos.copy();accepted=[];rejected=[]
         for i,c in enumerate(candidates(bands)):
             signature=(c['geom'],round(c['yaw_rad'],6),round(c['pitch_rad'],6))

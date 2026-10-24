@@ -25,6 +25,16 @@ def secure_right_grasp(max_attempts):
             if v['ok'] and hold_tuple(observe()) == ['right']:
                 return True
             fail_stop('hold not confirmed after close')
+        if c.get('error_code') == 'grasp_region_mismatch':
+            check_done(release_on_support(), 'release_on_support')
+            check_done(retreat(observe()['checkpoint_id']), 'retreat')
+            excluded = excluded + (gid,)
+            cands = propose_grasps(exclude_ids=excluded)
+            if not cands['candidates']:
+                fail_stop('no lower-body grasp candidates after supported release')
+            gid = cands['candidates'][0]['id']
+            attempt += 1
+            continue
         if c.get('error_code') != 'grasp_not_confirmed':
             fail_stop('close failed: ' + str(c.get('error_code')))
         o = observe()
