@@ -1,0 +1,13 @@
+#!/bin/sh
+set -eu
+ROOT=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd -P)
+export PYTHONDONTWRITEBYTECODE=1 PYTHONNOUSERSITE=1
+export TMPDIR="$ROOT/.runtime/tmp"
+export XDG_CACHE_HOME="$ROOT/.runtime/cache"
+export XDG_CONFIG_HOME="$ROOT/.runtime/config"
+export XDG_DATA_HOME="$ROOT/.runtime/data"
+export PIP_CONFIG_FILE=/dev/null PIP_DISABLE_PIP_VERSION_CHECK=1
+unset PYTHONPATH
+cd "$ROOT"
+if [ "$#" -eq 0 ]; then set -- status; fi
+exec "$ROOT/.venv/bin/python" -B "$ROOT/harness/robot.py" "$@"
