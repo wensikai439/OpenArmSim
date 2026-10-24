@@ -10,4 +10,7 @@ export PIP_CONFIG_FILE=/dev/null PIP_DISABLE_PIP_VERSION_CHECK=1
 unset PYTHONPATH
 cd "$ROOT"
 if [ "$#" -eq 0 ]; then set -- status; fi
-exec "$ROOT/.venv/bin/python" -B "$ROOT/harness/robot.py" "$@"
+case "$1" in
+    preflight|service|audit-log) exec "$ROOT/.venv/bin/python" -B "$ROOT/app/service.py" "$@" ;;
+    *) exec "$ROOT/.venv/bin/python" -B "$ROOT/app/robot.py" "$@" ;;
+esac

@@ -1,43 +1,46 @@
-# OpenArm 真机 Harness
+# OpenArm Harness
 
-这个目录只保留真机 agent、API 配置、凝练的瓶身技能和 NVIDIA ASPIRE 官方执行器。没有 MuJoCo、仿真模型、仿真页面、数据集或仿真训练环境。
+真机接入包：API agent、冻结瓶身技能、NVIDIA ASPIRE 官方执行器、测量与控制适配代码。公司电脑不包含仿真平台、MuJoCo、网页、模型权重或数据集。
 
 ```text
 LLMHarness/
-├── run                 启动入口
-├── config.json         真机服务地址与技能校验和
-├── harness/            API agent 与真机工具客户端
-├── skills/             抓下半瓶身→左手交接→入篮程序及说明
-├── third_party/aspire/  固定版本官方执行器、注册表与许可证
-├── .private/           同一 API 的私有配置，仅所有者可读
-├── .venv/              Python + NumPy，无仿真依赖
-├── .runtime/           本目录缓存和临时文件
-└── records/            接入状态、调用记录和原文件校验
+├── run          唯一命令入口
+├── README.md
+├── AGENTS.md    远程文件与设备操作范围
+├── app/         agent、服务、测量/控制适配、skill、官方执行器
+├── config/      robot.json、hardware.json、calibration.json
+└── records/     接入记录、版本备份、校验清单、每次操作日志
 ```
+
+私有 API 保存在 `.private/api.json`，权限600；环境和临时文件位于 `.venv/`、`.runtime/`。默认没有后台服务、定时任务或设备连接。
+
+## 现在可用
 
 ```sh
 ./run status
 ./run verify
-./run api-test
-./run chat "看一下现在能不能开始抓瓶子，先不要运动"
+./run preflight
+./run service
 ```
 
-API 使用与本地技能实验相同的地址、模型和密钥。密钥不进入源码、打包文件、Git、命令行或调用日志，仅保存在本目录权限600的 `.private/api.json`；父目录权限700。这里不写系统密钥环。
+`service` 只打开本机8772端口的无设备检查服务，Ctrl+C结束；不会打开相机、CAN或电机。它与agent的状态协议已经对接，但会如实报告物理接口未验收。`preflight`只读检查原部署源码哈希、同一ACT初始目标和接入证据。
 
-## 当前的缺项
+API保持原地址/模型/密钥，无需重新填写。`./run chat "检查准备情况，先不要运动"`可让同一模型查询接入情况；`./run api-test`仅测API。**当前不能直接抓瓶**：缺少实测相机外参、夹持阈值以及经实机验收的14工具运动提供者，`--execute`仍被阻止。
 
-凝练程序的14个动作/观测工具，目前仍需接入真正的瓶篮位姿、夹持证据、运动规划和执行服务。原有 ACT/DP/π0.5 的权重与启动代码保持原位、只读；路径记录不代表已经接到此技能。安装与 API 连通不等于能直接抓瓶，不能发送仿真关节轨迹代替适配。
+## 已准备的链路
 
-`config.json` 的 `robot_service` 在真实服务验收前保持null。缺少服务时，agent会报告缺项，`./run skill --execute` 也返回blocked、0运动命令，不假装动作已完成。没有自动启动任何相机、CAN或机械臂。
+- `app/devices.py`：独立、延迟打开的RGB-D读取器，不导入旧相机模块的设备枚举。原OpenArm控制器、CAN反馈和初始化源码按哈希只读引用。初始化复用ACT第71条数据目标、400步插值和5秒目标保持，增加实际到位检查与逐指令记录。本轮没有执行初始化。
+- `app/evidence.py`：URDF具名关节FK、物体相对位姿变换、编码器/力矩/物体在夹爪内位置/持续稳定窗口联合判定；抓取区域包含夹垫完整几何范围及定位误差。闭爪不等于持瓶。
+- `app/devices.py:marker_poses`：可选注册标记RGB-D定位基线，使用ArUco、PnP重投影和对齐深度复核。**不假设现有瓶子上有标记**。实际标记尺寸、相机外参仍未配置。可更换感知前端，但实测坐标系、误差和时间戳契约必须相同。
+- `app/motion.py`：双臂30Hz持续保持，LLM/API等待不停止另一只手的指令。每个轨迹点等待伺服回执，不跳点追赶；超时、关节跟踪异常即锁定停止。执行前需要受检规划器复核双臂完整路径和携物碰撞。**实际规划器尚未接入验收，没有直线插值冒充避障的后备路线。**
+- `app/service.py`：状态/新鲜观测/工具回执接口、会话鉴权、单任务占用、重复请求拒绝和未知执行结果停止。没有自动加载未经验收的运动提供者。
 
-真实服务只接受显式配置的本机HTTP地址：`GET /status` 应返回契约 `openarm-body-v4/1`、`source=real_robot`、标定已验收和14个工具；`GET /observation` 应提供 `source=measured_perception`、基座坐标系、200ms内时间戳、实测物体位姿/夹持证据及技能需要的状态。`POST /tools/工具名` 需要实现原技能的参数、前置条件和回执，真实动作由确定性控制器执行。这个API服务目前没有实现，不能把接口客户端说成驱动。
+这是一组可测试的适配代码和无设备服务，不能写成“三维定位和14个真实工具已经联调成功”。旧VR手柄标定不是相机外参，回位时间结束也不是已到位。`config/calibration.json`的未知项保留为null。修改控制配置后必须重新验收并更新发布清单，不能通过删掉校验绕过。
 
-右手闭爪成功后，服务还必须给出同一新鲜实测观测中的 `grasp_region_evidence.right`：`verified=true`、`source=measured_geometry`、`part=body`，以及包含定位不确定度的 `fraction_min/fraction_max`。只有整个区间位于瓶身自底向上的 `[0,0.5]` 内，才允许抬升或交接；预测抓姿、仅有闭爪反馈或未知区域都不够。超出下半部返回 `grasp_region_mismatch`，无测量则返回 `grasp_region_unverified` 并停下。该实测区间可以来自标定后的瓶体/夹爪几何与视觉、编码器及独立夹持证据，不能用仿真力接触坐标冒充真机测量。
+## 记录和后续验收
 
-区域错误后的释放需要观测给出 `support_evidence.table.verified=true`、`stationary=true` 且左手未持瓶，之后控制服务仍需自行核验支撑。`terminal/invalid` 状态禁止继续运动，供物手释放前要求实测接收手持瓶。HTTP超时后记录已尝试的运动请求及未知结果，不再误报“0运动”，也不自动重发。这些是客户端前置条件，不能替代实时控制器和看门狗。
+每次任务独立写入 `records/时间-类型-编号/`：`session.json`记录任务与版本，`events.jsonl`记录Unix/单调时间、API工具、观测、请求、驱动返回、关节反馈、故障和停止。运动请求在下发前写入并刷盘，日志有连续哈希链；`./run audit-log records/具体目录`检查完整性。未来获准的采集会话还需记录录像及其时钟映射；本轮没有拍摄或开启设备。
 
-实现和验证服务之后，操作员在场时才能使用 `./run chat "抓瓶子并交接入篮" --execute` 或 `./run skill --execute`。本次部署没有执行这两条命令。LLM只选工具，冻结程序由官方ASPIRE执行器调用14个真实工具；没有通过大模型直接发关节、CAN或高频指令。程序结束也不自动等于真实成功，还需要独立的释放、持瓶和篮底支撑证据。
+下一次现场依次完成：定位/时间同步→夹爪空抓与夹瓶阈值→同ACT初始位置实际到位→空手路径→右手下半瓶身抓取与保持→交接→左手保持与入篮。每段有独立实测回执后，才开放整段API任务。详见 [试运行](app/试运行.md)。所有文件、缓存和日志只能写在本目录内。
 
-所有后续文件、日志、缓存和环境只能写在本 `LLMHarness/` 内。其他远程目录、原模型配置、驱动、环境和权重都不能修改。没有系统服务、自动启动或定时任务。
-
-来源：[NVIDIA ASPIRE](https://github.com/NVlabs/ASPIRE)，固定执行器提交 `fa00f0ef2bc1d91d594b9aa502c22133c9f538f7`。这是OpenArm自定义接入客户端，不是NVIDIA官方OpenArm驱动。
+来源：[NVIDIA ASPIRE](https://github.com/NVlabs/ASPIRE)，固定提交 `fa00f0ef2bc1d91d594b9aa502c22133c9f538f7`；测量接口参考 [RealSense对齐示例](https://github.com/realsenseai/librealsense/blob/master/wrappers/python/examples/align-depth2color.py) 和 [OpenCV标记文档](https://docs.opencv.org/5.0/tutorials/objdetect/aruco_detection/aruco_detection.html)。OpenArm适配器由本项目实现，未宣称NVIDIA官方真机驱动。

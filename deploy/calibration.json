@@ -1,0 +1,81 @@
+{
+  "schema": "openarm-measured-calibration/1",
+  "status": "missing_physical_acceptance",
+  "table_top_z_m": null,
+  "support_tolerance_m": null,
+  "camera": {
+    "serial": null,
+    "mounted_link": null,
+    "T_link_camera": null,
+    "time_sync_verified": false
+  },
+  "objects": {
+    "bottle": {
+      "marker_id": null,
+      "marker_size_m": null,
+      "marker_to_object": null,
+      "body_height_m": null,
+      "body_bottom_m": null
+    },
+    "basket": {
+      "marker_id": null,
+      "marker_size_m": null,
+      "marker_to_object": null
+    }
+  },
+  "grippers": {
+    "left": {
+      "open_motor": null,
+      "contact_motor_range": null,
+      "contact_torque_range": null,
+      "object_center_bounds_tool_m": null,
+      "maximum_slip_m": null,
+      "maximum_rotation_rad": null,
+      "pad_extent_points_tool_m": null,
+      "accepted_tool_uncertainty_m": null
+    },
+    "right": {
+      "open_motor": null,
+      "contact_motor_range": null,
+      "contact_torque_range": null,
+      "object_center_bounds_tool_m": null,
+      "maximum_slip_m": null,
+      "maximum_rotation_rad": null,
+      "pad_extent_points_tool_m": null,
+      "accepted_tool_uncertainty_m": null
+    }
+  },
+  "acceptance": {
+    "camera_extrinsics": {
+      "physical_trial_passed": false,
+      "record": null,
+      "sha256": null
+    },
+    "object_geometry": {
+      "physical_trial_passed": false,
+      "record": null,
+      "sha256": null
+    },
+    "gripper_contact": {
+      "physical_trial_passed": false,
+      "record": null,
+      "sha256": null
+    },
+    "timing": {
+      "physical_trial_passed": false,
+      "record": null,
+      "sha256": null
+    },
+    "motion_planner": {
+      "physical_trial_passed": false,
+      "record": null,
+      "sha256": null
+    },
+    "watchdog": {
+      "physical_trial_passed": false,
+      "record": null,
+      "sha256": null
+    }
+  },
+  "note": "Unknown measurements remain null. Existing VR calibration is not camera extrinsics. Marker localization is optional and requires actual markers; no assumption of markers on current bottle."
+}

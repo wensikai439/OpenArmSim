@@ -67,7 +67,10 @@ def main():
         case={'seed':args.seed,'bottle_xy_m':[args.x,args.y],'fault':args.fault,'pose_bias_m':args.pose_bias}
         output=ROOT/'runs'/(time.strftime('%Y%m%d-%H%M%S')+'-bottle-recovery')
         world_type=None
-        if manifest.get('runtime_backend')=='placement':
+        if manifest.get('runtime_backend')=='stable':
+            from .stable import StableWorld
+            world_type=StableWorld;case.update(motion_profile='precision',grasp_region='body')
+        elif manifest.get('runtime_backend')=='placement':
             from .placement import PlacementWorld
             world_type=PlacementWorld;case.update(motion_profile='precision',grasp_region='body')
         elif manifest.get('runtime_backend')=='body':

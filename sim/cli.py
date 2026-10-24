@@ -151,6 +151,7 @@ def main():
         tests.addTests(unittest.defaultTestLoader.loadTestsFromName('harness.aspire.robust_checks'))
         tests.addTests(unittest.defaultTestLoader.loadTestsFromName('harness.aspire.placement_checks'))
         tests.addTests(unittest.defaultTestLoader.loadTestsFromName('deploy.robot_checks'))
+        tests.addTests(unittest.defaultTestLoader.loadTestsFromName('deploy.service_checks'))
         tests.addTests(unittest.defaultTestLoader.loadTestsFromName('harness.real_checks'))
         tests.addTests(unittest.defaultTestLoader.loadTestsFromName('tools.package_checks'))
         raise SystemExit(not unittest.TextTestRunner(verbosity=2).run(tests).wasSuccessful())

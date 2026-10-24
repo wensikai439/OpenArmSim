@@ -1,0 +1,90 @@
+{
+  "schema": "openarm-hardware-reference/1",
+  "deploy_root": "/home/sj/Desktop/wuji/lerobot_20260116/openarm_deploy",
+  "source_hashes": {
+    "model_launchers/configs/act_startup_target.json": "c81ef06e92eceda576322fc942eed21bca173ae50aea043c425b85b22f3ec42e",
+    "openarm/openarm_controller.py": "d4a69c2d54ab2442403d927168681697e38eb989bfc2a979976d35ddfc79acda",
+    "model_launchers/shared/joint_feedback.py": "1795aad91a3f681e1c5d5f23aa20a8bbd8710b6183557415813b02d623396578",
+    "model_launchers/shared/joint_initialization.py": "d94caca9bcc90e09fe17636cac1a0d3cadc9d345ce34d9f189793ec4d871550c",
+    "model_launchers/models/dp/deploy_dp_dual_joint.py": "79a81a52bc545868401abd02cdad4eb596f50e384b0e51a12111c5d33fc46742",
+    "pyroki_/robot_ik_solver.py": "10251285693f84e7a213cdfd68d8a300abe9f7cfbcad04db416d047322f4fea5",
+    "pyroki_/config/robot.yaml": "06c2198ec79f0091320181c4ea4899ccee078e2399332051866e063213dab623"
+  },
+  "startup_target_file": "model_launchers/configs/act_startup_target.json",
+  "startup_target": [
+    0.5319676399230957,
+    -0.7562752962112427,
+    0.4880979657173157,
+    1.0873960256576538,
+    -0.8012893795967102,
+    -0.14248111844062805,
+    -1.3925764560699463,
+    -0.8978027105331421,
+    -0.6700618267059326,
+    0.7585641145706177,
+    -0.49420157074928284,
+    1.0008010864257812,
+    0.6311513185501099,
+    -0.043678950518369675,
+    1.421950101852417,
+    -0.9424353241920471
+  ],
+  "feature_names": [
+    "qpos_0_0",
+    "qpos_0_1",
+    "qpos_0_2",
+    "qpos_0_3",
+    "qpos_0_4",
+    "qpos_0_5",
+    "qpos_0_6",
+    "gripper_0",
+    "qpos_1_0",
+    "qpos_1_1",
+    "qpos_1_2",
+    "qpos_1_3",
+    "qpos_1_4",
+    "qpos_1_5",
+    "qpos_1_6",
+    "gripper_1"
+  ],
+  "startup_episode": 71,
+  "startup_interpolation_steps": 400,
+  "startup_interval_s": 0.01,
+  "startup_final_hold_s": 5.0,
+  "urdf": "/home/sj/Desktop/lerobot/openarm_deploy/openarm/openarm_description/urdf/robot/openarm_bimanual.urdf",
+  "urdf_sha256": "f9b9ca6cd0149ea0db91daebc61e1c4570e1b2ac1324dee049c95a6afe2c9bd2",
+  "state_order": "left7,left_gripper_motor,right7,right_gripper_motor",
+  "cameras": {
+    "head": {
+      "device": "/dev/video12",
+      "resolution": [
+        1280,
+        960
+      ],
+      "fps": 30
+    },
+    "left": {
+      "serial": "150622074105",
+      "resolution": [
+        640,
+        480
+      ],
+      "fps": 30
+    },
+    "right": {
+      "serial": "236422072385",
+      "resolution": [
+        640,
+        480
+      ],
+      "fps": 30
+    }
+  },
+  "read_only": true,
+  "hardware_access": false,
+  "startup_executed": false,
+  "calibration_warning": "existing calib/{left,right}.yaml binds VR controller to wrist, not optical camera to robot base",
+  "solver_warning": "existing IK uses internal wxyz+xyz despite a conflicting xyz+xyzw comment; never pass arrays by assumed order",
+  "device_runtime_python": "/home/sj/miniconda3/envs/lerobot_20260116/bin/python",
+  "device_runtime_verified_this_session": false
+}

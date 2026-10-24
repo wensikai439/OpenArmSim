@@ -12,6 +12,7 @@ from pathlib import Path
 import re
 import sys
 import time
+import uuid
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -28,7 +29,7 @@ def read(path):return json.loads(Path(path).read_text())
 def clean(value):
     if isinstance(value,str):return re.sub(r'\bsk-[A-Za-z0-9_-]{12,}','[REDACTED]',value)
     if isinstance(value,dict):return {k:clean(v) for k,v in value.items()
-        if k.lower() not in ('api_key','authorization','thinking','reasoning_content','images')}
+        if k.lower() not in ('api_key','authorization','thinking','reasoning_content','images','session_token','access_token','secret')}
     if isinstance(value,list):return [clean(v) for v in value]
     return value
 
@@ -47,9 +48,10 @@ def request(url,body=None,*,key=None,timeout=15):
 
 
 class Robot:
-    def __init__(self,config,*,execute=False,transport=request):
+    def __init__(self,config,*,execute=False,transport=request,journal=None):
         self.config=config;self.execute=execute;self.transport=transport;self.calls=0
         self.motion_requests_attempted=0
+        self.journal=journal
         self.base=config.get('robot_service')
         if self.base:
             p=urllib.parse.urlsplit(self.base)
@@ -67,11 +69,14 @@ class Robot:
                           ('calibration_verified',True),('hardware_execution_available',True)]:
             if info.get(key)!=value:missing.append(key+' not verified')
         if not set(TOOLS)<=set(info.get('tools',[])):missing.append('14 real tool implementations required')
+        missing.extend(x for x in info.get('missing',[]) if x not in missing)
         return {'ready':not missing,'missing':missing,'service':info}
 
     def observe(self):
         if not self.base:raise RuntimeError('real perception service not connected')
-        return validate_observation(self.transport(self.base+'/observation',timeout=5))
+        state=validate_observation(self.transport(self.base+'/observation',timeout=5))
+        if self.journal:self.journal.record('observation',state)
+        return state
 
     def call(self,name,*args,**kwargs):
         if name not in TOOLS:raise ValueError('unknown real tool')
@@ -97,9 +102,20 @@ class Robot:
         if (name=='advance' and (state.get('operation') or {}).get('phase')=='release_right'
             and 'left' not in state['held_by']):
             raise RuntimeError('donor release requires measured receiver hold')
+        body={'args':list(args),'kwargs':kwargs,'request_id':uuid.uuid4().hex}
+        if self.journal:self.journal.record('tool_requested',{'name':name,'request':body})
+        token_path=ROOT/'.runtime/session-token'
+        transport_kwargs={'timeout':120}
+        if token_path.is_file():
+            if token_path.stat().st_mode&0o077:raise RuntimeError('service session token must be private')
+            transport_kwargs['key']=token_path.read_text().strip()
         if name not in ('propose_grasps','verify_hold'):self.motion_requests_attempted+=1
-        result=self.transport(self.base+'/tools/'+name,{'args':args,'kwargs':kwargs},timeout=60)
-        if name=='close_gripper' and kwargs.get('arm','right')=='right' and result.get('ok') is True:
+        try:result=self.transport(self.base+'/tools/'+name,body,**transport_kwargs)
+        except Exception:
+            if self.journal:self.journal.record('error',{'name':name,'outcome':'unknown; no automatic resend'})
+            raise
+        if self.journal:self.journal.record('tool_returned',{'name':name,'result':result})
+        if name=='close_gripper' and kwargs.get('arm',args[0] if args else 'right')=='right' and result.get('ok') is True:
             after=self.observe()
             if 'right' not in after['held_by']:return {'ok':False,'done':True,'error_code':'grasp_not_confirmed'}
             error=right_region_error(after)
@@ -145,11 +161,11 @@ def run_skill(robot,folder):
         return {'status':'blocked','missing':status['missing']+([] if robot.execute else ['--execute not supplied']),
                 'motion_commands':0,'task_success':None}
     robot.observe()
-    program=ROOT/'skills/bottle_recovery/program.py'
-    cfg=read(ROOT/'config.json')
+    program=ROOT/'app/skill/program.py'
+    cfg=read(ROOT/'config/robot.json')
     if hashlib.sha256(program.read_bytes()).hexdigest()!=cfg['program_sha256']:
         raise ValueError('admitted skill hash mismatch')
-    sys.path.insert(0,str(ROOT/'third_party/aspire/src'))
+    sys.path.insert(0,str(ROOT/'app/aspire/src'))
     from cap_harness.registry import ToolRegistry
     from cap_harness.runtime import ProgramExecutor
     registry=ToolRegistry(shared_public_names=TOOLS,public_extension_allowlist=())
@@ -195,6 +211,8 @@ def chat(task,robot,folder):
     attempted=False;trace=[]
     for turn in range(6):
         response=model(messages,tools=tools);message=response['choices'][0]['message']
+        if robot.journal:robot.journal.record('api_response',{'turn':turn,'model':response.get('model'),
+            'usage':response.get('usage'),'content':message.get('content'),'tool_calls':message.get('tool_calls',[])})
         calls=message.get('tool_calls',[])
         messages.append({'role':'assistant','content':message.get('content'),**({'tool_calls':calls} if calls else {})})
         if not calls:
@@ -219,7 +237,7 @@ def chat(task,robot,folder):
 
 
 def verify():
-    m=read(ROOT/'MANIFEST.json')
+    m=read(ROOT/'records/manifest.json')
     for name,digest in m['files'].items():
         p=(ROOT/name).resolve()
         if not p.is_relative_to(ROOT) or hashlib.sha256(p.read_bytes()).hexdigest()!=digest:
@@ -232,19 +250,26 @@ def main():
     p.add_argument('command',choices=['status','verify','api-test','chat','skill'])
     p.add_argument('task',nargs='?',default='右手抓瓶子下半瓶身，交接给左手，然后放进篮子')
     p.add_argument('--execute',action='store_true')
-    a=p.parse_args();verify();cfg=read(ROOT/'config.json');robot=Robot(cfg,execute=a.execute)
+    a=p.parse_args();verify();cfg=read(ROOT/'config/robot.json');robot=Robot(cfg,execute=a.execute)
     if a.command=='verify':result=verify()
     elif a.command=='status':
         try:s=settings();api={'configured':True,'model':s['model'],'base_url':s['base_url']}
         except RuntimeError:api={'configured':False}
         result={'deployment':'real_only','simulator_included':False,'api':api,'robot':robot.status()}
     else:
-        folder=ROOT/'records'/(time.strftime('%Y%m%d-%H%M%S')+'-'+a.command)
-        folder.mkdir(parents=True,exist_ok=False)
-        if a.command=='api-test':
-            r=model([{'role':'user','content':'Reply only: connected'}]);result={'connected':True,'model':r.get('model'),'scope':'text connectivity only; no robot motion'}
-        elif a.command=='chat':result=chat(a.task,robot,folder)
-        else:result=run_skill(robot,folder)
+        from service import Journal
+        folder=ROOT/'records'/(time.strftime('%Y%m%d-%H%M%S')+'-'+a.command+'-'+uuid.uuid4().hex[:6])
+        journal=Journal(folder,{'command':a.command,'task':a.task,'execute_requested':a.execute,
+            'skill_sha256':cfg['program_sha256'],'hardware_access_by_harness':False,
+            'motion_commands_unknown_until_service_receipts':True})
+        robot.journal=journal
+        try:
+            if a.command=='api-test':
+                r=model([{'role':'user','content':'Reply only: connected'}]);result={'connected':True,'model':r.get('model'),'scope':'text connectivity only; no robot motion'}
+            elif a.command=='chat':result=chat(a.task,robot,folder)
+            else:result=run_skill(robot,folder)
+            journal.record('result',result)
+        finally:journal.close()
     print(json.dumps(clean(result),ensure_ascii=False,indent=2))
     return 2 if result.get('status')=='blocked' else 0
 
