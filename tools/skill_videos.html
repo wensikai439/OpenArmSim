@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>仿真记录 · OpenArm Lab</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f6f4ef;color:#302e2a;font:15px/1.7 system-ui,sans-serif}main{max-width:1320px;margin:auto;padding:28px 30px 60px}nav{display:flex;justify-content:space-between;padding-bottom:18px;border-bottom:1px solid #ded9cf}a{color:inherit;text-underline-offset:4px}h1{font-size:32px;font-weight:550;margin:28px 0 8px}p{margin:8px 0 20px;color:#716b60}.layout{display:grid;grid-template-columns:245px minmax(0,1fr);gap:24px;margin-top:26px}.choices{display:flex;flex-direction:column;gap:12px}button,select{font:inherit;border:1px solid #ded8cc;border-radius:9px;background:#fffefa;color:inherit;cursor:pointer;padding:9px 14px}button:hover{background:#f0ebe3}button:focus-visible,a:focus-visible,select:focus-visible{outline:3px solid #ad6c4f;outline-offset:3px}.choice{text-align:left;padding:16px}.choice strong,.choice span{display:block}.choice span{font-size:14px;color:#766e61;margin-top:5px}.choice[aria-pressed=true]{background:#eee3d8;border-color:#b9977f}.player{background:#fffefa;border:1px solid #e2ddd3;border-radius:15px;overflow:hidden}video{display:block;width:100%;background:#252926;aspect-ratio:1280/600}.body{padding:20px 23px}h2{font-size:23px;font-weight:550;margin:0}.title{display:flex;justify-content:space-between;align-items:center;gap:12px}.badge{padding:3px 12px;border-radius:20px;background:#e9efe3;color:#53694b;white-space:nowrap}.badge.fail{background:#f1e2d8;color:#94604a}.toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:9px;margin:16px 0}.primary{background:#ad7658;color:#fff;border-color:#ad7658}.primary:hover{background:#946449}.spacer{flex:1}.muted{color:#7a7369}#stages{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}#stages button{font-size:14px;padding:5px 11px}#stages button.bad{border-color:#c79070;color:#955e42}.bottom{display:flex;flex-wrap:wrap;gap:12px;border-top:1px solid #e5e0d7;padding-top:15px;margin-top:20px}details{margin-top:24px}summary{cursor:pointer}details p{margin:10px 0}footer{margin-top:30px;color:#777164}@media(max-width:900px){main{padding:20px 16px}.layout{grid-template-columns:1fr}.choices{display:grid;grid-template-columns:1fr 1fr;gap:9px}.choice{padding:12px}.choice span{font-size:13px}h1{font-size:28px}.body{padding:16px}.title{align-items:flex-start}h2{font-size:20px}}
+</style>
+<main>
+<nav><strong>OpenArm Lab</strong><a href="../20261024-precision/final/index.html">完整实验报告 ↗</a></nav>
+<h1>四段典型仿真记录</h1>
+<p>正常执行、两种失败恢复，以及旧工具的失败对照。选择一例，直接播放或跳到关键片段。</p>
+<div class="layout">
+<aside class="choices" aria-label="选择仿真案例">
+<button class="choice" data-case="nominal" aria-pressed="true"><strong>01　完整抓取与交接</strong><span>改进工具 · 案例 1200</span></button>
+<button class="choice" data-case="regrasp" aria-pressed="false"><strong>02　抓空后重新抓取</strong><span>感知偏差 · 案例 1208</span></button>
+<button class="choice" data-case="receiver" aria-pressed="false"><strong>03　交接失败后恢复</strong><span>接收手命令丢失 · 案例 1209</span></button>
+<button class="choice" data-case="baseline" aria-pressed="false"><strong>04　旧工具放置掉瓶</strong><span>同条件对照 · 案例 1200</span></button>
+</aside>
+<section class="player" aria-label="仿真录像播放器">
+<video id="video" controls playsinline preload="metadata" poster="nominal/poster.jpg" aria-label="仿真录像"></video>
+<div class="body">
+<div class="title"><h2 id="title">完整抓取与交接</h2><span class="badge" id="status">读取记录</span></div>
+<p id="description"></p>
+<div class="toolbar"><button class="primary" id="play">播放</button><button id="highlight">关键片段</button><label>速度 <select id="speed" aria-label="播放速度"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option></select></label><span class="spacer"></span><span id="metric" class="muted"></span></div>
+<div id="stages" aria-label="跳转到运行阶段"></div>
+<div class="bottom"><a id="download" download>下载视频</a><a id="record">原实验记录</a><a id="proof">录像核对</a><span class="muted" id="match"></span></div>
+</div>
+</section></div>
+<details><summary>视频来源与实验边界</summary><p>原实验保存了动作日志与关键帧，没有连续录像。这四段视频来自同一冻结案例、同一技能代码的原生物理复跑；逐步核对动作、前后状态、仿真时间和阶段结果。它们不是原实验当时录下的视频，也不计入新增成功率。</p><p>每秒采样 6 帧，视频按仿真时间 1× 编码，省略物理暂停期间的规划等待；三个视角均显示同一时刻。全景是操作员视角，左右腕部图像没有替换模型的输入。抓取故障属于可控诊断注入；这些记录不构成真机验证。</p></details>
+<footer>仅本地仿真 · 未连接真机</footer>
+</main>
+<script>
+const cases={
+nominal:{title:'完整抓取与交接',description:'右手抓起瓶子，交给左手，再放入篮子。与第 04 例采用相同初始条件，可直接比较放置过程。',focus:'handover'},
+regrasp:{title:'抓空后重新抓取',description:'初始感知高度存在偏差。首次闭合没有形成夹持，技能张开夹爪、实际退回、更新抓取方案后重抓，随后完成交接和放置。',focus:'failure'},
+receiver:{title:'交接失败后恢复',description:'交接时接收手的闭合命令被诊断性丢弃。检测到夹持未建立后，供物手继续持瓶；接收手重新闭合并验证，随后才释放供物手。',focus:'failure'},
+baseline:{title:'旧工具放置掉瓶',description:'右手抓取和交接完成，但旧放置工具在运输过程中失去夹持。失败保留，用于与第 01 例比较。',focus:'failure'}
+};
+const names={pregrasp:'预抓取',approach:'接近瓶子',close_right:'右手合拢',open_right:'张开右爪',retreat:'实际退回',lift:'抬起瓶子',handover:'双手交接',close_left:'左手重新合拢',finish_transfer:'确认交接与撤离',place:'放入篮子'};
+const video=document.querySelector('#video');let current,frames=[],activeKey,selection=0,objectURL;
+function seekTick(tick,play=true){const frame=frames.find(f=>f.tick>=Math.max(0,tick))||frames.at(-1);if(!frame)return;const go=()=>{video.currentTime=frame.frame/6;if(play)video.play().catch(()=>{});};if(video.readyState>0)go();else video.addEventListener('loadedmetadata',go,{once:true});}
+async function choose(key){const turn=++selection;video.pause();current=null;frames=[];document.querySelectorAll('#play,#highlight,#speed').forEach(b=>b.disabled=true);document.querySelector('#stages').replaceChildren();activeKey=key;document.querySelectorAll('.choice').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.case===key)));document.querySelector('#title').textContent=cases[key].title;document.querySelector('#description').textContent=cases[key].description;document.querySelector('#status').textContent='读取记录';
+const [result,proof,samples,media]=await Promise.all([...['result.json','recording.json','frames.json'].map(file=>fetch(`${key}/${file}`).then(r=>{if(!r.ok)throw Error('记录尚未就绪');return r.json()})),fetch(`${key}/video.mp4`).then(r=>{if(!r.ok)throw Error('视频尚未就绪');return r.blob()})]);if(turn!==selection)return;current=result;frames=samples;document.querySelectorAll('#play,#highlight,#speed').forEach(b=>b.disabled=false);video.poster=`${key}/poster.jpg`;if(objectURL)URL.revokeObjectURL(objectURL);objectURL=URL.createObjectURL(media);video.src=objectURL;video.load();video.playbackRate=Number(document.querySelector('#speed').value);
+const status=document.querySelector('#status');status.textContent=result.task_success?'已完成':'失败对照';status.classList.toggle('fail',!result.task_success);
+document.querySelector('#metric').textContent=`仿真 ${result.sim_seconds.toFixed(1)} 秒`+(result.task_success&&result.pose_error_m!==null?` · XY 误差 ${(result.pose_error_m*1000).toFixed(2)} mm`:'');
+document.querySelector('#download').href=`${key}/video.mp4`;document.querySelector('#record').href=`/${proof.original}/result.json`;document.querySelector('#proof').href=`${key}/recording.json`;document.querySelector('#match').textContent=proof.exact_trace_match?'与原日志逐步一致':'与原日志存在差异';
+const stages=document.querySelector('#stages');stages.replaceChildren();for(const stage of result.stages){const button=document.createElement('button');button.textContent=(names[stage.tool]||stage.tool)+(stage.ok?'':' · 未通过');button.classList.toggle('bad',!stage.ok);button.addEventListener('click',()=>seekTick(stage.start_tick));stages.append(button);}}
+document.querySelectorAll('.choice').forEach(b=>b.addEventListener('click',()=>choose(b.dataset.case).catch(e=>document.querySelector('#status').textContent=e.message)));
+document.querySelector('#play').addEventListener('click',()=>video.paused?video.play():video.pause());video.addEventListener('play',()=>{document.querySelector('#play').textContent='暂停'});video.addEventListener('pause',()=>{document.querySelector('#play').textContent='播放'});
+document.querySelector('#speed').addEventListener('change',event=>video.playbackRate=Number(event.target.value));
+document.querySelector('#highlight').addEventListener('click',()=>{if(!current)return;const failed=current.stages.find(s=>!s.ok),stage=current.stages.find(s=>s.tool===cases[activeKey].focus);seekTick(failed?failed.end_tick-90:stage?stage.start_tick:0)});
+video.addEventListener('error',()=>document.querySelector('#status').textContent='视频读取失败，请下载查看');
+choose('nominal').catch(e=>document.querySelector('#status').textContent=e.message);
+</script>
+</html>
