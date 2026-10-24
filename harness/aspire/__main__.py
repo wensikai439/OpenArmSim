@@ -30,7 +30,7 @@ def main():
     prepare=commands.add_parser('prepare',help='只检查本地真机接口准备情况，不连接或移动真机')
     prepare.add_argument('--config',type=Path,default=ROOT/'skills/bottle_relay/robot.example.json')
     package=commands.add_parser('package',help='生成不含密钥和权重的仿真/技能交接包')
-    package.add_argument('--output',type=Path,default=ROOT/'handoff/OpenArmSkill-20261024-v2.zip')
+    package.add_argument('--output',type=Path,default=ROOT/'handoff/OpenArmSkill-20261024-v3.zip')
     args=parser.parse_args()
     if args.command=='prepare':
         from tools.prepare_robot import main as prepare_robot

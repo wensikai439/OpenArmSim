@@ -63,10 +63,16 @@ def preflight(config):
     gaps=[]
     if config.get('hardware_enabled') is not False:gaps.append('hardware_enabled must remain false')
     if hashlib.sha256(program.read_bytes()).hexdigest()!=manifest['program_sha256']:gaps.append('skill program hash mismatch')
+    for name,expected in manifest.get('runtime_sources',{}).items():
+        path=(ROOT/name).resolve()
+        if (not path.is_relative_to(ROOT) or not path.is_file()
+            or hashlib.sha256(path.read_bytes()).hexdigest()!=expected):
+            gaps.append('runtime hash mismatch: '+name)
     if config.get('perception_service') is None:gaps.append('bottle/basket pose and hold-evidence service not connected')
     for name in ('kinematics','cameras','controller','grippers','paired_trials'):
         if config.get('evidence',{}).get(name) is None:gaps.append(name+' independent evidence not supplied')
     return {'package_ready':not any('hash mismatch' in s for s in gaps),'hardware_access':False,
+        'skill_version':manifest['version'],'skill_backend':manifest.get('runtime_backend'),
         'hardware_execution_available':False,'transfer_ready':False,'missing':gaps,
         'capabilities':{'recorded_state_replay':True,'snapshot_shadow_planning':True,
             'live_perception':False,'robot_motion':False},
@@ -103,12 +109,12 @@ def shadow(config,observation,output,*,fixture=False):
     from .aspire.runtime import dump, ProgramExecutor, ToolRegistry, PublicTrace
     gaps=validate(config,observation,fixture=fixture)
     if gaps:return {'status':'blocked','missing':gaps,'hardware_access':False,'motion_commands':0}
-    from .aspire.precision import PrecisionWorld
+    from .aspire.body import BodyWorld
     from .aspire.recovery import SegmentPlanner
     import mujoco
     from scipy.spatial.transform import Rotation
     from sim.alignment import recorded_pose
-    class ShadowWorld(PrecisionWorld):
+    class ShadowWorld(BodyWorld):
         def capture(self,label):pass
     m=np.asarray(config['T_world_from_base']);poses={}
     for ident,p in observation['objects'].items():
@@ -143,7 +149,8 @@ def shadow(config,observation,output,*,fixture=False):
             p._sync();p.rotation=np.asarray(g['rotation']);goal=p._ik(np.asarray(g['pregrasp_m']))
             path=p._path(goal)
             planned.append({'tool':'pregrasp','grasp_id':grasp_id,'joint_path_rad':[q.tolist() for q in path],
-                'path_is_execution_command':False,'planning_model_calibrated':False})
+                'path_is_execution_command':False,'planning_model_calibrated':False,
+                'skill_backend':'body','grasp_region':'lower_body'})
             return {'ok':False,'done':True,'error_code':'shadow_execution_disabled'}
         def disabled(*args,**kwargs):return {'ok':False,'done':True,'error_code':'shadow_execution_disabled'}
         registry=ToolRegistry(shared_public_names=world.PUBLIC,public_extension_allowlist=())
@@ -172,7 +179,6 @@ def main(argv=None):
     else:
         output=ROOT/'runs'/(time.strftime('%Y%m%d-%H%M%S')+'-shadow')
         if a.command=='demo':
-            from .aspire.precision import PrecisionWorld
             # One backend per process: use a plain isolated model for the fixture.
             from sim.scene_library import LibraryEnv
             from types import SimpleNamespace

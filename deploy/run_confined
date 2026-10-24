@@ -1,0 +1,16 @@
+#!/bin/sh
+set -eu
+ROOT=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd -P)
+if [ -d "$ROOT/OpenArmSim" ]; then
+  APP="$ROOT/OpenArmSim"
+else
+  APP="$ROOT"
+  ROOT=$(dirname -- "$APP")
+fi
+if [ ! -f "$ROOT/DEPLOYMENT.json" ] || [ ! -x "$APP/.venv/bin/python" ]; then
+  echo '部署或独立环境尚未准备好。' >&2
+  exit 1
+fi
+export PYTHONDONTWRITEBYTECODE=1
+export TMPDIR="$ROOT/.runtime/tmp"
+exec "$APP/.venv/bin/python" -B "$APP/deploy/confined.py" "$@"

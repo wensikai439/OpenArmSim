@@ -146,7 +146,7 @@
     "harness/policy_trace_checks.py": "9d90de26bafde0de7b63cca990c2e75f93cffa3077c2cebe485b555b11e30201",
     "harness/poses.py": "f4f7e257bba078984f01e41d16091c9d6db3231514971a8e212155725413813a",
     "harness/provider.py": "c725cc0dcd94669c7f6a5bbe17c5dc5ff920050d18983c58adc5fa2731911991",
-    "harness/real.py": "356c24c4c21012dc37b229f472c1ca153d50524c296843575d7c111d8f16a46d",
+    "harness/real.py": "3c7a8f0110d83ff1f36cd62a95adfaf120c67369353f2137e358983287f738af",
     "harness/real_checks.py": "72c26e86cef8a1df770e1dcad3d0f6d249bb9292d0ac9539b309cd0b2c1b5646",
     "harness/relay_checks.py": "32fc10f7d5ac5e316bfa37bcbafc6186d84bedceabb02e7c71b62b77f3f7e827",
     "harness/runtime_composition_checks.py": "600837a72828889dfd676be3a8a58d6024beba1a39fcc6d5ff809a2a2665e2bf",
@@ -263,7 +263,7 @@
     "skills/bottle_recovery/program.py": "2b377f56486904e0a5367c542de512c64c3a8f3f0787d161ebc9f2baf12e7e90",
     "tools/body_eval.py": "b4e29daad7b1cb7364088148b4e3f6118dba05f5757308d7031558eafbe7413d",
     "tools/object_workbench.py": "77228ced55771f58b3feb000d53630966cd0a3c45924198bd45abc199d02e214",
-    "harness/aspire/__main__.py": "d7854db95d5bb78f8d85f29cda68b2573a001a765e0736826b958c79b810afc6"
+    "harness/aspire/__main__.py": "8f87e1b9d871faa20832010de079422146387b1ef039fdc7e34cca4493e8e071"
   },
   "previous_version": "history/v2",
   "deployment": {
@@ -287,5 +287,18 @@
     "same_initial_geometry_and_physics": true,
     "with_compensation_drop_m": 0.0017561098449492274,
     "without_compensation_drop_m": 0.032648252360075514
+  },
+  "deployment_revision": {
+    "scope": "body v3 skill and physics unchanged; shadow adapter now uses body backend; verify runtime hashes before connection checks",
+    "changed_sources": {
+      "harness/real.py": {
+        "before": "356c24c4c21012dc37b229f472c1ca153d50524c296843575d7c111d8f16a46d",
+        "after": "3c7a8f0110d83ff1f36cd62a95adfaf120c67369353f2137e358983287f738af"
+      },
+      "harness/aspire/__main__.py": {
+        "before": "d7854db95d5bb78f8d85f29cda68b2573a001a765e0736826b958c79b810afc6",
+        "after": "8f87e1b9d871faa20832010de079422146387b1ef039fdc7e34cca4493e8e071"
+      }
+    }
   }
 }

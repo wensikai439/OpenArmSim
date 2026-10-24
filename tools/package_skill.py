@@ -27,7 +27,7 @@ def eligible(name):
     return True
 
 
-def build(destination, upstream):
+def build(destination, upstream, *, confined=False):
     from harness.aspire.runtime import SOURCE
     upstream=(upstream or SOURCE).resolve()
     origin_path=upstream/'ORIGIN.json'
@@ -74,8 +74,8 @@ def build(destination, upstream):
         'revision':UPSTREAM_REV,'files':runtime_hashes,
         'scope':'official ProgramExecutor and transitive runtime dependencies, license and metadata; no robot backends/models'},indent=2)+'\n').encode()
     # Keep experiments distinct; raw large recordings remain local.
-    for campaign in ('20261024-relay','20261024-recovery','20261024-precision','20261024-precision/final'):
-        for name in ('protocol.json','assessment.json','audit.json','metrics.json','diagnosis.md','verification.json','model-review.json'):
+    for campaign in ('20261024-relay','20261024-recovery','20261024-precision','20261024-precision/final','20261024-body/final'):
+        for name in ('protocol.json','assessment.json','audit.json','metrics.json','diagnosis.md','verification.json','model-review.json','results.json'):
             path=ROOT/'runs'/campaign/name
             if path.exists():files['evidence/'+campaign+'/'+name]=path.read_bytes()
         base=ROOT/'runs'/campaign
@@ -86,6 +86,8 @@ def build(destination, upstream):
         if (base/'program.py').exists():files['evidence/'+campaign+'/program.py']=(base/'program.py').read_bytes()
     files['harness/policy.json']=files['harness/policy.example.json']
     files['README-FIRST.md']=(ROOT/'docs/真机部署.md').read_bytes()
+    if confined:
+        files['run']=(ROOT/'deploy/run_confined').read_bytes()
     entries=[{'path':name,'bytes':len(data),'sha256':hashlib.sha256(data).hexdigest()}
         for name,data in sorted(files.items())]
     manifest={'schema':'openarmsim-colleague-package/3','files':len(entries),'entries':entries,
@@ -95,6 +97,8 @@ def build(destination, upstream):
         'hardware_driver_included':False,'hardware_enabled':False,'transfer_ready':False,
         'connection_modes':['local_recorded_state_replay','snapshot_shadow_planning'],
         'perception_service_included':False,'hardware_execution_available':False}
+    manifest['confined_deployment']=confined
+    manifest['skill_version']=json.loads(files['skills/bottle_recovery/manifest.json'])['version']
     files['PACKAGE-MANIFEST.json']=(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n').encode()
     destination=destination.resolve();destination.parent.mkdir(parents=True,exist_ok=True)
     if destination.exists():raise ValueError('refuse overwriting an existing package')
@@ -113,11 +117,12 @@ def build(destination, upstream):
 
 def main(argv=None):
     p=argparse.ArgumentParser(description=__doc__)
-    p.add_argument('--output',type=Path,default=ROOT/'handoff/OpenArmSkill-20261024-v2.zip')
+    p.add_argument('--output',type=Path,default=ROOT/'handoff/OpenArmSkill-20261024-v3.zip')
     p.add_argument('--upstream',type=Path)
+    p.add_argument('--confined',action='store_true',help='directory-contained launcher for the company host')
     args=p.parse_args(argv)
     if not args.output.resolve().is_relative_to(ROOT/'handoff'):p.error('package belongs in handoff/')
-    build(args.output,args.upstream)
+    build(args.output,args.upstream,confined=args.confined)
     return 0
 
 

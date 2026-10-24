@@ -1,4 +1,10 @@
-# 最新接入包 · 2026-10-24
+# v3 公司目录部署 · 2026-10-24
+
+`OpenArmSkill-20261024-v3-remote.zip` 是限定目录的公司版，包含最新瓶身抓取和14工具恢复技能。仅在 `/home/sj/Desktop/wuji/lerobot_20260116/LLMHarness/` 内安装、保存环境及运行记录；既有模型和控制代码只读。安装与离线通过不代表真实运动已接通。入口及边界见 `deploy/REMOTE.md`，SHA256见同名 `.sha256`。
+
+以下为旧v2交付记录。
+
+# v2 接入包 · 2026-10-24
 
 `OpenArmSkill-20261024-v2.zip`（约34.8MB）与同名 `.sha256` 是本轮交付。解压后先看 `OpenArmSim/README-FIRST.md`。
 
