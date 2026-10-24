@@ -38,14 +38,19 @@ def main():
     parser.add_argument('--trial', required=True, type=Path)
     parser.add_argument('--output', required=True, type=Path)
     parser.add_argument('--encoder', required=True, type=Path)
+    parser.add_argument('--backend', choices=['precision','body','placement','stable'],
+                        help='Explicit recorded provider; otherwise infer admitted donor-support evidence')
     args = parser.parse_args()
     source, output = args.trial.resolve(), args.output.resolve()
     if not output.is_relative_to(ROOT / 'runs') or output.exists():
         parser.error('output must be a new directory under runs/')
     from PIL import Image, ImageDraw, ImageFont
-    from harness.aspire.precision import PrecisionWorld
-    if json.loads((source/'case.json').read_text()).get('grasp_region')=='body':
-        from harness.aspire.body import BodyWorld as PrecisionWorld
+    original = json.loads((source / 'result.json').read_text())
+    backend=args.backend or ('stable' if 'donor_support' in original else
+        'body' if json.loads((source/'case.json').read_text()).get('grasp_region')=='body' else 'precision')
+    import importlib
+    names={'precision':'PrecisionWorld','body':'BodyWorld','placement':'PlacementWorld','stable':'StableWorld'}
+    PrecisionWorld=getattr(importlib.import_module('harness.aspire.'+backend),names[backend])
     from harness.aspire.recovery_campaign import run_trial
     from harness.aspire.runtime import dump
 
@@ -103,7 +108,6 @@ def main():
                 self.encoder_log.close()
                 super().close()
 
-    original = json.loads((source / 'result.json').read_text())
     case = json.loads((source / 'case.json').read_text())
     program = source / 'program-0.py'
     result = run_trial(case, output, program, 'frozen', world_type=VideoWorld)
@@ -121,6 +125,7 @@ def main():
              'observer_views': ['operator', 'right', 'left'], 'hardware_access': False,
              'program_sha256': result['program_sha256'],
              'video_sha256': hashlib.sha256((output / 'video.mp4').read_bytes()).hexdigest()}
+    proof['runtime_backend']=backend
     dump(output / 'recording.json', proof)
     print(json.dumps({'recording': str(output), 'exact_trace_match': matched}), flush=True)
     if not matched:
