@@ -1,0 +1,10 @@
+{
+  "schema": "openarm-connection/1",
+  "hardware_enabled": false,
+  "perception_service": null,
+  "T_world_from_base": [[1,0,0,0.185],[0,1,0,0],[0,0,1,0.642],[0,0,0,1]],
+  "transform_evidence": "candidate software frame alignment; independent physical calibration missing",
+  "limits": {"max_age_s": 0.2, "max_position_std_m": 0.005},
+  "limits_evidence": "provisional connection checks, not validated physical tolerances",
+  "evidence": {"kinematics":null,"cameras":null,"controller":null,"grippers":null,"paired_trials":null}
+}

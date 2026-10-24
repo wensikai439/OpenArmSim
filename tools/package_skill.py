@@ -73,19 +73,28 @@ def build(destination, upstream):
     files['third_party/aspire/ORIGIN.json']=(json.dumps({'url':'https://github.com/NVlabs/ASPIRE',
         'revision':UPSTREAM_REV,'files':runtime_hashes,
         'scope':'official ProgramExecutor and transitive runtime dependencies, license and metadata; no robot backends/models'},indent=2)+'\n').encode()
-    # Include concise measured evidence; native large recordings stay local.
-    for name in ('protocol.json','assessment.json','audit.json','model-review.json'):
-        path=ROOT/'runs/20261024-relay'/name
-        if path.exists():files['evidence/'+name]=path.read_bytes()
+    # Keep experiments distinct; raw large recordings remain local.
+    for campaign in ('20261024-relay','20261024-recovery','20261024-precision','20261024-precision/final'):
+        for name in ('protocol.json','assessment.json','audit.json','metrics.json','diagnosis.md','verification.json','model-review.json'):
+            path=ROOT/'runs'/campaign/name
+            if path.exists():files['evidence/'+campaign+'/'+name]=path.read_bytes()
+        base=ROOT/'runs'/campaign
+        for path in (base/'cases').rglob('*.json'):
+            files['evidence/'+campaign+'/'+str(path.relative_to(base))]=path.read_bytes()
+        for path in (base/'sources').glob('*.py'):
+            files['evidence/'+campaign+'/sources/'+path.name]=path.read_bytes()
+        if (base/'program.py').exists():files['evidence/'+campaign+'/program.py']=(base/'program.py').read_bytes()
     files['harness/policy.json']=files['harness/policy.example.json']
     files['README-FIRST.md']=(ROOT/'docs/真机部署.md').read_bytes()
     entries=[{'path':name,'bytes':len(data),'sha256':hashlib.sha256(data).hexdigest()}
         for name,data in sorted(files.items())]
-    manifest={'schema':'openarmsim-colleague-package/2','files':len(entries),'entries':entries,
+    manifest={'schema':'openarmsim-colleague-package/3','files':len(entries),'entries':entries,
         'source_commit':(subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip()
             if (ROOT/'.git').exists() else package.get('source_commit')),
         'submodules':submodules,
-        'hardware_driver_included':False,'hardware_enabled':False,'transfer_ready':False}
+        'hardware_driver_included':False,'hardware_enabled':False,'transfer_ready':False,
+        'connection_modes':['local_recorded_state_replay','snapshot_shadow_planning'],
+        'perception_service_included':False,'hardware_execution_available':False}
     files['PACKAGE-MANIFEST.json']=(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n').encode()
     destination=destination.resolve();destination.parent.mkdir(parents=True,exist_ok=True)
     if destination.exists():raise ValueError('refuse overwriting an existing package')
@@ -104,7 +113,7 @@ def build(destination, upstream):
 
 def main(argv=None):
     p=argparse.ArgumentParser(description=__doc__)
-    p.add_argument('--output',type=Path,default=ROOT/'handoff/OpenArmSkill-20261024.zip')
+    p.add_argument('--output',type=Path,default=ROOT/'handoff/OpenArmSkill-20261024-v2.zip')
     p.add_argument('--upstream',type=Path)
     args=p.parse_args(argv)
     if not args.output.resolve().is_relative_to(ROOT/'handoff'):p.error('package belongs in handoff/')

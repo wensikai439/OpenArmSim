@@ -82,11 +82,11 @@ def fixed_policy(w):
     require(w.start_place());require(drain(w))
 
 
-def run_trial(case,output,program,mode,skill=None):
+def run_trial(case,output,program,mode,skill=None,world_type=None):
     from .recovery import RecoveryWorld
     world=None;started=time.monotonic();executions=[];error=None
     try:
-        world=RecoveryWorld(case,output)
+        world=(world_type or RecoveryWorld)(case,output)
         if mode=='fixed':fixed_policy(world)
         else:
             code=Path(program).read_text()

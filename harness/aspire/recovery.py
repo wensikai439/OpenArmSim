@@ -84,7 +84,7 @@ class RecoveryWorld:
     PUBLIC=('observe','propose_grasps','pregrasp','approach','close_gripper','open_gripper',
         'verify_hold','lift','retreat','start_transfer','advance','finish_transfer','start_place')
 
-    def __init__(self, case, output):
+    def __init__(self, case, output, *, environment_factory=fixture_environment):
         allowed={'seed','bottle_xy_m','fault','pose_bias_m'}
         if set(case)-allowed or not {'seed','bottle_xy_m','fault'}<=set(case):
             raise ValueError('expected seed, bottle_xy_m, fault and optional pose_bias_m')
@@ -100,7 +100,7 @@ class RecoveryWorld:
         factory,_=build_backend();self.planner_factory=factory._bound_tamp_planner_factory
         from sim.scene_library import LibraryEnv
         base={k:case[k] for k in ('seed','bottle_xy_m')}
-        self.env=fixture_environment(LibraryEnv,base)(images=False,selection=[])
+        self.env=environment_factory(LibraryEnv,base)(images=False,selection=[])
         self.env.reset(seed=case['seed']);self.env.set_task_budget(120)
         self.rows=[];self.route=[];self.catalogue={};self.checkpoint=None
         self.active=None;self.last_grasp=None;self.last_failure=None;self.calls=0

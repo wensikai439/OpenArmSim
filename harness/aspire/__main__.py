@@ -30,7 +30,7 @@ def main():
     prepare=commands.add_parser('prepare',help='只检查本地真机接口准备情况，不连接或移动真机')
     prepare.add_argument('--config',type=Path,default=ROOT/'skills/bottle_relay/robot.example.json')
     package=commands.add_parser('package',help='生成不含密钥和权重的仿真/技能交接包')
-    package.add_argument('--output',type=Path,default=ROOT/'handoff/OpenArmSkill-20261024.zip')
+    package.add_argument('--output',type=Path,default=ROOT/'handoff/OpenArmSkill-20261024-v2.zip')
     args=parser.parse_args()
     if args.command=='prepare':
         from tools.prepare_robot import main as prepare_robot
@@ -58,10 +58,19 @@ def main():
         manifest=json.loads((folder/'manifest.json').read_text())
         if not manifest.get('admitted') or hashlib.sha256(program.read_bytes()).hexdigest()!=manifest['program_sha256']:
             parser.error('技能未验收或程序已改变；请重新验证')
+        for relative,expected in manifest.get('runtime_sources',{}).items():
+            source=(ROOT/relative).resolve()
+            if (not source.is_relative_to(ROOT) or not source.is_file()
+                or hashlib.sha256(source.read_bytes()).hexdigest()!=expected):
+                parser.error('技能运行时与验收版本不同：'+relative)
         from .recovery_campaign import run_trial
         case={'seed':args.seed,'bottle_xy_m':[args.x,args.y],'fault':args.fault,'pose_bias_m':args.pose_bias}
         output=ROOT/'runs'/(time.strftime('%Y%m%d-%H%M%S')+'-bottle-recovery')
-        result=run_trial(case,output,program,'frozen')
+        world_type=None
+        if manifest.get('motion_profile')=='precision':
+            from .precision import PrecisionWorld
+            world_type=PrecisionWorld;case['motion_profile']='precision'
+        result=run_trial(case,output,program,'frozen',world_type=world_type)
         print('完整记录：'+str(output))
         return 0 if result['task_success'] else 1
     folder=ROOT/'skills/bottle_relay'

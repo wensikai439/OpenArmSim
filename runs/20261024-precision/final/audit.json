@@ -1,0 +1,14 @@
+{
+  "admitted": true,
+  "source_hashes_verified_before_and_after_evaluation": true,
+  "native_trials": 24,
+  "native_transitions_audited": 48019,
+  "audit_errors": 0,
+  "regressions": 0,
+  "regression_checks_passed": 365,
+  "extra_model_api_requests": 0,
+  "remote_operations": 0,
+  "hardware_access": false,
+  "transfer_ready": false,
+  "previous_candidate_rejected": "../audit.json"
+}

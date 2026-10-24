@@ -1,0 +1,15 @@
+{
+  "seed": 1113,
+  "bottle_xy_m": [
+    0.529007,
+    -0.142239
+  ],
+  "fault": "right_close_loss",
+  "bottle_yaw_rad": -0.737654,
+  "basket_offset_m": [
+    -0.000286,
+    -0.003527
+  ],
+  "bottle_mass_scale": 1.062438,
+  "bottle_friction_scale": 0.978544
+}

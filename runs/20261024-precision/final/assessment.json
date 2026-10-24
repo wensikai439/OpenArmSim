@@ -1,0 +1,59 @@
+{
+  "methods": {
+    "baseline": {
+      "position": {
+        "passed": 3,
+        "total": 6
+      },
+      "combined": {
+        "passed": 3,
+        "total": 6
+      }
+    },
+    "precision": {
+      "position": {
+        "passed": 6,
+        "total": 6
+      },
+      "combined": {
+        "passed": 6,
+        "total": 6
+      }
+    }
+  },
+  "paired_success_xy_error_m": [
+    {
+      "baseline": 0.0009568943093322298,
+      "precision": 0.0021722686387398364
+    },
+    {
+      "baseline": 0.001852772911493191,
+      "precision": 0.0006643302705432923
+    },
+    {
+      "baseline": 0.001848390560011887,
+      "precision": 0.0006524502792483565
+    },
+    {
+      "baseline": 0.00048002958106986435,
+      "precision": 0.0007220148616366278
+    },
+    {
+      "baseline": 0.0010451961471207537,
+      "precision": 0.0012791896390502103
+    },
+    {
+      "baseline": 0.0037819847984876674,
+      "precision": 0.0006068897178361364
+    }
+  ],
+  "improvements": [
+    1200,
+    1201,
+    1202,
+    1206,
+    1207,
+    1208
+  ],
+  "regressions": []
+}

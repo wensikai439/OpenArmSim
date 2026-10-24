@@ -1,0 +1,244 @@
+{
+  "task_success": true,
+  "route": [
+    "lift",
+    "finish_transfer",
+    "place"
+  ],
+  "native_failures": {
+    "code": "dual_hold_not_confirmed",
+    "tool": "handover",
+    "tick": 774
+  },
+  "stages": [
+    {
+      "tool": "pregrasp",
+      "ok": true,
+      "failure_code": null,
+      "message": null,
+      "start_tick": 0,
+      "end_tick": 125,
+      "phase": "approach",
+      "native": "native/20261024-110817-recovery-9d49b3"
+    },
+    {
+      "tool": "approach",
+      "ok": true,
+      "failure_code": null,
+      "message": null,
+      "start_tick": 125,
+      "end_tick": 164,
+      "phase": "grasp",
+      "native": "native/20261024-110818-recovery-ecde48"
+    },
+    {
+      "tool": "close_right",
+      "ok": true,
+      "failure_code": null,
+      "message": null,
+      "start_tick": 164,
+      "end_tick": 209,
+      "phase": "close",
+      "native": "native/20261024-110818-recovery-7b32bb"
+    },
+    {
+      "tool": "lift",
+      "ok": true,
+      "failure_code": null,
+      "message": null,
+      "start_tick": 209,
+      "end_tick": 364,
+      "phase": "hold",
+      "native": "native/20261024-110818-recovery-87c20b"
+    },
+    {
+      "tool": "handover",
+      "ok": false,
+      "failure_code": "dual_hold_not_confirmed",
+      "message": "Native sustained two-finger receiver hold missing; donor remains closed",
+      "start_tick": 364,
+      "end_tick": 774,
+      "phase": "dual_hold",
+      "native": "native/20261024-110819-recovery-5d55fd"
+    },
+    {
+      "tool": "close_left",
+      "ok": true,
+      "failure_code": null,
+      "message": null,
+      "start_tick": 774,
+      "end_tick": 819,
+      "phase": "close",
+      "native": "native/20261024-110829-recovery-e94d97"
+    },
+    {
+      "tool": "finish_transfer",
+      "ok": true,
+      "failure_code": null,
+      "message": null,
+      "start_tick": 819,
+      "end_tick": 1302,
+      "phase": "hold",
+      "native": "native/20261024-110830-recovery-d0e43b"
+    },
+    {
+      "tool": "place",
+      "ok": true,
+      "failure_code": null,
+      "message": null,
+      "start_tick": 1302,
+      "end_tick": 2656,
+      "phase": "settle",
+      "native": "native/20261024-110833-recovery-530dd2"
+    }
+  ],
+  "fault_used": [
+    "left"
+  ],
+  "pose_error_cleared": true,
+  "sim_seconds": 88.53300000005868,
+  "calls": 37,
+  "evaluation": {
+    "success": true,
+    "invalid": false,
+    "held": {
+      "left": false,
+      "right": false
+    },
+    "touching": {
+      "left": false,
+      "right": false
+    },
+    "failure_reasons": [],
+    "inside_basket": true,
+    "supported_by_basket": true,
+    "stable_seconds": 3.851,
+    "linear_speed_m_s": 1.1987072305930499e-05,
+    "penetration_m": 0.00012037277951533926,
+    "max_penetration_m": 0.008755502629463174,
+    "peak_normal_force_N": 1.6900560102701037,
+    "robot_contact_count": 0,
+    "contact_window": {
+      "sampling": "every solved physics step plus a zero-duration final-state check",
+      "physics_dt_s": 0.001,
+      "samples": 33,
+      "interval_start_s": 88.50000000005852,
+      "duration_s": 0.03300000000000002,
+      "robot_external_seconds": 0.0,
+      "robot_self_seconds": 0.0,
+      "robot_external_impulse_Ns": 0.0,
+      "robot_self_impulse_Ns": 0.0,
+      "robot_external_peak_force_N": 0.0,
+      "robot_self_peak_force_N": 0.0,
+      "endpoint_robot_external_force_N": 0.0,
+      "endpoint_robot_self_force_N": 0.0,
+      "peak_normal_force_N": 1.6900560102701037,
+      "max_penetration_m": 0.00012037277951533926,
+      "hold_seconds": {
+        "left": 0.0,
+        "right": 0.0
+      },
+      "stable_seconds": 3.850999999999687,
+      "placement_seconds": 3.850999999999687,
+      "pairs": [
+        {
+          "geoms": [
+            "bottle_body",
+            "box_floor"
+          ],
+          "bodies": [
+            "task_bottle",
+            "target_box"
+          ],
+          "robot_external": false,
+          "robot_self": false,
+          "first_time_s": 88.50000000005852,
+          "last_time_s": 88.53300000005868,
+          "duration_s": 0.03300000000000002,
+          "normal_impulse_Ns": 0.188475214290402,
+          "peak_normal_force_N": 5.713927901880252,
+          "penetration_m": 0.00012037277951533926
+        }
+      ]
+    },
+    "placement": {
+      "surface": "basket",
+      "xy_m": [
+        0.474074,
+        0.365118
+      ],
+      "tolerance_m": 0.025,
+      "stable_seconds": 3.851,
+      "confirmed": true
+    },
+    "evidence_source": "privileged simulator evaluator; not a camera measurement",
+    "transfer_ready": false,
+    "non_target_object_guard": {
+      "source": "native registered-body displacement from task selection; hidden diagnostic",
+      "displacement_m": {},
+      "limit_m": 0.003,
+      "passed": true,
+      "scope": "additional development execution gate; not a measured physical tolerance"
+    }
+  },
+  "hardware_access": false,
+  "transfer_ready": false,
+  "reset_count": 1,
+  "post_start_pose_restores": 0,
+  "source_sha256": "ad2f924f26b4582a3edd509b44c2c403a998775b92794c8c41905adff2a0e750",
+  "motion_profile": "precision",
+  "pose_error_m": 0.001261102283209941,
+  "physical_task_success": true,
+  "program_ok": true,
+  "mode": "frozen",
+  "error": null,
+  "executions": [
+    {
+      "program_ok": true,
+      "error": null,
+      "state": {
+        "source": "simulation_geometry_with_diagnostic_sensor_or_command_faults",
+        "tick": 2656,
+        "sim_seconds": 88.53300000005868,
+        "pose_revision": 0,
+        "terminal": false,
+        "invalid": false,
+        "held_by": [],
+        "touching": {
+          "left": false,
+          "right": false
+        },
+        "upright": true,
+        "bottle_center_m": [
+          0.47369743798855457,
+          0.3663215696989595,
+          1.0208912169984086
+        ],
+        "gripper_motor_feedback_rad": {
+          "left": -1.259272575378418,
+          "right": -1.259272575378418
+        },
+        "gripper_open_rad": {
+          "left": -1.26,
+          "right": -1.26
+        },
+        "checkpoint_id": "pregrasp-125",
+        "current_grasp_id": "g0-000",
+        "last_failure": {
+          "code": "dual_hold_not_confirmed",
+          "tool": "handover",
+          "tick": 774
+        },
+        "completed_steps": [
+          "lift",
+          "finish_transfer",
+          "place"
+        ],
+        "operation": null,
+        "remaining_seconds": 31.466999999941322
+      }
+    }
+  ],
+  "wall_seconds": 27.454928135033697,
+  "program_sha256": "663a993ae02f1d915d20af2cca4a99e25b5d501c2b9cebeb6679c1948b0ebc46"
+}
