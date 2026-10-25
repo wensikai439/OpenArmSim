@@ -1,0 +1,141 @@
+{
+  "schema": "rgb-grasp-evaluation/1",
+  "program": "skills/bottle_visual/program.py",
+  "authoring": "claude-haiku-5-5 revised an engineered draft; no neural policy training",
+  "sources": {
+    "harness/aspire/visual.py": "9d9173ca032cfed9ec999de935c44c8a35d3d9fe7a7694ba8b30330e561f2af8",
+    "harness/aspire/visual_control.py": "f61c864acb308296bab03a38f6e6721cf9f2503f0b7deae9900d05e0867f1e16",
+    "skills/bottle_visual/program.py": "528557a1f868c169d31fa7d5757137f1dc5d7bc7ffed216d662f15bd1f8025ee",
+    "tools/visual_benchmark.py": "9736f8ada5e1b61661734fc7e9066c1c031cb450c2e25872b8d057f0737c08c1"
+  },
+  "cases": [
+    {
+      "name": "position-1",
+      "label": "新瓶位 1",
+      "group": "heldout",
+      "case": {
+        "seed": 901,
+        "bottle_xy_m": [
+          0.485,
+          -0.225
+        ]
+      }
+    },
+    {
+      "name": "position-2",
+      "label": "新瓶位 2",
+      "group": "heldout",
+      "case": {
+        "seed": 902,
+        "bottle_xy_m": [
+          0.515,
+          -0.195
+        ]
+      }
+    },
+    {
+      "name": "position-3",
+      "label": "新瓶位 3",
+      "group": "heldout",
+      "case": {
+        "seed": 903,
+        "bottle_xy_m": [
+          0.485,
+          -0.195
+        ]
+      }
+    },
+    {
+      "name": "position-4",
+      "label": "新瓶位 4",
+      "group": "heldout",
+      "case": {
+        "seed": 904,
+        "bottle_xy_m": [
+          0.515,
+          -0.225
+        ]
+      }
+    },
+    {
+      "name": "camera-1",
+      "label": "相机角度 +3°",
+      "group": "heldout",
+      "case": {
+        "seed": 911,
+        "bottle_xy_m": [
+          0.495,
+          -0.215
+        ],
+        "camera_yaw_deg": 3
+      }
+    },
+    {
+      "name": "camera-2",
+      "label": "相机角度 -3°",
+      "group": "heldout",
+      "case": {
+        "seed": 912,
+        "bottle_xy_m": [
+          0.505,
+          -0.205
+        ],
+        "camera_yaw_deg": -3
+      }
+    },
+    {
+      "name": "close-retry",
+      "label": "首次闭爪指令丢失",
+      "group": "heldout",
+      "case": {
+        "seed": 921,
+        "bottle_xy_m": [
+          0.495,
+          -0.22
+        ],
+        "close_drop_once": true
+      }
+    },
+    {
+      "name": "pixel-noise",
+      "label": "像素测量噪声",
+      "group": "heldout",
+      "case": {
+        "seed": 922,
+        "bottle_xy_m": [
+          0.505,
+          -0.2
+        ],
+        "pixel_noise": 0.15
+      }
+    },
+    {
+      "name": "stress-1",
+      "label": "较大位置与视角变化 1",
+      "group": "stress",
+      "case": {
+        "seed": 931,
+        "bottle_xy_m": [
+          0.47,
+          -0.25
+        ],
+        "camera_yaw_deg": 8
+      }
+    },
+    {
+      "name": "stress-2",
+      "label": "较大位置与视角变化 2",
+      "group": "stress",
+      "case": {
+        "seed": 932,
+        "bottle_xy_m": [
+          0.53,
+          -0.17
+        ],
+        "camera_yaw_deg": -8
+      }
+    }
+  ],
+  "success": "program completed + final consecutive native two-finger elevated hold >=20 ticks + every final contact in bottom 0..50% of cylinder body + RGB hold verification + native valid",
+  "boundary": "known upright black cylinder, virtual planar tool fixture, two fixed synthetic RGB views; right grasp and lift only; no physical transfer claim"
+}
