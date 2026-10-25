@@ -1,0 +1,580 @@
+{
+  "schema": "openarm-head-points/1",
+  "image_coordinates": "original JPEG pixels, no crop or rescale",
+  "method": "Manual visual estimate of wrist rotational-axis centre; URDF link7-origin correspondence is approximate, not independently surveyed.",
+  "scope": "candidate initialization only; no physical acceptance",
+  "points": [
+    {
+      "episode": 0,
+      "frame": 0,
+      "side": "left",
+      "uv": [
+        365,
+        747
+      ],
+      "kind": "manual_wrist_axis_proxy",
+      "sigma_px": 8
+    },
+    {
+      "episode": 0,
+      "frame": 0,
+      "side": "right",
+      "uv": [
+        899,
+        715
+      ],
+      "kind": "manual_wrist_axis_proxy",
+      "sigma_px": 8
+    },
+    {
+      "episode": 0,
+      "frame": 100,
+      "side": "left",
+      "uv": [
+        365,
+        747
+      ],
+      "kind": "manual_wrist_axis_proxy",
+      "sigma_px": 8
+    },
+    {
+      "episode": 0,
+      "frame": 100,
+      "side": "right",
+      "uv": [
+        884,
+        705
+      ],
+      "kind": "manual_wrist_axis_proxy",
+      "sigma_px": 8
+    },
+    {
+      "episode": 0,
+      "frame": 275,
+      "side": "left",
+      "uv": [
+        365,
+        747
+      ],
+      "kind": "manual_wrist_axis_proxy",
+      "sigma_px": 8
+    },
+    {
+      "episode": 0,
+      "frame": 275,
+      "side": "right",
+      "uv": [
+        794,
+        623
+      ],
+      "kind": "manual_wrist_axis_proxy",
+      "sigma_px": 8
+    },
+    {
+      "episode": 0,
+      "frame": 300,
+      "side": "left",
+      "uv": [
+        365,
+        747
+      ],
+      "kind": "manual_wrist_axis_proxy",
+      "sigma_px": 8
+    },
+    {
+      "episode": 0,
+      "frame": 300,
+      "side": "right",
+      "uv": [
+        793,
+        623
+      ],
+      "kind": "manual_wrist_axis_proxy",
+      "sigma_px": 8
+    },
+    {
+      "episode": 0,
+      "frame": 500,
+      "side": "left",
+      "uv": [
+        389,
+        625
+      ],
+      "kind": "manual_wrist_axis_proxy",
+      "sigma_px": 8
+    },
+    {
+      "episode": 0,
+      "frame": 500,
+      "side": "right",
+      "uv": [
+        774,
+        654
+      ],
+      "kind": "manual_wrist_axis_proxy",
+      "sigma_px": 8
+    },
+    {
+      "episode": 0,
+      "frame": 545,
+      "side": "left",
+      "uv": [
+        377,
+        615
+      ],
+      "kind": "manual_wrist_axis_proxy",
+      "sigma_px": 8
+    },
+    {
+      "episode": 0,
+      "frame": 545,
+      "side": "right",
+      "uv": [
+        774,
+        654
+      ],
+      "kind": "manual_wrist_axis_proxy",
+      "sigma_px": 8
+    },
+    {
+      "episode": 0,
+      "frame": 720,
+      "side": "left",
+      "uv": [
+        333,
+        634
+      ],
+      "kind": "manual_wrist_axis_proxy",
+      "sigma_px": 8
+    },
+    {
+      "episode": 0,
+      "frame": 720,
+      "side": "right",
+      "uv": [
+        908,
+        716
+      ],
+      "kind": "manual_wrist_axis_proxy",
+      "sigma_px": 8
+    },
+    {
+      "episode": 0,
+      "frame": 868,
+      "side": "left",
+      "uv": [
+        371,
+        724
+      ],
+      "kind": "manual_wrist_axis_proxy",
+      "sigma_px": 8
+    },
+    {
+      "episode": 0,
+      "frame": 868,
+      "side": "right",
+      "uv": [
+        909,
+        715
+      ],
+      "kind": "manual_wrist_axis_proxy",
+      "sigma_px": 8
+    },
+    {
+      "episode": 1,
+      "frame": 0,
+      "side": "left",
+      "uv": [
+        365,
+        747
+      ],
+      "kind": "manual_wrist_axis_proxy",
+      "sigma_px": 8
+    },
+    {
+      "episode": 1,
+      "frame": 0,
+      "side": "right",
+      "uv": [
+        909,
+        715
+      ],
+      "kind": "manual_wrist_axis_proxy",
+      "sigma_px": 8
+    },
+    {
+      "episode": 1,
+      "frame": 100,
+      "side": "left",
+      "uv": [
+        365,
+        747
+      ],
+      "kind": "manual_wrist_axis_proxy",
+      "sigma_px": 8
+    },
+    {
+      "episode": 1,
+      "frame": 100,
+      "side": "right",
+      "uv": [
+        894,
+        702
+      ],
+      "kind": "manual_wrist_axis_proxy",
+      "sigma_px": 8
+    },
+    {
+      "episode": 1,
+      "frame": 300,
+      "side": "left",
+      "uv": [
+        377,
+        710
+      ],
+      "kind": "manual_wrist_axis_proxy",
+      "sigma_px": 8
+    },
+    {
+      "episode": 1,
+      "frame": 300,
+      "side": "right",
+      "uv": [
+        811,
+        662
+      ],
+      "kind": "manual_wrist_axis_proxy",
+      "sigma_px": 8
+    },
+    {
+      "episode": 1,
+      "frame": 500,
+      "side": "left",
+      "uv": [
+        317,
+        651
+      ],
+      "kind": "manual_wrist_axis_proxy",
+      "sigma_px": 8
+    },
+    {
+      "episode": 1,
+      "frame": 500,
+      "side": "right",
+      "uv": [
+        807,
+        667
+      ],
+      "kind": "manual_wrist_axis_proxy",
+      "sigma_px": 8
+    },
+    {
+      "episode": 1,
+      "frame": 657,
+      "side": "left",
+      "uv": [
+        335,
+        664
+      ],
+      "kind": "manual_wrist_axis_proxy",
+      "sigma_px": 8
+    },
+    {
+      "episode": 1,
+      "frame": 657,
+      "side": "right",
+      "uv": [
+        914,
+        713
+      ],
+      "kind": "manual_wrist_axis_proxy",
+      "sigma_px": 8
+    },
+    {
+      "episode": 1,
+      "frame": 761,
+      "side": "left",
+      "uv": [
+        377,
+        727
+      ],
+      "kind": "manual_wrist_axis_proxy",
+      "sigma_px": 8
+    },
+    {
+      "episode": 1,
+      "frame": 761,
+      "side": "right",
+      "uv": [
+        914,
+        713
+      ],
+      "kind": "manual_wrist_axis_proxy",
+      "sigma_px": 8
+    },
+    {
+      "episode": 2,
+      "frame": 0,
+      "side": "left",
+      "uv": [
+        380,
+        752
+      ],
+      "kind": "manual_wrist_axis_proxy",
+      "sigma_px": 8
+    },
+    {
+      "episode": 2,
+      "frame": 0,
+      "side": "right",
+      "uv": [
+        874,
+        756
+      ],
+      "kind": "manual_wrist_axis_proxy",
+      "sigma_px": 8
+    },
+    {
+      "episode": 2,
+      "frame": 100,
+      "side": "left",
+      "uv": [
+        380,
+        752
+      ],
+      "kind": "manual_wrist_axis_proxy",
+      "sigma_px": 8
+    },
+    {
+      "episode": 2,
+      "frame": 100,
+      "side": "right",
+      "uv": [
+        874,
+        756
+      ],
+      "kind": "manual_wrist_axis_proxy",
+      "sigma_px": 8
+    },
+    {
+      "episode": 2,
+      "frame": 300,
+      "side": "left",
+      "uv": [
+        380,
+        752
+      ],
+      "kind": "manual_wrist_axis_proxy",
+      "sigma_px": 8
+    },
+    {
+      "episode": 2,
+      "frame": 300,
+      "side": "right",
+      "uv": [
+        847,
+        728
+      ],
+      "kind": "manual_wrist_axis_proxy",
+      "sigma_px": 8
+    },
+    {
+      "episode": 2,
+      "frame": 500,
+      "side": "left",
+      "uv": [
+        355,
+        642
+      ],
+      "kind": "manual_wrist_axis_proxy",
+      "sigma_px": 8
+    },
+    {
+      "episode": 2,
+      "frame": 500,
+      "side": "right",
+      "uv": [
+        813,
+        677
+      ],
+      "kind": "manual_wrist_axis_proxy",
+      "sigma_px": 8
+    },
+    {
+      "episode": 2,
+      "frame": 744,
+      "side": "left",
+      "uv": [
+        342,
+        665
+      ],
+      "kind": "manual_wrist_axis_proxy",
+      "sigma_px": 8
+    },
+    {
+      "episode": 2,
+      "frame": 744,
+      "side": "right",
+      "uv": [
+        813,
+        724
+      ],
+      "kind": "manual_wrist_axis_proxy",
+      "sigma_px": 8
+    },
+    {
+      "episode": 2,
+      "frame": 890,
+      "side": "left",
+      "uv": [
+        400,
+        738
+      ],
+      "kind": "manual_wrist_axis_proxy",
+      "sigma_px": 8
+    },
+    {
+      "episode": 2,
+      "frame": 890,
+      "side": "right",
+      "uv": [
+        813,
+        724
+      ],
+      "kind": "manual_wrist_axis_proxy",
+      "sigma_px": 8
+    },
+    {
+      "episode": 3,
+      "frame": 0,
+      "side": "left",
+      "uv": [
+        365,
+        747
+      ],
+      "kind": "manual_wrist_axis_proxy",
+      "sigma_px": 8
+    },
+    {
+      "episode": 3,
+      "frame": 0,
+      "side": "right",
+      "uv": [
+        902,
+        715
+      ],
+      "kind": "manual_wrist_axis_proxy",
+      "sigma_px": 8
+    },
+    {
+      "episode": 3,
+      "frame": 160,
+      "side": "left",
+      "uv": [
+        361,
+        682
+      ],
+      "kind": "manual_wrist_axis_proxy",
+      "sigma_px": 8
+    },
+    {
+      "episode": 3,
+      "frame": 160,
+      "side": "right",
+      "uv": [
+        894,
+        691
+      ],
+      "kind": "manual_wrist_axis_proxy",
+      "sigma_px": 8
+    },
+    {
+      "episode": 3,
+      "frame": 320,
+      "side": "left",
+      "uv": [
+        372,
+        718
+      ],
+      "kind": "manual_wrist_axis_proxy",
+      "sigma_px": 8
+    },
+    {
+      "episode": 3,
+      "frame": 320,
+      "side": "right",
+      "uv": [
+        840,
+        661
+      ],
+      "kind": "manual_wrist_axis_proxy",
+      "sigma_px": 8
+    },
+    {
+      "episode": 3,
+      "frame": 480,
+      "side": "left",
+      "uv": [
+        330,
+        591
+      ],
+      "kind": "manual_wrist_axis_proxy",
+      "sigma_px": 8
+    },
+    {
+      "episode": 3,
+      "frame": 480,
+      "side": "right",
+      "uv": [
+        831,
+        674
+      ],
+      "kind": "manual_wrist_axis_proxy",
+      "sigma_px": 8
+    },
+    {
+      "episode": 3,
+      "frame": 640,
+      "side": "left",
+      "uv": [
+        355,
+        588
+      ],
+      "kind": "manual_wrist_axis_proxy",
+      "sigma_px": 8
+    },
+    {
+      "episode": 3,
+      "frame": 640,
+      "side": "right",
+      "uv": [
+        913,
+        716
+      ],
+      "kind": "manual_wrist_axis_proxy",
+      "sigma_px": 8
+    },
+    {
+      "episode": 3,
+      "frame": 822,
+      "side": "left",
+      "uv": [
+        377,
+        727
+      ],
+      "kind": "manual_wrist_axis_proxy",
+      "sigma_px": 8
+    },
+    {
+      "episode": 3,
+      "frame": 822,
+      "side": "right",
+      "uv": [
+        913,
+        715
+      ],
+      "kind": "manual_wrist_axis_proxy",
+      "sigma_px": 8
+    }
+  ]
+}

@@ -11,6 +11,10 @@ if [ "$#" -eq 0 ]; then
   set -- start
 fi
 case "$1" in
+  offline)
+    shift
+    exec .venv/bin/python -B tools/offline_calibration.py "$@"
+    ;;
   real)
     shift
     exec .venv/bin/python -B -m harness.real "$@"
