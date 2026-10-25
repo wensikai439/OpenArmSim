@@ -1,5 +1,5 @@
 {
-  "schema": "openarm-measured-calibration/1",
+  "schema": "openarm-measured-calibration/2",
   "status": "missing_physical_acceptance",
   "table_top_z_m": null,
   "support_tolerance_m": null,
@@ -7,7 +7,8 @@
     "serial": null,
     "mounted_link": null,
     "T_link_camera": null,
-    "time_sync_verified": false
+    "time_sync_verified": false,
+    "clock_model": null
   },
   "objects": {
     "bottle": {
@@ -15,12 +16,22 @@
       "marker_size_m": null,
       "marker_to_object": null,
       "body_height_m": null,
-      "body_bottom_m": null
+      "body_bottom_m": null,
+      "maximum_reprojection_px": null,
+      "maximum_depth_residual_m": null,
+      "accepted_pose_uncertainty_m": null,
+      "body_radius_m": null
     },
     "basket": {
       "marker_id": null,
       "marker_size_m": null,
-      "marker_to_object": null
+      "marker_to_object": null,
+      "maximum_reprojection_px": null,
+      "maximum_depth_residual_m": null,
+      "accepted_pose_uncertainty_m": null,
+      "inner_size_m": null,
+      "floor_z_m": null,
+      "wall_radius_m": null
     }
   },
   "grippers": {
@@ -32,7 +43,9 @@
       "maximum_slip_m": null,
       "maximum_rotation_rad": null,
       "pad_extent_points_tool_m": null,
-      "accepted_tool_uncertainty_m": null
+      "accepted_tool_uncertainty_m": null,
+      "motor_limits": null,
+      "close_motor": null
     },
     "right": {
       "open_motor": null,
@@ -42,7 +55,9 @@
       "maximum_slip_m": null,
       "maximum_rotation_rad": null,
       "pad_extent_points_tool_m": null,
-      "accepted_tool_uncertainty_m": null
+      "accepted_tool_uncertainty_m": null,
+      "motor_limits": null,
+      "close_motor": null
     }
   },
   "acceptance": {
@@ -77,5 +92,40 @@
       "sha256": null
     }
   },
-  "note": "Unknown measurements remain null. Existing VR calibration is not camera extrinsics. Marker localization is optional and requires actual markers; no assumption of markers on current bottle."
+  "note": "Unknown measurements remain null. Existing VR calibration is not camera extrinsics. Marker localization is optional and requires actual markers; no assumption of markers on current bottle.",
+  "motion": {
+    "tool_links": {
+      "left": "openarm_left_hand_tcp",
+      "right": "openarm_right_hand_tcp"
+    },
+    "workspace_bounds_m": null,
+    "collision_margin_m": 0.01,
+    "velocity_rad_s": 0.1,
+    "acceleration_rad_s2": 0.2,
+    "scene_max_age_s": 0.2,
+    "lift_m": 0.08,
+    "pregrasp_m": 0.06,
+    "right_grasps": [],
+    "T_bottle_left_tool": null,
+    "T_base_handover_bottle": null,
+    "T_basket_bottle": null,
+    "contact_links": {
+      "left": [
+        "openarm_left_hand",
+        "openarm_left_left_finger",
+        "openarm_left_right_finger"
+      ],
+      "right": [
+        "openarm_right_hand",
+        "openarm_right_left_finger",
+        "openarm_right_right_finger"
+      ]
+    },
+    "table_mount_links": [
+      "openarm_body_link0",
+      "openarm_left_link0",
+      "openarm_right_link0"
+    ],
+    "self_collision_margin_m": 0.002
+  }
 }

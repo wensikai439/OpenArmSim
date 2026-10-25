@@ -52,7 +52,9 @@ class Kinematics:
         if len(roots)!=1:raise ValueError('ambiguous URDF root')
         self.root=roots.pop()
 
-    def pose(self,link,values):
+    def pose(self,link,values,cache=None):
+        cache={} if cache is None else cache
+        if link in cache:return cache[link]
         if link==self.root:return np.eye(4)
         j=self.joints[link];t=j['origin'].copy();q=0.
         if j['type']!='fixed':
@@ -67,7 +69,8 @@ class Kinematics:
             elif j['type']=='prismatic':motion[:3,3]=a*q
             else:raise ValueError('unsupported joint type')
             t=t@motion
-        return self.pose(j['parent'],values)@t
+        cache[link]=self.pose(j['parent'],values,cache)@t
+        return cache[link]
 
 
 class HoldEvidence:
@@ -78,11 +81,16 @@ class HoldEvidence:
     """
     def __init__(self,config):
         self.config=config;self.rows={side:deque() for side in ('left','right')}
+        self.anchors={side:None for side in ('left','right')}
+        self.slipped={side:False for side in ('left','right')}
+        self.last_feedback={side:None for side in ('left','right')}
 
     def read(self,side,*,object_pose,tool_pose,feedback,stamp,now=None):
         now=time.time() if now is None else now;c=self.config[side]
         if not fresh(stamp,now) or not fresh(feedback.get('timestamp_unix_s'),now):
-            self.rows[side].clear();return {'verified':False,'held':False,'reason':'stale evidence'}
+            if self.anchors[side] is not None:self.slipped[side]=True
+            self.rows[side].clear();self.anchors[side]=None
+            return {'verified':False,'held':False,'reason':'stale evidence'}
         obj=transform(object_pose);tool=transform(tool_pose);rel=np.linalg.inv(tool)@obj
         point=rel[:3,3];bounds=finite(c['object_center_bounds_tool_m'],(2,3))
         effort=abs(float(feedback['torque']));jaw=float(feedback['position'])
@@ -91,18 +99,38 @@ class HoldEvidence:
             c['contact_motor_range'][0]<=jaw<=c['contact_motor_range'][1] and
             c['contact_torque_range'][0]<=effort<=c['contact_torque_range'][1])
         rows=self.rows[side]
+        feedback_stamp=feedback['timestamp_unix_s']
+        if self.last_feedback[side] is not None and feedback_stamp<self.last_feedback[side]:
+            self.slipped[side]=True;rows.clear()
+            return {'verified':False,'held':False,'reason':'out-of-order jaw feedback'}
         # Distinct, ordered samples with a measured upper gap bound. Repeated
         # cached frames cannot accumulate contact duration.
-        if rows and (stamp<=rows[-1][0] or stamp-rows[-1][0]>.075):rows.clear()
-        if not touching:rows.clear()
-        if touching:rows.append((stamp,rel.copy()))
+        if rows and (stamp<=rows[-1][0] or stamp-rows[-1][0]>.075):
+            if self.anchors[side] is not None:self.slipped[side]=True
+            rows.clear();self.anchors[side]=None
+        if not touching:
+            rows.clear();self.anchors[side]=None
+            # Only an observed, open, unloaded jaw clears a slip latch. Moving
+            # the bottle or waiting for the short window to expire cannot.
+            opened=abs(jaw-float(c.get('open_motor',jaw+1)))<.05
+            if opened and effort<c['contact_torque_range'][0]:self.slipped[side]=False
+        if touching and feedback_stamp!=self.last_feedback[side]:rows.append((stamp,rel.copy()))
+        self.last_feedback[side]=feedback_stamp
         while len(rows)>1 and stamp-rows[1][0]>.15:rows.popleft()
-        seconds=stamp-rows[0][0] if rows else 0.
+        seconds=rows[-1][0]-rows[0][0] if rows else 0.
         trans=max([np.linalg.norm(r[:3,3]-rel[:3,3]) for _,r in rows],default=0.)
         angle=max([math.acos(float(np.clip((np.trace(r[:3,:3].T@rel[:3,:3])-1)/2,-1,1))) for _,r in rows],default=0.)
-        held=touching and seconds>=.1 and trans<=c['maximum_slip_m'] and angle<=c['maximum_rotation_rad']
+        stable=touching and seconds>=.1 and trans<=c['maximum_slip_m'] and angle<=c['maximum_rotation_rad']
+        if stable and self.anchors[side] is None and not self.slipped[side]:self.anchors[side]=rel.copy()
+        anchor=self.anchors[side]
+        drift=0. if anchor is None else float(np.linalg.norm(anchor[:3,3]-rel[:3,3]))
+        rotation=0. if anchor is None else math.acos(float(np.clip((np.trace(anchor[:3,:3].T@rel[:3,:3])-1)/2,-1,1)))
+        if anchor is not None and (drift>c['maximum_slip_m'] or rotation>c['maximum_rotation_rad']):
+            self.slipped[side]=True
+        held=stable and not self.slipped[side]
         return {'verified':True,'held':bool(held),'touching':touching,'contact_seconds':seconds,
             'translation_span_m':float(trans),'rotation_span_rad':float(angle),
+            'cumulative_slip_m':drift,'cumulative_rotation_rad':rotation,'slip_latched':self.slipped[side],
             'source':'measured_geometry_and_motor_torque','timestamp_unix_s':stamp,
             'qualification':'candidate inference; independent grip sensor/real slip trial still required'}
 

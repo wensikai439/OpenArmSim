@@ -11,6 +11,7 @@ import logging
 from pathlib import Path
 import sys
 import time
+import threading
 
 import numpy as np
 
@@ -28,7 +29,7 @@ def pinned(path,digest):
 
 class Camera:
     def __init__(self,config,record):
-        self.config=config;self.record=record;self.pipeline=None
+        self.config=config;self.record=record;self.pipeline=None;self.last_frame=None
 
     def open(self,*,operator_confirmed=False):
         if not operator_confirmed:raise RuntimeError('camera requires an explicit on-site device session')
@@ -45,7 +46,7 @@ class Camera:
         except Exception:
             self.close();raise
 
-    def read(self):
+    def read(self,*,diagnostic=False):
         started=time.time();frames=self.pipeline.wait_for_frames(500)
         frames=self.align.process(frames);rgb=frames.get_color_frame();depth=frames.get_depth_frame()
         if not rgb or not depth:raise RuntimeError('incomplete RGB-D frame')
@@ -54,11 +55,17 @@ class Camera:
         arrived=time.time()
         if arrived-started>.15:raise RuntimeError('camera fetch latency exceeded')
         intr=rgb.profile.as_video_stream_profile().intrinsics
+        stamp=None if diagnostic else exposure_time(rgb.get_timestamp(),str(rgb.get_frame_timestamp_domain()),
+            self.config.get('clock_model'),serial=self.config['serial'],now=arrived)
+        number=rgb.get_frame_number()
+        if not diagnostic and self.last_frame is not None and (number<=self.last_frame[0] or stamp<=self.last_frame[1]):
+            raise RuntimeError('duplicate/out-of-order camera exposure')
+        if not diagnostic:self.last_frame=(number,stamp)
         return {'bgr':np.asarray(rgb.get_data()).copy(),
             'depth_m':np.asarray(depth.get_data()).copy()*self.scale,
             'K':np.array([[intr.fx,0,intr.ppx],[0,intr.fy,intr.ppy],[0,0,1.]]),
             'distortion':np.array(intr.coeffs),'distortion_model':str(intr.model),
-            'timestamp_unix_s':arrived,'acquisition_started_unix_s':started,
+            'timestamp_unix_s':stamp,'arrival_unix_s':arrived,'acquisition_started_unix_s':started,
             'device_timestamp_ms':rgb.get_timestamp(),'clock_domain':str(rgb.get_frame_timestamp_domain()),
             'frame_number':rgb.get_frame_number(),'serial':self.config['serial']}
 
@@ -67,6 +74,19 @@ class Camera:
             try:self.pipeline.stop()
             except RuntimeError:pass
             self.pipeline=None
+
+
+def exposure_time(device_ms,domain,model,*,serial,now):
+    """Use a measured clock fit, never assign host arrival to an old exposure."""
+    if not isinstance(model,dict) or model.get('serial')!=serial or model.get('domain')!=domain:
+        raise RuntimeError('accepted camera exposure clock mapping required')
+    values=np.array([device_ms,model.get('seconds_per_ms'),model.get('offset_unix_s'),
+        model.get('maximum_error_s'),model.get('valid_until_unix_s')],dtype=float)
+    if not np.isfinite(values).all() or not 0<values[1]<.01 or not 0<=values[3]<=.02 or now>values[4]:
+        raise RuntimeError('invalid/expired camera clock mapping')
+    stamp=float(values[0]*values[1]+values[2])
+    if not -.01<=now-stamp<=.15-values[3]:raise RuntimeError('camera exposure is stale/future')
+    return stamp
 
 
 def marker_poses(frame,config,base_camera):
@@ -114,6 +134,7 @@ class LegacyArm:
     def __init__(self,config,record):
         self.config=config;self.record=record;self.controller=None
         self.target=finite(config['startup_target'],(16,));self.stopped=False
+        self.io_lock=threading.RLock()
 
     def open(self,*,operator_confirmed=False):
         if not operator_confirmed:raise RuntimeError('CAN requires an explicit on-site device session')
@@ -127,17 +148,21 @@ class LegacyArm:
         self.controller=module.OpenArmController(enable_left=True,enable_right=True,startup_mode='deferred')
         original=self.controller.get_position
         def audited_position(arm):
-            value=original(arm)
-            side='left' if arm is self.controller.left_arm else 'right'
-            reader=self.controller._feedback_readers[side]
-            self.record('can_feedback',{'side':side,'motors':[
-                {'position':s.position,'velocity':s.velocity,'torque':s.torque,'rx_ns':s.rx_ns,
-                 'can_id':s.can_id,'raw_hex':s.raw.hex()} for s in reader.last_snapshot]})
-            return value
+            with self.io_lock:
+                value=original(arm)
+                side='left' if arm is self.controller.left_arm else 'right'
+                reader=self.controller._feedback_readers[side]
+                self.record('can_feedback',{'side':side,'motors':[
+                    {'position':s.position,'velocity':s.velocity,'torque':s.torque,'rx_ns':s.rx_ns,
+                     'can_id':s.can_id,'raw_hex':s.raw.hex()} for s in reader.last_snapshot]})
+                return value
         self.controller.get_position=audited_position
         self.record('hardware_open',{'enabled':False,'startup_mode':'deferred'})
 
     def read(self):
+        with self.io_lock:return self._read()
+
+    def _read(self):
         c=self.controller;rows={};q=[]
         # get_position creates and uses the original fresh readers. Preserve
         # position/velocity/torque/RX timestamp instead of SDK cached position.
@@ -152,6 +177,9 @@ class LegacyArm:
         self.record('feedback',result);return result
 
     def send(self,target,state):
+        with self.io_lock:return self._send(target,state)
+
+    def _send(self,target,state):
         q=finite(target,(16,));measured=finite(state['q'],(16,));c=self.controller
         if self.stopped:raise RuntimeError('driver stop is latched')
         age=time.time()-state['timestamp_unix_s']
@@ -159,13 +187,15 @@ class LegacyArm:
         self.record('command_requested',{'target':q.tolist(),'measured':measured.tolist()})
         c.remember_validated_state(measured)
         for side,i in [('left',0),('right',8)]:
+            if self.stopped:raise RuntimeError('driver stop latched between arm commands')
+            self.record('arm_command_requested',{'side':side,'target':q[i:i+8].tolist()})
             getattr(c,'set_'+side+'_position')(q[i:i+7].tolist(),float(q[i+7]),measured[i:i+7].tolist(),float(measured[i+7]))
+            self.record('arm_command_returned',{'side':side,'qualification':'not an arrival receipt'})
         self.record('command_returned',{'target':q.tolist(),'qualification':'driver returned, not proof of motion or arrival'})
 
-    def initialize(self,limits,should_stop):
+    def initialize(self,limits,should_stop,*,planner,scene):
         """Explicit caller must obtain on-site confirmation before open()."""
-        c=self.controller;state=np.array(self.read()['q']);c.remember_validated_state(state)
-        c.activate_at_current_position(state,limits=limits,motion_checks=True)
+        c=self.controller;state=np.array(self.read()['q'])
         # Reuse the exact interpolation/5s hold from the pinned source via an
         # AST-selected function set. No top-level launcher/model imports run.
         source=Path(self.config['deploy_root'])/'model_launchers/models/dp/deploy_dp_dual_joint.py'
@@ -186,14 +216,25 @@ class LegacyArm:
             node.returns=None
             for arg in [*node.args.posonlyargs,*node.args.args,*node.args.kwonlyargs]:arg.annotation=None
         exec(compile(ast.fix_missing_locations(ast.Module(body=nodes,type_ignores=[])),str(source),'exec'),namespace)
+        validate(state,limits);validate(self.target,limits)
+        path=[state+(self.target-state)*i/400 for i in range(401)]
+        if planner.validate_path(path,scene) is not True:
+            raise RuntimeError('ACT initialization path not explicitly collision accepted')
+        if should_stop():raise InterruptedError('initialization cancelled before activation')
+        current=finite(self.read()['q'],(16,))
+        if np.max(abs(current-state))>.01:raise RuntimeError('robot moved during startup planning; replan before activation')
+        c.remember_validated_state(state)
+        c.activate_at_current_position(state,limits=limits,motion_checks=True)
         # Audit every old-controller command and measured state. Original source
         # is not edited, patched on disk, or imported as a policy launcher.
         old_left,old_right=c.set_left_position,c.set_right_position
         def logged(side,original):
             def invoke(q,g,current,cg):
                 if should_stop():raise InterruptedError('initialization cancelled')
+                if np.max(abs(np.array(q)-np.array(current)))>np.deg2rad(3):
+                    raise RuntimeError('initialization tracking error exceeded')
                 self.record('initialization_command',{'side':side,'target':list(q)+[float(g)],'feedback':list(current)+[float(cg)]})
-                return original(q,g,current,cg)
+                with self.io_lock:return original(q,g,current,cg)
             return invoke
         c.set_left_position=logged('left',old_left);c.set_right_position=logged('right',old_right)
         try:namespace['move_arms_to_initial_position'](c,config=None,limits=limits,waypoints=[],should_stop=should_stop)

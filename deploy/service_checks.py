@@ -89,6 +89,7 @@ class RealServiceChecks(unittest.TestCase):
             identity='offline_test_fixture'
             def validate_path(self,path,scene):
                 self.called=True
+                return True
         driver=Driver();planner=Planner()
         limits={s:(np.full(7,-2.),np.full(7,2.)) for s in ['left','right']}
         limits.update(left_gripper=(-1.,1.),right_gripper=(-1.,1.))

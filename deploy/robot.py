@@ -37,7 +37,7 @@ def clean(value):
 def request(url,body=None,*,key=None,timeout=15):
     headers={'Content-Type':'application/json','User-Agent':'OpenArm-RealHarness/1'}
     if key:headers['Authorization']='Bearer '+key
-    req=urllib.request.Request(url,data=None if body is None else json.dumps(body).encode(),headers=headers)
+    req=urllib.request.Request(url,data=None if body is None else json.dumps(body,allow_nan=False).encode(),headers=headers)
     try:
         with urllib.request.urlopen(req,timeout=timeout) as response:
             data=response.read(2*1024*1024+1)
@@ -52,6 +52,7 @@ class Robot:
         self.config=config;self.execute=execute;self.transport=transport;self.calls=0
         self.motion_requests_attempted=0
         self.journal=journal
+        self.session_id=None
         self.base=config.get('robot_service')
         if self.base:
             p=urllib.parse.urlsplit(self.base)
@@ -78,6 +79,26 @@ class Robot:
         if self.journal:self.journal.record('observation',state)
         return state
 
+    def session_request(self,path,body):
+        token_path=ROOT/'.runtime/session-token'
+        if not token_path.is_file() or token_path.stat().st_mode&0o077:
+            raise RuntimeError('private service session token unavailable')
+        return self.transport(self.base+path,body,key=token_path.read_text().strip(),timeout=3)
+
+    def begin(self):
+        if self.session_id is not None:raise RuntimeError('session already active')
+        self.session_id=self.session_request('/session',{})['session_id']
+
+    def abort(self):
+        if self.session_id is not None:
+            try:self.session_request('/abort',{'session_id':self.session_id})
+            except Exception:
+                if self.journal:self.journal.record('error',{'reason':'abort not acknowledged; hardware outcome unknown'})
+
+    def end(self):
+        if self.session_id is not None:
+            self.session_request('/session/end',{'session_id':self.session_id});self.session_id=None
+
     def call(self,name,*args,**kwargs):
         if name not in TOOLS:raise ValueError('unknown real tool')
         if name=='observe':return self.observe()
@@ -102,7 +123,7 @@ class Robot:
         if (name=='advance' and (state.get('operation') or {}).get('phase')=='release_right'
             and 'left' not in state['held_by']):
             raise RuntimeError('donor release requires measured receiver hold')
-        body={'args':list(args),'kwargs':kwargs,'request_id':uuid.uuid4().hex}
+        body={'args':list(args),'kwargs':kwargs,'request_id':uuid.uuid4().hex,'session_id':self.session_id}
         if self.journal:self.journal.record('tool_requested',{'name':name,'request':body})
         token_path=ROOT/'.runtime/session-token'
         transport_kwargs={'timeout':120}
@@ -112,6 +133,7 @@ class Robot:
         if name not in ('propose_grasps','verify_hold'):self.motion_requests_attempted+=1
         try:result=self.transport(self.base+'/tools/'+name,body,**transport_kwargs)
         except Exception:
+            self.abort()
             if self.journal:self.journal.record('error',{'name':name,'outcome':'unknown; no automatic resend'})
             raise
         if self.journal:self.journal.record('tool_returned',{'name':name,'result':result})
@@ -152,6 +174,22 @@ def validate_observation(o,*,now=None):
     if (not isinstance(o['held_by'],list) or any(v not in ('left','right') for v in o['held_by'])
         or len(set(o['held_by']))!=len(o['held_by']) or type(o['terminal']) is not bool or type(o['invalid']) is not bool):
         raise ValueError('invalid holder or terminal-state evidence')
+    def number(v):return type(v) in (int,float) and math.isfinite(v)
+    if (not isinstance(o['bottle_center_m'],list) or len(o['bottle_center_m'])!=3 or
+        not all(number(v) for v in o['bottle_center_m']) or type(o['pose_revision']) is not int or o['pose_revision']<1 or
+        not number(o['remaining_seconds']) or not 0<=o['remaining_seconds']<=120 or type(o['upright']) is not bool):
+        raise ValueError('invalid measured geometry/time values')
+    for side in ['left','right']:
+        if (type(o['touching'].get(side)) is not bool or
+            not number(o['gripper_motor_feedback_rad'].get(side)) or not number(o['gripper_open_rad'].get(side))):
+            raise ValueError('invalid gripper feedback')
+    def finite_tree(v):
+        if isinstance(v,float) and not math.isfinite(v):raise ValueError('nonfinite observation')
+        if isinstance(v,dict):
+            for value in v.values():finite_tree(value)
+        if isinstance(v,list):
+            for value in v:finite_tree(value)
+    finite_tree(o)
     return o
 
 
@@ -173,11 +211,20 @@ def run_skill(robot,folder):
         def tool(*args,_name=name,**kwargs):return robot.call(_name,*args,**kwargs)
         registry.register(tool,name=name,public=True,layer='shared_high_level',
                           capability='measured real robot only; no reset or simulation')
-    result=ProgramExecutor(registry).execute_program(program.read_text())
+    robot.begin()
+    try:
+        result=ProgramExecutor(registry).execute_program(program.read_text())
+        if not result.ok:robot.abort()
+        final=robot.observe()
+    except Exception:
+        robot.abort();raise
+    finally:robot.end()
+    support=final.get('support_evidence',{}).get('basket',{})
+    verified=bool(result.ok and not final['held_by'] and support.get('verified') is True and support.get('stationary') is True)
     # Completion of the program is not independent task success evidence.
     data={'status':'program_finished' if result.ok else 'program_failed',
           'program_ok':result.ok,'error':str(result.error) if result.error else None,
-          'tool_calls':len(result.calls),'task_success':None,
+          'tool_calls':len(result.calls),'task_success':True if verified else None,
           'motion_requests_attempted':robot.motion_requests_attempted,
           'note':'real task verdict requires independent hold, release and basket support evidence'}
     (folder/'skill-result.json').write_text(json.dumps(clean(data),ensure_ascii=False,indent=2)+'\n')
@@ -242,7 +289,13 @@ def verify():
         p=(ROOT/name).resolve()
         if not p.is_relative_to(ROOT) or hashlib.sha256(p.read_bytes()).hexdigest()!=digest:
             raise ValueError('deployment hash mismatch: '+name)
-    return {'verified_files':len(m['files']),'simulator_included':False}
+    for name in m.get('mutable_configuration',[]):
+        if name not in ('config/calibration.json','config/collision.json'):raise ValueError('unexpected mutable path')
+        p=(ROOT/name).resolve()
+        if not p.is_relative_to(ROOT):raise ValueError('configuration path escape')
+        if p.is_file():read(p)
+    return {'verified_files':len(m['files']),'simulator_included':False,
+        'configuration_note':'calibration and collision parameters require separately bound physical acceptance'}
 
 
 def main():

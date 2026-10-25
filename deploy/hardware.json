@@ -86,5 +86,20 @@
   "calibration_warning": "existing calib/{left,right}.yaml binds VR controller to wrist, not optical camera to robot base",
   "solver_warning": "existing IK uses internal wxyz+xyz despite a conflicting xyz+xyzw comment; never pass arrays by assumed order",
   "device_runtime_python": "/home/sj/miniconda3/envs/lerobot_20260116/bin/python",
-  "device_runtime_verified_this_session": false
+  "device_runtime_verified_this_session": true,
+  "runtime_contract": {
+    "python": "3.10",
+    "packages": {
+      "numpy": "2.2.6",
+      "opencv-contrib-python": "4.13.0.90",
+      "pyrealsense2": "2.56.5.9235",
+      "scipy": "1.15.3",
+      "trimesh": "4.11.1",
+      "python-fcl": "0.7.0.11"
+    },
+    "native_can": {
+      "path": "/home/sj/Desktop/wuji/lerobot_20260116/openarm_deploy/openarm/openarm_can/python/build/cp310/openarm_can.cpython-310-x86_64-linux-gnu.so",
+      "sha256": "6abc28762646f418739e5eab9c765f12996c5c44742209978c7dbb22466fe06d"
+    }
+  }
 }

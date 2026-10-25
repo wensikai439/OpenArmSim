@@ -7,10 +7,13 @@ export XDG_CACHE_HOME="$ROOT/.runtime/cache"
 export XDG_CONFIG_HOME="$ROOT/.runtime/config"
 export XDG_DATA_HOME="$ROOT/.runtime/data"
 export PIP_CONFIG_FILE=/dev/null PIP_DISABLE_PIP_VERSION_CHECK=1
+export NUMBA_CACHE_DIR="$ROOT/.runtime/cache/numba" MPLCONFIGDIR="$ROOT/.runtime/cache/matplotlib"
 unset PYTHONPATH
 cd "$ROOT"
 if [ "$#" -eq 0 ]; then set -- status; fi
 case "$1" in
+    check) exec "$ROOT/.venv/bin/python" -B -m unittest app.robot_checks app.service_checks app.checks ;;
+    prepare) shift; exec "$ROOT/.venv/bin/python" -B "$ROOT/app/prepare.py" "$@" ;;
     preflight|service|audit-log) exec "$ROOT/.venv/bin/python" -B "$ROOT/app/service.py" "$@" ;;
     *) exec "$ROOT/.venv/bin/python" -B "$ROOT/app/robot.py" "$@" ;;
 esac
