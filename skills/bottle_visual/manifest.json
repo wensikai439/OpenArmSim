@@ -1,0 +1,43 @@
+{
+  "schema": "openarm-rgb-skill/2",
+  "version": 2,
+  "admitted": false,
+  "status": "validated local simulation experiment; not published as default platform skill",
+  "scope": "right lower-body grasp and lift only; no new handover/place or hardware validation",
+  "entrypoint": "./run visual",
+  "program_sha256": "9d464c2ceabf3acb4e1e752948d9ba90127c45ec4e524368a6515150cb0a7825",
+  "protocol_sha256": "7ce6b370637f826abe10784ebd62f49d431f2996ad461788c235ab540ffdc197",
+  "runtime_sources": {
+    "harness/aspire/visual.py": "8c880dc9b16b9f2eed2407ebe5335f57a16c213c42ff360c4be22207400929f8",
+    "harness/aspire/visual_control.py": "285a368672c941d259d8f36d943061252e3ec1853154c260f9ea743763a75dc6",
+    "skills/bottle_visual/program.py": "9d464c2ceabf3acb4e1e752948d9ba90127c45ec4e524368a6515150cb0a7825",
+    "tools/visual_benchmark.py": "d5b167921f5e559fabc8656bf6c42544115697d2b56941298a494c07dfaad0da"
+  },
+  "legacy_dependency_manifest_sha256": "cf197480fba7d5b214ed7060cfa996f3f560a4a48c27c8130032634333c13a44",
+  "official_runtime": "NVlabs/ASPIRE ProgramExecutor and ToolRegistry",
+  "official_source_commit": "fa00f0ef2bc1d91d594b9aa502c22133c9f538f7",
+  "generated_by": "provider reported claude-haiku-5-5, two API revisions of engineered draft",
+  "neural_training": false,
+  "old_tamp_called": false,
+  "hardware_enabled": false,
+  "transfer_ready": false,
+  "latest_heldout": {
+    "passed": 6,
+    "total": 6,
+    "report": "runs/20261025-visual/validation-v2/index.html"
+  },
+  "first_version": {
+    "heldout_passed": 7,
+    "heldout_total": 8,
+    "stress_passed": 2,
+    "stress_total": 2,
+    "report": "runs/20261025-visual/validation/index.html"
+  },
+  "boundary": [
+    "known upright black cylinder",
+    "two fixed synthetic RGB views",
+    "rendered four-color planar tool fixture of known geometry",
+    "stationary target and cameras during approach",
+    "native physics invalid-state guard, without predictive general obstacle planner"
+  ]
+}

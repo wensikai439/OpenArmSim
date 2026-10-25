@@ -5,17 +5,14 @@ Native task state is read separately by the evaluator, never exposed as XYZ.
 """
 from pathlib import Path
 import argparse
-import hashlib
 import json
 import os
 import subprocess
 import sys
-import time
 
 import mujoco
 import numpy as np
 from scipy.spatial.transform import Rotation, Slerp
-from PIL import Image
 
 from .runtime import ROOT, ProgramExecutor, ToolRegistry, PublicTrace, dump, fixture_environment
 
@@ -130,7 +127,7 @@ class RobotWorld:
         self._guard()
         robot={s:{'tcp_m':self.pose(s)[0].tolist(),'rotation':self.pose(s)[1].tolist(),
                    'gripper_motor_rad':float(self.env.state()[7 if s=='left' else 15]),
-                   'gripper_open_rad':self.env.grippers[s].open_motor} for s in ('left','right')}
+                   'gripper_open_command_rad':self.env.grippers[s].open_motor} for s in ('left','right')}
         return {'tick':self.env.tick,'robot':robot,'vision':self.last_visual,
                 'image_targets':{'bottle_lower':self.rig.goals.tolist()},
                 'object_xyz_available':False,'legacy_tamp_available':False}
@@ -146,7 +143,7 @@ class RobotWorld:
 
     def move_relative(self, arm='right', delta_m=(0,0,0)):
         self._guard();delta=np.array(delta_m,float)
-        if delta.shape!=(3,) or not np.isfinite(delta).all() or np.linalg.norm(delta)>.181:
+        if delta.shape!=(3,) or not np.isfinite(delta).all() or np.linalg.norm(delta)>.180:
             raise ValueError('bounded relative movement <=180mm required')
         self.phase='relative_'+arm
         self._move(arm,self.pose(arm)[0]+delta,self.rotation_reference[arm]);return {'ok':True}

@@ -7,19 +7,15 @@ encoder-feedback IK controller; native object/contact state is evaluation only.
 """
 from __future__ import annotations
 
-import argparse
 import copy
-import hashlib
-import json
 from pathlib import Path
-import time
 
 import mujoco
 import numpy as np
 from PIL import Image, ImageDraw
 from scipy import ndimage
 
-from .runtime import ROOT, dump
+from .runtime import dump
 
 
 VIEWS = [dict(mode='free',lookat=[.46, -.12, 1.12], distance=1.08, azimuth=75., elevation=-32.),

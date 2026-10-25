@@ -15,11 +15,13 @@ if not a['ok']:
     raise ValueError('visual alignment failed')
 
 # Close, with measured-feedback check and at most one retry.
-open_rad = s['robot']['right']['gripper_open_rad']
+# Baseline is the fresh measured motor state, not the commanded open endpoint.
+s = observe()
+baseline = s['robot']['right']['gripper_motor_rad']
 c = set_gripper(arm='right', opened=False)
-if abs(c['motor_rad'] - open_rad) < .10:
+if abs(c['motor_rad'] - baseline) < .10:
     c = set_gripper(arm='right', opened=False)
-    if abs(c['motor_rad'] - open_rad) < .10:
+    if abs(c['motor_rad'] - baseline) < .10:
         raise ValueError('gripper close failed: no measured closure after retry')
 
 # Lift and verify with fresh RGB + robot lift.
@@ -28,4 +30,3 @@ wait(seconds=1.0)
 v = check_grasp()
 if not v['ok']:
     raise ValueError('RGB hold verification failed')
-

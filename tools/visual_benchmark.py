@@ -25,6 +25,12 @@ def verify(protocol):
     for name, expected in protocol['sources'].items():
         if digest(ROOT / name) != expected:
             raise ValueError('frozen source changed: ' + name)
+    if 'legacy_manifest_sha256' in protocol:
+        path=ROOT/'skills/bottle_recovery/manifest.json'
+        if digest(path)!=protocol['legacy_manifest_sha256']:
+            raise ValueError('legacy reference manifest changed')
+        for name,expected in json.loads(path.read_text())['runtime_sources'].items():
+            if digest(ROOT/name)!=expected:raise ValueError('native dependency changed: '+name)
 
 
 def gallery(folder, protocol, rows):
@@ -72,6 +78,9 @@ def main():
         p.error('new output directory under runs/ required')
     protocol = json.loads(a.protocol.read_text()); verify(protocol)
     folder.mkdir(parents=True); save(folder / 'protocol.json', protocol)
+    for name in protocol['sources']:
+        target=folder/'source'/name;target.parent.mkdir(parents=True,exist_ok=True)
+        target.write_bytes((ROOT/name).read_bytes())
     rows = []
     for spec in protocol['cases']:
         verify(protocol)
