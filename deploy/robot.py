@@ -69,7 +69,9 @@ class Robot:
         for key,value in [('contract',self.config.get('robot_contract','openarm-body-v4/1')),('source','real_robot'),
                           ('calibration_verified',True),('hardware_execution_available',True)]:
             if info.get(key)!=value:missing.append(key+' not verified')
-        if not set(TOOLS)<=set(info.get('tools',[])):missing.append('14 real tool implementations required')
+        if not set(TOOLS)<=set(info.get('tools',[])):
+            missing.append('14 real tools installed but not active/admitted' if info.get('tool_implementations_included')
+                else '14 real tool implementations required')
         missing.extend(x for x in info.get('missing',[]) if x not in missing)
         return {'ready':not missing,'missing':missing,'service':info}
 
@@ -253,7 +255,7 @@ def chat(task,robot,folder):
            'run_bottle_skill':'Run right lower-body grasp, handover left, basket placement. Requires real tools and --execute; stop on missing inputs.'}
     tools=[{'type':'function','function':{'name':name,'description':desc,
         'parameters':{'type':'object','properties':{},'additionalProperties':False}}} for name,desc in names.items()]
-    messages=[{'role':'system','content':'You operate an OpenArm real robot harness. First get_status. Never claim real execution or success from simulation, replay, configured paths, jaw closure or program completion. If perception/calibration/tools are missing, explain the blocker. Do not invent measurements. Never request raw joints, shell, CAN or reset. Maximum one skill execution per session. Reply in Chinese.'},
+    messages=[{'role':'system','content':'You operate an OpenArm real robot harness. First get_status. Distinguish installed tool implementations from active and physically admitted device sessions. Never claim real execution or success from simulation, replay, configured paths, jaw closure or program completion. If perception/calibration/tools are missing, explain the blocker. Do not invent measurements. Never request raw joints, shell, CAN or reset. Maximum one skill execution per session. Reply in Chinese.'},
               {'role':'user','content':task}]
     attempted=False;trace=[]
     for turn in range(6):

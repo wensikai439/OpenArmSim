@@ -203,6 +203,8 @@ class Service:
         return {'contract':self.config['robot_contract'],'source':'real_robot' if self.provider else 'disabled_service',
             'calibration_verified':self.readiness['calibration_verified'],
             'hardware_execution_available':ready,'tools':tools,
+            'tool_implementations_included':(Path(__file__).parent/'runtime.py').is_file(),
+            'device_session_active':bool(self.provider and not provider_failure),
             'missing':self.readiness['missing']+([] if self.provider else ['accepted real motion provider not loaded'])+
                 (['real provider stopped: '+provider_failure] if provider_failure else []),
             'devices_started':bool(self.provider),'tool_requests':self.calls,
