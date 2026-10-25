@@ -1,5 +1,7 @@
 # 视觉闭环抓瓶
 
+本文保留上一版右手抓取实验。新的完整“抓取—交接—入篮”流程见 [relay/README.md](relay/README.md)，入口为 `./run relay`。
+
 实验入口，只验证右手抓住下半瓶身并抬起。它与旧 TAMP 演示分开，不复用 pick、handover、place、固定关节轨迹或物体三维真值。
 
 ## 当前结构

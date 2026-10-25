@@ -1,0 +1,46 @@
+{
+  "schema": "openarm-complete-visual-relay/2",
+  "version": 2,
+  "admitted": true,
+  "admission_scope": "local simulation complete skill; independent entry; not main-chat default or hardware certified",
+  "entrypoint": "./run relay",
+  "program_sha256": "0f46058ad163abc63a8211ce2c27f86290a98483d3e23001e94fe60f14a46993",
+  "runtime_sources": {
+    "harness/aspire/visual_relay.py": "86321d309c62e754f687148776d24718a3ebf4b5e89e72a177f2dfa440e9fe9d",
+    "harness/aspire/visual_geometry.py": "c119b3755d5c9b8aabea46c4fe2fbcf9b82722616f4b27b89debb780a914490e",
+    "harness/aspire/visual.py": "8c880dc9b16b9f2eed2407ebe5335f57a16c213c42ff360c4be22207400929f8",
+    "harness/aspire/visual_control.py": "285a368672c941d259d8f36d943061252e3ec1853154c260f9ea743763a75dc6",
+    "tools/relay_benchmark.py": "166685cf375eb3e825802c3f8237b6742389ae30ac85820a9dfac1a119ad6577",
+    "tools/visual_benchmark.py": "d5b167921f5e559fabc8656bf6c42544115697d2b56941298a494c07dfaad0da",
+    "skills/bottle_visual/relay/program.py": "0f46058ad163abc63a8211ce2c27f86290a98483d3e23001e94fe60f14a46993"
+  },
+  "legacy_dependency_manifest_sha256": "cf197480fba7d5b214ed7060cfa996f3f560a4a48c27c8130032634333c13a44",
+  "protocol_sha256": "bc9d5d6861b3d0fd477dd779b06ad8a05dbe873da7e48d9cdb97b100fdab8d28",
+  "latest_results": {
+    "regression": {
+      "passed": 2,
+      "total": 2
+    },
+    "new_conditions": {
+      "passed": 4,
+      "total": 4
+    },
+    "report": "runs/20261026-relay/index.html"
+  },
+  "first_round": {
+    "passed": 7,
+    "total": 8,
+    "report": "runs/20261026-relay/validation/index.html"
+  },
+  "task_score": "original native complete-task score AND lower-body right contact; no lowered physics thresholds",
+  "official_runtime": "NVlabs/ASPIRE ProgramExecutor + ToolRegistry",
+  "official_source_commit": "fa00f0ef2bc1d91d594b9aa502c22133c9f538f7",
+  "model_role": "Haiku feedback review + engineered controller; failed raw revision rejected and compiled with reviewed recovery logic",
+  "neural_training": false,
+  "legacy_tamp_calls": 0,
+  "hardware_enabled": false,
+  "transfer_ready": false,
+  "sensor_scope": "two fixed synthetic RGB views and virtual planar tool markers; online robot-FK projection estimate; fixed known bottle/basket",
+  "camera_matrix_source": "estimated from RGB/robot FK; simulator camera matrices not read",
+  "gripper_range": "explicit native model full range, unverified on physical hardware"
+}
