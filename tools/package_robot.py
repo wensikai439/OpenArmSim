@@ -13,7 +13,7 @@ def main():
     existing=json.loads((ROOT/'skills/bottle_recovery/manifest.json').read_text())
     version=existing['version']
     p=argparse.ArgumentParser(description=__doc__)
-    p.add_argument('--output',type=Path,default=ROOT/'handoff/OpenArmRobot-20261025-r6.zip')
+    p.add_argument('--output',type=Path,default=ROOT/'handoff/OpenArmRobot-20261025-r6.1.zip')
     p.add_argument('--collision',type=Path,default=ROOT/'runs/20261025-real/collision.json')
     a=p.parse_args();destination=a.output.resolve()
     if destination.exists():raise ValueError('refuse overwriting an existing robot package')

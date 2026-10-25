@@ -255,7 +255,12 @@ class RuntimeChecks(unittest.TestCase):
                     self.assertEqual(a.call('propose_grasps'),{'candidates':[]})
                     a.end();b.begin();b.abort()
                     self.assertTrue(provider.stopped);self.assertFalse(a.status()['ready']);b.end()
-            finally:server.shutdown();server.server_close();thread.join(2)
+            finally:
+                server.shutdown();server.server_close();thread.join(2)
+                # Some target hosts omit dot-directories from enumeration.
+                # These are the exact test-owned paths, never a broad deletion.
+                if token.is_file():token.unlink()
+                token.parent.rmdir()
 
 
 if __name__=='__main__':unittest.main()
