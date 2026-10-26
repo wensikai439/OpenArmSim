@@ -1,0 +1,11 @@
+{
+  "schema": "adaptive-visual-relay/1",
+  "version": 4,
+  "admitted": false,
+  "development_results": {
+    "passed": 22,
+    "total": 24
+  },
+  "scope": "development only; heldout untouched; no hardware",
+  "report": "runs/20261026-adaptive/development/round-1/index.html"
+}
