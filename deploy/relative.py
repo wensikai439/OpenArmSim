@@ -75,13 +75,22 @@ class RelativeRuntime(Runtime):
         # Feedback is measured q, never the previous requested endpoint.
         current=self.planner.tools(self.servo.state['q'])[side]
         distance,angle=goal_error(current,target)
-        self.record('relative_goal',{'arm':side,'source':'fresh_real_object_pose_and_FK',
+        fine_window=3*self.relative['correction_step_m']
+        # A tolerance band prevents a numerically exact 18mm endpoint from
+        # repeatedly re-entering coarse mode after finite-accuracy IK/feedback.
+        phase='coarse' if distance>fine_window+self.relative['correction_tolerance_m'] else 'fine'
+        self.record('relative_goal',{'arm':side,'source':'fresh_real_object_pose_and_FK','phase':phase,
             'target':target.tolist(),'measured':current.tolist(),
             'position_error_m':distance,'rotation_error_rad':angle,
-            'maximum_step_m':self.relative['correction_step_m']})
+            'maximum_fine_step_m':self.relative['correction_step_m']})
         if (distance<=self.relative['correction_tolerance_m'] and
             angle<=self.relative['rotation_tolerance_rad']):return True
-        step=bounded_target(current,target,self.relative['correction_step_m'])
+        if phase=='coarse':
+            # One checked continuous reach, stopping 3 fine steps from target.
+            # The final 18 mm still use new observations and <=6 mm steps.
+            step=target.copy()
+            step[:3,3]-=(target[:3,3]-current[:3,3])*(3*self.relative['correction_step_m']/distance)
+        else:step=bounded_target(current,target,self.relative['correction_step_m'])
         self._move({side:step},contact=contact)
         # Require another fresh observation before declaring arrival.
         return False
@@ -160,8 +169,8 @@ class RelativeRuntime(Runtime):
 
 
 def description():
-    return {'skill':'relative-bottle/1','robot_contract':CONTRACT,
-        'strategy':['fresh object-relative grasp','bounded 6mm final correction',
+    return {'skill':'relative-bottle/2','robot_contract':CONTRACT,
+        'strategy':['fresh object-relative grasp','continuous coarse reach then bounded 6mm final correction',
                     'measured session-relative handover','verified receiver before donor release',
                     'basket-relative placement with measured tool-object transform'],
         'simulation_source':'adaptive visual relay v4',

@@ -101,6 +101,7 @@ class RelativeChecks(unittest.TestCase):
         np.testing.assert_allclose(transfer_goal(b,tools,[.03,0,.1])[:3,3],a[:3,3]+delta)
     def test_alignment_follows_new_object_measurement_and_measured_tcp(self):
         f=Fixture();f.propose_grasps();f.pregrasp('g0');old=f.bottle.copy()
+        f.poses['right']=f.bottle.copy();f.poses['right'][2,3]-=.012
         f.bottle[0,3]+=.004
         before=f.poses['right'].copy();f.servo.target[:]=1.  # misleading old command
         result=f.align_relative('g0')
@@ -108,6 +109,7 @@ class RelativeChecks(unittest.TestCase):
         target=[v for k,v in f.events if k=='relative_goal'][-1]['target']
         self.assertAlmostEqual(target[0][3],old[0,3]+.004)
         self.assertLessEqual(goal_error(before,f.poses['right'])[0],.006000001)
+        self.assertEqual([v for k,v in f.events if k=='relative_goal'][-1]['phase'],'fine')
     def test_large_target_jump_and_collision_failure_dispatch_nothing(self):
         for jump,reject in [(.021,False),(0.,True)]:
             f=Fixture();f.propose_grasps();f.pregrasp('g0');n=len(f.moves)

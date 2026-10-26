@@ -4,6 +4,7 @@ The admitted program runs through the official ASPIRE executor only after a
 separate real-robot service supplies calibrated measurements and tool adapters.
 """
 import argparse
+import copy
 import hashlib
 import json
 import math
@@ -48,7 +49,14 @@ def request(url,body=None,*,key=None,timeout=15):
             data=response.read(2*1024*1024+1)
             if len(data)>2*1024*1024:raise RuntimeError('response exceeds limit')
             return json.loads(data)
-    except urllib.error.HTTPError as exc:raise RuntimeError('HTTP '+str(exc.code)) from None
+    except urllib.error.HTTPError as exc:
+        # Keep a short structured service error; never include headers/tokens.
+        detail=''
+        try:
+            body=json.loads(exc.read(16384))
+            detail=clean(str(body.get('error') or body.get('reason') or ''))[:1000]
+        except Exception:pass
+        raise RuntimeError('HTTP '+str(exc.code)+(': '+detail if detail else '')) from None
     except Exception:raise RuntimeError('service unavailable or invalid JSON response') from None
 
 
@@ -58,6 +66,7 @@ class Robot:
         self.tools=tools_for(config)
         self.motion_requests_attempted=0
         self.journal=journal
+        self.last_observation=None
         self.session_id=None
         self.base=config.get('robot_service')
         if self.base:
@@ -84,6 +93,7 @@ class Robot:
     def observe(self):
         if not self.base:raise RuntimeError('real perception service not connected')
         state=validate_observation(self.transport(self.base+'/observation',timeout=5))
+        self.last_observation=copy.deepcopy(state)
         if self.journal:self.journal.record('observation',state)
         return state
 
@@ -206,7 +216,7 @@ def run_skill(robot,folder):
     if not robot.execute or not status['ready']:
         return {'status':'blocked','missing':status['missing']+([] if robot.execute else ['--execute not supplied']),
                 'motion_commands':0,'task_success':None}
-    robot.observe()
+    initial=robot.observe()
     program=ROOT/'app/skill/program.py'
     cfg=read(ROOT/'config/robot.json')
     if hashlib.sha256(program.read_bytes()).hexdigest()!=cfg['program_sha256']:
@@ -219,20 +229,32 @@ def run_skill(robot,folder):
         def tool(*args,_name=name,**kwargs):return robot.call(_name,*args,**kwargs)
         registry.register(tool,name=name,public=True,layer='shared_high_level',
                           capability='measured real robot only; no reset or simulation')
-    robot.begin()
+    result=None;original_error=None;cleanup_errors=[];final=None;started=False
     try:
+        robot.begin();started=True
         result=ProgramExecutor(registry).execute_program(program.read_text())
-        if not result.ok:robot.abort()
-        final=robot.observe()
-    except Exception:
-        robot.abort();raise
-    finally:robot.end()
-    support=final.get('support_evidence',{}).get('basket',{})
-    verified=bool(result.ok and not final['held_by'] and support.get('verified') is True and support.get('stationary') is True)
+        if not result.ok:original_error=str(result.error)
+        else:final=robot.observe()
+    except Exception as exc:original_error=type(exc).__name__+': '+str(exc)
+    finally:
+        if started and original_error:
+            try:robot.abort()
+            except Exception as exc:cleanup_errors.append('abort: '+str(exc))
+        if started:
+            try:robot.end()
+            except Exception as exc:cleanup_errors.append('session end: '+str(exc))
+    # A stopped provider intentionally refuses fresh observations. Preserve the
+    # ORIGINAL error and last valid evidence instead of overwriting it with 409.
+    program_ok=bool(result and result.ok)
+    last=copy.deepcopy(getattr(robot,'last_observation',None) or initial)
+    support=(final or {}).get('support_evidence',{}).get('basket',{})
+    verified=bool(program_ok and not original_error and not cleanup_errors and final and
+        not final['held_by'] and support.get('verified') is True and support.get('stationary') is True)
     # Completion of the program is not independent task success evidence.
-    data={'status':'program_finished' if result.ok else 'program_failed',
-          'program_ok':result.ok,'error':str(result.error) if result.error else None,
-          'tool_calls':len(result.calls),'task_success':True if verified else None,
+    data={'status':'program_finished' if program_ok and not original_error and not cleanup_errors else 'program_failed',
+          'program_ok':program_ok,'error':original_error,'cleanup_errors':cleanup_errors,
+          'final_observation':final,'last_valid_observation':last,
+          'tool_calls':len(result.calls) if result else 0,'task_success':True if verified else None,
           'motion_requests_attempted':robot.motion_requests_attempted,
           'note':'real task verdict requires independent hold, release and basket support evidence'}
     (folder/'skill-result.json').write_text(json.dumps(clean(data),ensure_ascii=False,indent=2)+'\n')

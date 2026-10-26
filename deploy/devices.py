@@ -53,7 +53,7 @@ class Camera:
         # Host arrival is not exposure time. Preserve SDK clock/domain and
         # reject slow fetches; acceptance also needs a measured latency bound.
         arrived=time.time()
-        if arrived-started>.15:raise RuntimeError('camera fetch latency exceeded')
+        if not diagnostic and arrived-started>.15:raise RuntimeError('camera fetch latency exceeded')
         intr=rgb.profile.as_video_stream_profile().intrinsics
         stamp=None if diagnostic else exposure_time(rgb.get_timestamp(),str(rgb.get_frame_timestamp_domain()),
             self.config.get('clock_model'),serial=self.config['serial'],now=arrived)

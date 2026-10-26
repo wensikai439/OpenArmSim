@@ -12,7 +12,7 @@ unset PYTHONPATH
 cd "$ROOT"
 if [ "$#" -eq 0 ]; then set -- status; fi
 case "$1" in
-    check) exec "$ROOT/.venv/bin/python" -B -m unittest app.robot_checks app.service_checks app.checks app.relative_checks ;;
+    check) exec "$ROOT/.venv/bin/python" -B -m unittest app.robot_checks app.service_checks app.checks app.relative_checks app.motion_checks ;;
     prepare) shift; exec "$ROOT/.venv/bin/python" -B "$ROOT/app/prepare.py" "$@" ;;
     preflight|service|audit-log) exec "$ROOT/.venv/bin/python" -B "$ROOT/app/service.py" "$@" ;;
     *) exec "$ROOT/.venv/bin/python" -B "$ROOT/app/robot.py" "$@" ;;

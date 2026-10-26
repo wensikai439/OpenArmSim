@@ -81,8 +81,8 @@ def check(cal,hardware,collision,root):
         c=cal['motion'];bounds=finite(c['workspace_bounds_m'],(2,3))
         if not np.all(bounds[0]<bounds[1]):return False
         if set(c['tool_links'])!={'left','right'} or not all(c['tool_links'].values()):return False
-        if not all(positive(c[k]) for k in ['collision_margin_m','velocity_rad_s','acceleration_rad_s2','scene_max_age_s','lift_m','pregrasp_m']):return False
-        if c['velocity_rad_s']>.15 or c['acceleration_rad_s2']>.3 or c['scene_max_age_s']>.2:return False
+        if not all(positive(c[k]) for k in ['collision_margin_m','velocity_rad_s','acceleration_rad_s2','jerk_rad_s3','scene_max_age_s','lift_m','pregrasp_m']):return False
+        if c['velocity_rad_s']>.15 or c['acceleration_rad_s2']>.3 or c['jerk_rad_s3']>2. or c['scene_max_age_s']>.2:return False
         if not c['right_grasps'] or len(c['right_grasps'])>32:return False
         for row in c['right_grasps']:transform(row['T_object_tool'])
         transform(c['T_bottle_left_tool']);transform(c['T_basket_bottle'])

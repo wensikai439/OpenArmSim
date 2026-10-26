@@ -11,9 +11,9 @@ from .package_skill import ROOT,UPSTREAM_REV,RUNTIME_FILES
 
 def main():
     existing=json.loads((ROOT/'skills/bottle_visual/adaptive/manifest.json').read_text())
-    version='relative-bottle/1'
+    version='relative-bottle/2'
     p=argparse.ArgumentParser(description=__doc__)
-    p.add_argument('--output',type=Path,default=ROOT/'handoff/OpenArmRobot-r7.zip')
+    p.add_argument('--output',type=Path,default=ROOT/'handoff/OpenArmRobot-r8.zip')
     p.add_argument('--collision',type=Path,default=ROOT/'runs/20261025-real/collision.json')
     a=p.parse_args();destination=a.output.resolve()
     if destination.exists():raise ValueError('refuse overwriting an existing robot package')
@@ -30,7 +30,7 @@ def main():
         'config/hardware.json':(ROOT/'deploy/hardware.json').read_bytes(),
         'config/calibration.json':(ROOT/'deploy/calibration.json').read_bytes(),
     }
-    for name in ['service','evidence','devices','motion','planning','calibration','runtime','relative','prepare','relative_checks']:
+    for name in ['service','evidence','devices','motion','planning','calibration','runtime','relative','prepare','relative_checks','motion_checks']:
         files['app/'+name+'.py']=(ROOT/('deploy/'+name+'.py')).read_bytes()
     for source,target in [('robot_checks','robot_checks'),('service_checks','service_checks'),('runtime_checks','checks')]:
         files['app/'+target+'.py']=(ROOT/('deploy/'+source+'.py')).read_bytes()
@@ -45,11 +45,11 @@ def main():
     files['app/skill/manifest.json']=(json.dumps({
         'version':version,'program_sha256':program_hash,'admitted_in':'real adapter software checks only; not physical validation',
         'real_validation_passed':False,'real_tool_implementations_included':True,
-        'runtime_release':7,'physical_acceptance_required':True,
+        'runtime_release':8,'physical_acceptance_required':True,
         'robot_contract':'openarm-relative-v1/1','right_contact_fraction_max':.5,
         'simulation_source':{'version':existing['version'],'program_sha256':existing['program_sha256'],
             'latest_results':existing['latest_results']['groups']},
-        'adaptation':'object-relative goals and bounded measured corrections; real RGB-D/FK replaces synthetic camera probes; no simulation dimensions, gains or joint tapes',
+        'adaptation':'continuous coarse reach then <=6mm final corrections; jerk-bounded reference and measured contact stop; real RGB-D/FK replaces synthetic camera probes; no simulation dimensions, gains or joint tapes',
         'identical_simulation_controller':False,'neural_weights_included':False,
         'placement_contract':'object center and upright axis preserved; checked axial-yaw alternatives',
         'simulation_backend_included':False},indent=2)+'\n').encode()
@@ -60,7 +60,7 @@ def main():
     files['app/aspire/ORIGIN.json']=(json.dumps({'url':'https://github.com/NVlabs/ASPIRE',
         'revision':UPSTREAM_REV,'files':hashes,'scope':'executor and registry only; no simulator or robot backend'},indent=2)+'\n').encode()
     mutable=['config/calibration.json','config/collision.json']
-    manifest={'schema':'openarm-real-only/3','runtime_release':7,'source_commit':subprocess.check_output(
+    manifest={'schema':'openarm-real-only/3','runtime_release':8,'source_commit':subprocess.check_output(
         ['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),
         'simulator_included':False,'hardware_driver_included':False,'hardware_adapter_included':True,'skills_real_validated':False,
         'files':{name:hashlib.sha256(data).hexdigest() for name,data in sorted(files.items()) if name not in mutable},

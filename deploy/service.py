@@ -99,8 +99,31 @@ def preflight(root=ROOT):
     return {'software_reference_match':all(r['sha256_match'] for r in references),
         'same_act_startup_target':init.get('target')==hardware['startup_target'],
         'calibration_verified':not missing,'missing':missing,'references':references,
+        'setup_groups':setup_groups(missing),
         'hardware_access':False,'devices_started':False,'motion_commands':0,
         'qualification':'read-only files and evidence hashes; no physical acceptance performed here'}
+
+
+def setup_groups(missing):
+    """Actionable diagnostics only. Never populate measurements or accept trials."""
+    rules=[('physical_acceptance','现场验收',('bound physical acceptance',),
+            '真实分段试验及硬件停止验收；不能将标志直接改成 true。'),
+        ('perception','相机与定位',('camera','registered RGB-D'),
+            '确定实际相机/标记，测量外参与曝光对时；已有 VR 标定不替代相机标定。'),
+        ('grip','夹持证据',('grip calibration',),
+            '采集位置/力矩/实际持瓶证据，验证夹持区间、滑移及闭爪力矩上限。'),
+        ('geometry_motion','场景与动作',('table geometry','bottle dimensions','basket interior','relative grasp','collision','finger'),
+            '实测桌面、瓶篮和夹爪几何，确认工作空间、相对抓姿、交接偏移和撤离向量。')]
+    groups={};unassigned=[]
+    for item in missing:
+        for key,title,words,action in rules:
+            if any(w in item for w in words):
+                group=groups.setdefault(key,{'name':title,'missing':[],'next_action':action})
+                group['missing'].append(item);break
+        else:unassigned.append(item)
+    if unassigned:groups['software']={'name':'软件引用','missing':unassigned,
+        'next_action':'核对环境、原源码和 ACT 初始化目标；保持原部署只读。'}
+    return groups
 
 
 class EvidencePipeline:
@@ -147,6 +170,8 @@ class EvidencePipeline:
             'pose_revision':self.revision,'held_by':held,'touching':touching,
             'upright':bool(bottle[2,2]>.98),'bottle_center_m':center.tolist(),
             'object_poses':{'bottle':bottle.tolist(),'basket':basket.tolist()},'hold_evidence':evidence,
+            'exposure_aligned_tools':{side:{'T_base_tool':transform(tool_poses[side]['T_base_tool']).tolist(),
+                'timestamp_unix_s':tool_poses[side]['timestamp_unix_s']} for side in ['left','right']},
             'hold_evidence_verified':True,'object_pose_verified':True,'grasp_region_evidence':region,
             'support_evidence':{name:{'verified':bool(candidate and stationary),'stationary':stationary,
                 'source':'accepted_geometry_and_measured_stationarity','timestamp_unix_s':stamp,
@@ -290,7 +315,10 @@ def main():
         if a.command=='preflight':result=readiness
         else:
             if a.devices and not readiness['calibration_verified']:
-                raise ValueError('device session refused: '+', '.join(readiness['missing']))
+                print(json.dumps({'status':'not_ready','reason':'实测配置或现场验收未完成，设备未打开',
+                    'setup_groups':readiness['setup_groups'],'next_command':'./run preflight',
+                    'devices_started':False,'motion_commands':0},ensure_ascii=False,indent=2))
+                return 2
             folder=ROOT/'records'/(time.strftime('%Y%m%d-%H%M%S')+'-service-'+secrets.token_hex(2))
             journal=Journal(folder,{'mode':'devices' if a.devices else 'disabled','preflight':readiness,'hardware_access':a.devices})
             service=Service(load(ROOT/'config/robot.json'),readiness,journal)

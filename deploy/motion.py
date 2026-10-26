@@ -79,7 +79,10 @@ class Servo:
                 if not -.01<=time.time()-state['timestamp_unix_s']<=.1:raise RuntimeError('feedback watchdog expired')
                 if np.max(abs(target[ARM]-measured[ARM]))>self.tracking:raise RuntimeError('joint tracking limit exceeded')
                 if self.stop_event.is_set():break
-                self.driver.send(target,state);self.state=state;self.sends+=1;self.progress=time.monotonic()
+                # Make fresh effort feedback available to the guard BEFORE
+                # dispatch, including while a jaw is closing but not held yet.
+                self.state=state;self.guard()
+                self.driver.send(target,state);self.sends+=1;self.progress=time.monotonic()
                 with self.condition:
                     self.applied_generation=generation;self.condition.notify_all()
                 deadline+=1/self.rate
@@ -90,7 +93,7 @@ class Servo:
         except Exception as exc:
             self.halt(exc)
 
-    def follow(self,path,planner,scene,*,guard=lambda:None):
+    def follow(self,path,planner,scene,*,guard=lambda:None,until=None):
         if not self.thread or self.failure or self.stop_event.is_set():raise RuntimeError('servo unavailable')
         points=[self.validate(q).copy() for q in path]
         if not points:raise ValueError('empty path')
@@ -110,6 +113,12 @@ class Servo:
             for q in points:
                 guard()
                 if self.failure or self.stop_event.is_set():raise RuntimeError(self.failure or 'servo stopped')
+                if until is not None and until() is True:
+                    # Keep the last accepted command that produced the hold;
+                    # zeroing force or jumping to measured jaw position could
+                    # release the bottle. Other arm targets stay unchanged.
+                    self.record('path_contact_hold',{'qualification':'measured hold; remaining closing targets discarded'})
+                    return
                 with self.condition:
                     self.target=q.copy();self.generation+=1;generation=self.generation
                     deadline=time.monotonic()+.2
@@ -129,17 +138,20 @@ class Servo:
         if self.thread and self.thread.is_alive():raise RuntimeError('servo failed to stop; operator intervention required')
 
 
-def retime(start,goal,*,rate=30,velocity=.15,acceleration=.3,minimum_seconds=.3):
+def retime(start,goal,*,rate=30,velocity=.15,acceleration=.3,jerk=2.,minimum_seconds=.3):
     """Quintic interpolation with zero endpoint velocity/acceleration, radians.
 
     This smooths an already collision-planned segment. It is never an obstacle
     avoidance planner and the resulting full path must be checked again.
     """
     start=finite(start,(16,));goal=finite(goal,(16,))
-    if not all(np.isfinite(v) and v>0 for v in [rate,velocity,acceleration,minimum_seconds]):
+    if not all(np.isfinite(v) and v>0 for v in [rate,velocity,acceleration,jerk,minimum_seconds]):
         raise ValueError('invalid trajectory timing')
     distance=float(np.max(abs(goal-start)))
-    duration=max(minimum_seconds,1.875*distance/velocity,np.sqrt(5.774*distance/acceleration))
+    # For s(u)=10u^3-15u^4+6u^5: max |s'|=1.875,
+    # max |s''|<5.774 and max |s'''|=60. Quantize UP to native ticks.
+    duration=max(minimum_seconds,1.875*distance/velocity,
+        np.sqrt(5.774*distance/acceleration),np.cbrt(60*distance/jerk))
     ticks=max(2,int(np.ceil(duration*rate)))
     t=np.arange(1,ticks+1)/ticks;s=10*t**3-15*t**4+6*t**5
     return [start+(goal-start)*v for v in s]

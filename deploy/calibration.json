@@ -136,7 +136,8 @@
       "correction_tolerance_m": 0.002,
       "rotation_tolerance_rad": 0.02,
       "maximum_target_shift_m": 0.02,
-      "qualification": "software correction bounds from simulation; offsets must be measured and physically accepted; no simulation dimensions or camera matrices imported"
-    }
+      "qualification": "candidate software motion bounds; continuous checked coarse reach, final 3x6mm correction; measured offsets and physical acceptance still required"
+    },
+    "jerk_rad_s3": 2.0
   }
 }

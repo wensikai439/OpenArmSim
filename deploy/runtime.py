@@ -122,6 +122,14 @@ class Runtime:
         with self.lock:s=copy.deepcopy(self.snapshot)
         if not s or not fresh(s['timestamp_unix_s'],time.time(),.15):raise RuntimeError('perception progress watchdog expired')
         if not self.required_holds<=set(s['held_by']):raise RuntimeError('required measured grip lost')
+        if self.servo is not None and self.servo.state is not None:
+            feedback=self.servo.state
+            if not fresh(feedback['timestamp_unix_s'],time.time(),.1):raise RuntimeError('gripper effort feedback stale')
+            for side in ['left','right']:
+                motor=feedback['motors'][side][7]
+                torque=float(motor['torque'])
+                if not np.isfinite(torque) or abs(torque)>self.cal['grippers'][side]['contact_torque_range'][1]:
+                    raise RuntimeError(side+' gripper exceeded accepted effort ceiling')
 
     def observe(self):
         self._ambient_guard()
@@ -136,7 +144,21 @@ class Runtime:
 
     def begin_session(self):
         state=self.observe()
-        if state['held_by'] or self.operation is not None:raise RuntimeError('cannot begin a new task with a hold or pending operation')
+        if state['held_by'] or any(state['touching'].values()) or self.operation is not None:
+            raise RuntimeError('cannot begin a new task with a hold, contact or pending operation')
+        feedback=self.servo.state
+        if not fresh(feedback.get('timestamp_unix_s'),time.time(),.1):raise RuntimeError('fresh feedback required for ACT startup check')
+        measured=np.array(feedback['q'],float);target=np.array(self.hardware['startup_target'],float)
+        if measured.shape!=(16,) or target.shape!=(16,) or not np.isfinite(measured).all():
+            raise RuntimeError('invalid startup feedback')
+        error=abs(measured-target);arm=np.r_[0:7,8:15]
+        if max(error[arm])>np.deg2rad(3) or max(error[[7,15]])>.1:
+            raise RuntimeError('ACT startup pose required before EACH task; no automatic homing while state is unverified')
+        with self.servo.lock:command=np.array(self.servo.target,float)
+        if max(abs(command[arm]-target[arm]))>np.deg2rad(3) or max(abs(command[[7,15]]-target[[7,15]]))>.1:
+            raise RuntimeError('pending servo target is not the ACT startup target')
+        self.record('session_startup_verified',{'source':'fresh_measured_joint_feedback',
+            'absolute_error':error.tolist(),'target':target.tolist()})
         self.started=time.monotonic();self.completed.clear();self.last_failure=None
         self.candidates.clear();self.checkpoints.clear();self.current_grasp=None
 
@@ -171,8 +193,11 @@ class Runtime:
         obstacles.append({'id':'basket_floor','capsules':floor_bars})
         held=s['held_by'];carried=None
         if held:
-            side='left' if held==['left'] else 'right';tools=self.planner.tools(self.driver.read()['q'] if self.servo is None else self.servo.state['q'])
-            carried={'arm':side,'T_tool_object':(np.linalg.inv(tools[side])@bottle).tolist()}
+            side='left' if held==['left'] else 'right'
+            aligned=s['exposure_aligned_tools'][side]
+            if abs(aligned['timestamp_unix_s']-s['timestamp_unix_s'])>.005:
+                raise RuntimeError('carried object requires exposure-aligned tool pose')
+            carried={'arm':side,'T_tool_object':(np.linalg.inv(transform(aligned['T_base_tool']))@bottle).tolist()}
         contact_links=[link for side in contact for link in self.cal['motion']['contact_links'][side]]
         return {'revision':s['pose_revision'],'timestamp_unix_s':s['timestamp_unix_s'],'table_z_m':self.cal['table_top_z_m'],
             'obstacles':obstacles,'carried':carried,'contact_links':contact_links,
@@ -214,8 +239,10 @@ class Runtime:
                 raise RuntimeError('sole holder cannot release unsupported bottle')
         with self.servo.lock:start=self.servo.target.copy()
         goal=start.copy();goal[7 if side=='left' else 15]=self.cal['grippers'][side]['open_motor' if opened else 'close_motor']
-        path=retime(start,goal,velocity=.1,acceleration=.2)
-        self.servo.follow(path,self.planner,self.scene(state,contact=('left','right')),guard=self._ambient_guard)
+        path=retime(start,goal,velocity=.1,acceleration=.2,jerk=self.cal['motion']['jerk_rad_s3'])
+        stop_on_hold=None if opened else lambda:side in self.observe()['held_by']
+        self.servo.follow(path,self.planner,self.scene(state,contact=('left','right')),
+            guard=self._ambient_guard,until=stop_on_hold)
 
     def _wait_hold(self,side,wanted=True):
         deadline=time.monotonic()+1.2

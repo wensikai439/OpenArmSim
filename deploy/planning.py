@@ -259,8 +259,9 @@ class Planner:
         for seed in seeds:
             solved=least_squares(residual,np.clip(seed,lo+1e-6,hi-1e-6),bounds=(lo,hi),max_nfev=80)
             goal=full(solved.x);poses=self.tools(goal)
-            if any(np.linalg.norm(poses[s][:3,3]-t[:3,3])>.002 or
-                np.linalg.norm(Rotation.from_matrix(t[:3,:3].T@poses[s][:3,:3]).as_rotvec())>.03 for s,t in targets.items()):continue
-            path=retime(start,goal,velocity=self.motion['velocity_rad_s'],acceleration=self.motion['acceleration_rad_s2'])
+            if any(np.linalg.norm(poses[s][:3,3]-t[:3,3])>.001 or
+                np.linalg.norm(Rotation.from_matrix(t[:3,:3].T@poses[s][:3,:3]).as_rotvec())>.01 for s,t in targets.items()):continue
+            path=retime(start,goal,velocity=self.motion['velocity_rad_s'],acceleration=self.motion['acceleration_rad_s2'],
+                jerk=self.motion['jerk_rad_s3'])
             if self.validate_path([start,*path],scene):return path
         raise RuntimeError('no fully checked path in bounded local IK search; no unchecked fallback')
