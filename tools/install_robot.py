@@ -9,7 +9,16 @@ ROOT=Path(__file__).resolve().parents[1]
 INSTALL=r'''
 from pathlib import Path,PurePosixPath
 import hashlib,io,json,os,sys,zipfile
-root=Path('/home/sj/Desktop/wuji/lerobot_20260116/LLMHarness').resolve()
+root=Path('/home/sj/Desktop/wuji/lerobot_20260116/LLMHarness')
+if root.resolve()!=root:raise ValueError('authorized root must not resolve outside its exact path')
+active=[]
+for proc in Path('/proc').iterdir():
+ if not proc.name.isdigit():continue
+ try:
+  args=(proc/'cmdline').read_bytes().split(b'\0')
+  if any(a==str(root/'app/service.py').encode() for a in args):active.append(proc.name)
+ except (OSError,PermissionError):pass
+if active:raise ValueError('stop and inspect existing harness service before replacing code; PIDs '+str(active))
 archive=zipfile.ZipFile(io.BytesIO(sys.stdin.buffer.read()))
 names=archive.namelist()
 for name in names:
@@ -94,12 +103,16 @@ print(json.dumps(receipt,ensure_ascii=False))
 
 
 def main():
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('archive',type=Path);a=p.parse_args()
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('archive',type=Path)
+    p.add_argument('--record',type=Path,default=ROOT/'runs/20261026-deploy')
+    a=p.parse_args()
+    folder=a.record.resolve()
+    if not folder.is_relative_to(ROOT/'runs'):raise ValueError('deployment record must stay in project runs')
     data=a.archive.read_bytes()
     command='PYTHONDONTWRITEBYTECODE=1 python3 -B -c '+shlex.quote(INSTALL)
     r=subprocess.run(['ssh','-o','BatchMode=yes','data-cs',command],input=data,capture_output=True,check=True)
     receipt=json.loads(r.stdout)
-    folder=ROOT/'runs/20261025-real';folder.mkdir(exist_ok=True)
+    folder.mkdir(parents=True,exist_ok=True)
     (folder/'deployment.json').write_text(json.dumps(receipt,ensure_ascii=False,indent=2)+'\n')
     print(json.dumps(receipt,ensure_ascii=False,indent=2))
 

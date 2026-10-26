@@ -18,11 +18,11 @@ import importlib.metadata
 import signal
 
 try:
-    from .robot import TOOLS,clean,validate_observation,verify
+    from .robot import TOOLS,tools_for,clean,validate_observation,verify
     from .evidence import finite,fresh,relative_target,transform,HoldEvidence,grasp_region
     from .calibration import check as check_calibration
 except ImportError:
-    from robot import TOOLS,clean,validate_observation,verify
+    from robot import TOOLS,tools_for,clean,validate_observation,verify
     from evidence import finite,fresh,relative_target,transform,HoldEvidence,grasp_region
     from calibration import check as check_calibration
 
@@ -161,6 +161,7 @@ class EvidencePipeline:
 class Service:
     def __init__(self,config,readiness,journal,provider=None):
         self.config=config;self.readiness=readiness;self.journal=journal;self.provider=provider
+        self.tools=tools_for(config)
         self.lock=threading.Lock();self.failed=False;self.seen=set();self.calls=0
         self.token=secrets.token_urlsafe(32)
         self.session=None;self.session_deadline=0.;self.session_lock=threading.Lock()
@@ -199,7 +200,7 @@ class Service:
         # motion backend needs independent path/collision/hold/watchdog trials.
         tools=list(self.provider.tools) if self.provider else []
         provider_failure=getattr(self.provider,'failure',None)
-        ready=bool(self.provider and self.readiness['calibration_verified'] and set(TOOLS)<=set(tools) and not self.failed and not provider_failure)
+        ready=bool(self.provider and self.readiness['calibration_verified'] and set(self.tools)<=set(tools) and not self.failed and not provider_failure)
         return {'contract':self.config['robot_contract'],'source':'real_robot' if self.provider else 'disabled_service',
             'calibration_verified':self.readiness['calibration_verified'],
             'hardware_execution_available':ready,'tools':tools,
@@ -222,10 +223,10 @@ class Service:
             if body.get('session_id')!=self.session or self.session is None:raise ValueError('exclusive skill session required')
             if self.expire():raise ValueError('session expired')
             self.session_deadline=time.monotonic()+120
-            if name not in TOOLS:raise ValueError('unknown skill tool')
+            if name not in self.tools:raise ValueError('unknown skill tool')
             ident=body.get('request_id')
             if not isinstance(ident,str) or not ident or ident in self.seen:raise ValueError('missing or duplicate request id; never resend uncertain motion')
-            if len(self.seen)>=64:raise ValueError('tool budget exhausted')
+            if len(self.seen)>=(192 if len(self.tools)>len(TOOLS) else 64):raise ValueError('tool budget exhausted')
             self.seen.add(ident)
             try:state=self.observation()
             except Exception:
@@ -305,8 +306,12 @@ def main():
             previous_term=signal.signal(signal.SIGTERM,interrupted)
             try:
                 if a.devices:
-                    try:from .runtime import Runtime
-                    except ImportError:from runtime import Runtime
+                    if service.config.get('robot_contract')=='openarm-relative-v1/1':
+                        try:from .relative import RelativeRuntime as Runtime
+                        except ImportError:from relative import RelativeRuntime as Runtime
+                    else:
+                        try:from .runtime import Runtime
+                        except ImportError:from runtime import Runtime
                     service.provider=Runtime(ROOT,journal.record)
                     service.provider.open(operator_confirmed=True)
                 print(json.dumps({'service':'http://127.0.0.1:'+str(server.server_port),'devices_started':a.devices,'motion_enabled':a.devices}),flush=True)

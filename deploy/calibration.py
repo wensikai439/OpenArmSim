@@ -19,9 +19,13 @@ CATEGORIES=('camera_extrinsics','object_geometry','gripper_contact','timing','mo
 
 
 def implementation(root):
-    return {name:hashlib.sha256((Path(root)/'app'/(name+'.py')).read_bytes()).hexdigest()
-        for name in ['robot','service','devices','evidence','motion','planning','runtime','calibration']
+    result={name:hashlib.sha256((Path(root)/'app'/(name+'.py')).read_bytes()).hexdigest()
+        for name in ['robot','service','devices','evidence','motion','planning','runtime','relative','calibration']
         if (Path(root)/'app'/(name+'.py')).is_file()}
+    for name in ['app/skill/program.py','config/robot.json']:
+        p=Path(root)/name
+        if p.is_file():result[name]=hashlib.sha256(p.read_bytes()).hexdigest()
+    return result
 
 
 def subject(calibration,hardware,collision,code=None):
@@ -31,6 +35,9 @@ def subject(calibration,hardware,collision,code=None):
 
 def check(cal,hardware,collision,root):
     missing=[]
+    config_path=Path(root)/'config/robot.json'
+    relative_required=(config_path.is_file() and
+        json.loads(config_path.read_text()).get('robot_contract')=='openarm-relative-v1/1')
     def need(name,fn):
         try:
             if fn() is not True:raise ValueError('unverified')
@@ -78,7 +85,17 @@ def check(cal,hardware,collision,root):
         if c['velocity_rad_s']>.15 or c['acceleration_rad_s2']>.3 or c['scene_max_age_s']>.2:return False
         if not c['right_grasps'] or len(c['right_grasps'])>32:return False
         for row in c['right_grasps']:transform(row['T_object_tool'])
-        transform(c['T_bottle_left_tool']);transform(c['T_base_handover_bottle']);transform(c['T_basket_bottle'])
+        transform(c['T_bottle_left_tool']);transform(c['T_basket_bottle'])
+        if 'relative' in c or relative_required:
+            r=c['relative']
+            if r['schema']!='openarm-relative-goals/1' or r['handover_frame']!='session_start_tool_midpoint':return False
+            for name in ['handover_offset_m','donor_retreat_base_m']:
+                vector=finite(r[name],(3,))
+                if np.linalg.norm(vector)>.3:return False
+            if np.linalg.norm(r['donor_retreat_base_m'])<.01:return False
+            if not 0<r['correction_step_m']<=.006 or not 0<r['correction_tolerance_m']<=.003:return False
+            if not 0<r['rotation_tolerance_rad']<=.03 or not 0<r['maximum_target_shift_m']<=.02:return False
+        else:transform(c['T_base_handover_bottle'])
         return bool(c['contact_links']['left']) and bool(c['contact_links']['right']) and isinstance(c['table_mount_links'],list)
     need('measured relative grasp/transfer/place and motion limits',motion)
     need('mesh collision model and full jaw sweep',lambda:isinstance(collision,dict) and collision.get('schema')=='openarm-collision-envelopes/2'

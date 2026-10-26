@@ -126,6 +126,17 @@
       "openarm_left_link0",
       "openarm_right_link0"
     ],
-    "self_collision_margin_m": 0.002
+    "self_collision_margin_m": 0.002,
+    "relative": {
+      "schema": "openarm-relative-goals/1",
+      "handover_frame": "session_start_tool_midpoint",
+      "handover_offset_m": null,
+      "donor_retreat_base_m": null,
+      "correction_step_m": 0.006,
+      "correction_tolerance_m": 0.002,
+      "rotation_tolerance_rad": 0.02,
+      "maximum_target_shift_m": 0.02,
+      "qualification": "software correction bounds from simulation; offsets must be measured and physically accepted; no simulation dimensions or camera matrices imported"
+    }
   }
 }

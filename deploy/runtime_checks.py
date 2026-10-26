@@ -87,7 +87,7 @@ class RuntimeChecks(unittest.TestCase):
         sys.path.insert(0,str(runtime))
         from cap_harness.registry import ToolRegistry
         from cap_harness.runtime import ProgramExecutor
-        program=base/'app/skill/program.py'
+        program=base/'app/skill/legacy.py'
         if not program.is_file():program=base/'skills/bottle_recovery/program.py'
         class Fixture(Runtime):
             def __init__(self,x,fail_receiver):

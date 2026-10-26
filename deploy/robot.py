@@ -21,6 +21,11 @@ ROOT=Path(__file__).resolve().parents[1]
 TOOLS=('observe','propose_grasps','pregrasp','approach','close_gripper','open_gripper',
        'verify_hold','lift','retreat','start_transfer','advance','finish_transfer',
        'start_place','release_on_support')
+RELATIVE_TOOLS=TOOLS+('align_relative','withdraw_donor')
+
+
+def tools_for(config):
+    return RELATIVE_TOOLS if config.get('robot_contract')=='openarm-relative-v1/1' else TOOLS
 
 
 def read(path):return json.loads(Path(path).read_text())
@@ -50,6 +55,7 @@ def request(url,body=None,*,key=None,timeout=15):
 class Robot:
     def __init__(self,config,*,execute=False,transport=request,journal=None):
         self.config=config;self.execute=execute;self.transport=transport;self.calls=0
+        self.tools=tools_for(config)
         self.motion_requests_attempted=0
         self.journal=journal
         self.session_id=None
@@ -69,9 +75,9 @@ class Robot:
         for key,value in [('contract',self.config.get('robot_contract','openarm-body-v4/1')),('source','real_robot'),
                           ('calibration_verified',True),('hardware_execution_available',True)]:
             if info.get(key)!=value:missing.append(key+' not verified')
-        if not set(TOOLS)<=set(info.get('tools',[])):
-            missing.append('14 real tools installed but not active/admitted' if info.get('tool_implementations_included')
-                else '14 real tool implementations required')
+        if not set(self.tools)<=set(info.get('tools',[])):
+            missing.append(str(len(self.tools))+' real tools installed but not active/admitted' if info.get('tool_implementations_included')
+                else str(len(self.tools))+' real tool implementations required')
         missing.extend(x for x in info.get('missing',[]) if x not in missing)
         return {'ready':not missing,'missing':missing,'service':info}
 
@@ -102,17 +108,17 @@ class Robot:
             self.session_request('/session/end',{'session_id':self.session_id});self.session_id=None
 
     def call(self,name,*args,**kwargs):
-        if name not in TOOLS:raise ValueError('unknown real tool')
+        if name not in self.tools:raise ValueError('unknown real tool')
         if name=='observe':return self.observe()
         if not self.execute:raise RuntimeError('motion requires the explicit --execute session option')
         self.calls+=1
-        if self.calls>64:raise RuntimeError('real tool call budget exceeded')
+        if self.calls>(192 if self.tools==RELATIVE_TOOLS else 64):raise RuntimeError('real tool call budget exceeded')
         # Revalidate a fresh real measurement before EVERY tool, not just start.
         state=self.observe()
         if state['terminal'] is not False or state['invalid'] is not False:
             raise RuntimeError('terminal or invalid measured state; motion refused')
         required={'lift':{'right'},'start_transfer':{'right'},
-                  'finish_transfer':{'right','left'},'start_place':{'left'}}
+                  'finish_transfer':{'right','left'},'start_place':{'left'},'withdraw_donor':{'left'}}
         if name in required and set(state['held_by'])!=required[name]:
             raise RuntimeError('measured hold precondition not satisfied for '+name)
         if name in ('lift','start_transfer'):
@@ -208,8 +214,8 @@ def run_skill(robot,folder):
     sys.path.insert(0,str(ROOT/'app/aspire/src'))
     from cap_harness.registry import ToolRegistry
     from cap_harness.runtime import ProgramExecutor
-    registry=ToolRegistry(shared_public_names=TOOLS,public_extension_allowlist=())
-    for name in TOOLS:
+    registry=ToolRegistry(shared_public_names=robot.tools,public_extension_allowlist=())
+    for name in robot.tools:
         def tool(*args,_name=name,**kwargs):return robot.call(_name,*args,**kwargs)
         registry.register(tool,name=name,public=True,layer='shared_high_level',
                           capability='measured real robot only; no reset or simulation')
@@ -302,11 +308,17 @@ def verify():
 
 def main():
     p=argparse.ArgumentParser(description='OpenArm 纯真机 harness；不包含仿真平台')
-    p.add_argument('command',choices=['status','verify','api-test','chat','skill'])
+    p.add_argument('command',choices=['status','verify','api-test','chat','skill','relative'])
     p.add_argument('task',nargs='?',default='右手抓瓶子下半瓶身，交接给左手，然后放进篮子')
     p.add_argument('--execute',action='store_true')
     a=p.parse_args();verify();cfg=read(ROOT/'config/robot.json');robot=Robot(cfg,execute=a.execute)
     if a.command=='verify':result=verify()
+    elif a.command=='relative':
+        from relative import description
+        from service import preflight
+        result={**description(),'readiness':preflight(),
+            'configuration':'config/calibration.json → motion.relative',
+            'entrypoint':'./run chat "右手抓瓶子下半身，交接左手再放入篮子" --execute'}
     elif a.command=='status':
         try:s=settings();api={'configured':True,'model':s['model'],'base_url':s['base_url']}
         except RuntimeError:api={'configured':False}
