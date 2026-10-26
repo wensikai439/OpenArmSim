@@ -1,6 +1,7 @@
 """Adaptive skill contract, evidence gates, and RGB-only cache checks."""
 import ast
 from pathlib import Path
+from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import patch
 
@@ -11,6 +12,20 @@ from .visual_adaptive import AdaptiveWorld, CachedRig
 
 
 class AdaptiveChecks(unittest.TestCase):
+    def test_receiver_search_rejects_unreachable_middle_not_only_endpoints(self):
+        with TemporaryDirectory() as tmp:
+            world=object.__new__(AdaptiveWorld);world._guard=lambda:None;world.output=Path(tmp)
+            world.planning_seed={};world.approach_checks=[];checked=[]
+            def solve(arm,target,rotation):
+                yaw=np.degrees(np.arctan2(rotation[1,2],rotation[0,2]));checked.append((yaw,float(target[1])))
+                if yaw<-80 and .025<target[1]<.045:raise ValueError('middle corridor blocked')
+                return np.zeros(7)
+            world._solve=solve
+            result=world.approach_options('left',[.5,0,1.3],[-85,-75],pitch_deg=-5)
+            self.assertTrue(result['ok']);self.assertEqual(result['yaw_deg'],-75)
+            self.assertEqual(result['rejected'][0]['yaw_deg'],-85)
+            self.assertTrue(result['corridor_checked']);self.assertEqual(world.planning_seed,{})
+
     def simulate(self,*,receiver=True,drop=False,position=(.50,-.21,1.06)):
         state={'left':[.39,.36,1.24],'right':[.33,-.41,1.20]};motors={'left':-1.26,'right':-1.26}
         moves=[];grips=[];close_count=0

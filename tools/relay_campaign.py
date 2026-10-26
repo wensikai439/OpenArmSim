@@ -64,12 +64,16 @@ def main():
     for group in a.groups:
         for spec in splits['groups'][group]:cases.append({**spec,'group':group})
     base=json.loads((ROOT/'skills/bottle_visual/relay/evaluation.json').read_text());sources=list(base['sources'])+[
-        'harness/aspire/visual_adaptive.py','tools/relay_campaign.py',a.program]
+        'harness/aspire/visual_adaptive.py','harness/aspire/adaptive_checks.py','tools/relay_campaign.py',a.program]
     protocol={**base,'schema':'adaptive-rgb-relay/1','program':a.program,'groups':a.groups,'cases':cases,
         'splits_sha256':hashlib.sha256(a.splits.read_bytes()).hexdigest(),
         'sources':{n:hashlib.sha256((ROOT/n).read_bytes()).hexdigest() for n in dict.fromkeys(sources)},
         'training_method':'model-reviewed program and engineered closed-loop controller; no neural/RL training',
         'model_role':'reviewed engineered draft and bounded waits; see campaign model requests',
+        'motion_comparison':{'baseline':'runs/20261026-smooth/validation',
+            'paired_regression_gates':{'all_native_tasks_pass':True,'median_time_change_percent_max':-15,
+                'median_jerk_p95_change_percent_max':10,'median_jerk_rms_change_percent_max':20},
+            'note':'six matched previously used cases; new heldout and stress have no matched previous controller baseline'},
         'recording':'all RGB/keyframe/controller traces; overview video only for predeclared cases'}
     verify(protocol);folder.mkdir(parents=True);(folder/'cases').mkdir();save(folder/'protocol.json',protocol)
     for name in protocol['sources']:

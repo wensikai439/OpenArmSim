@@ -51,7 +51,33 @@ class AdaptiveWorld(RelayWorld):
             view['distance']*=case.get('camera_distance_scale',1.)
             view['lookat'][2]+=case.get('camera_lookat_z_m',0.)
         self.rig.exposure=case.get('exposure',1.)
-        self.rig.lock_target();self.adaptive_trace=[]
+        self.rig.lock_target();self.adaptive_trace=[];self.approach_checks=[]
+
+    def approach_options(self,arm,target_m,yaws_deg,pitch_deg=-15,standoff_m=.07):
+        self._guard();target=np.asarray(target_m,float)
+        if target.shape!=(3,) or not np.isfinite(target).all() or not .03<=standoff_m<=.12 or len(yaws_deg)>8:
+            raise ValueError('bounded target and approach candidates required')
+        rejected=[]
+        for yaw in yaws_deg:
+            theta=np.deg2rad(yaw);up=np.array([0.,0.,1.]);direction=np.array([np.cos(theta),np.sin(theta),0.])
+            rotation=np.column_stack([up,np.cross(direction,up),direction])@Rotation.from_euler('y',pitch_deg,degrees=True).as_matrix()
+            pre=target-standoff_m*rotation[:,2]
+            try:
+                q=self._solve(arm,pre,rotation)
+                # Endpoint feasibility does not imply a feasible insertion
+                # corridor. Search the entire local approach before moving.
+                for f in np.linspace(0,1,max(2,int(np.ceil(standoff_m/.006)))+1)[1:]:
+                    self.planning_seed[arm]=q
+                    q=self._solve(arm,pre+(target-pre)*f,rotation)
+                result={'ok':True,'target_m':target.tolist(),'pre_m':pre.tolist(),'yaw_deg':yaw,
+                    'pitch_deg':pitch_deg,'rejected':rejected,'corridor_checked':True}
+                self.approach_checks.append(result);dump(self.output/'approach-checks.json',self.approach_checks)
+                return result
+            except ValueError as exc:rejected.append({'yaw_deg':yaw,'reason':str(exc)})
+            finally:self.planning_seed.clear()
+        result={'ok':False,'rejected':rejected,'corridor_checked':True}
+        self.approach_checks.append(result);dump(self.output/'approach-checks.json',self.approach_checks)
+        return result
 
     def calibrate_views(self):
         self._guard();self.phase='view_probe'
@@ -81,18 +107,21 @@ class AdaptiveWorld(RelayWorld):
         data.qpos[:]=env.data.qpos;data.qvel[:]=0
         q0=self.planning_seed.get(arm,env.data.qpos[ids]).copy()
         off=0 if arm=='left' else 8;lo=env.action_space.low[off:off+7];hi=env.action_space.high[off:off+7]
-        rng=np.random.default_rng(17);best=1e9
+        rng=np.random.default_rng(17);best=1e9;best_errors=None
         for attempt in range(10):
             data.qpos[ids]=q0 if not attempt else np.clip(q0+rng.normal(0,.65,7),lo,hi)
             for _ in range(240):
                 mujoco.mj_forward(env.model,data);p,r=self.pose(arm,data)
                 dp=target-p;dr=Rotation.from_matrix(rotation@r.T).as_rotvec()
-                best=min(best,float(np.linalg.norm(dp)+.2*np.linalg.norm(dr)))
+                score=float(np.linalg.norm(dp)+.2*np.linalg.norm(dr))
+                if score<best:best=score;best_errors=[float(np.linalg.norm(dp)),float(np.linalg.norm(dr))]
                 if np.linalg.norm(dp)<.0002 and np.linalg.norm(dr)<.006:return data.qpos[ids].copy()
                 jp=np.zeros((3,env.model.nv));jr=np.zeros_like(jp);mujoco.mj_jac(env.model,data,jp,jr,p,body)
                 jac=np.vstack([jp[:,dofs],.2*jr[:,dofs]]);error=np.r_[dp,.2*dr]
                 dq=jac.T@np.linalg.solve(jac@jac.T+.0001*np.eye(6),error)
                 dq*=min(1.,.10/max(np.max(abs(dq)),1e-9));data.qpos[ids]=np.clip(data.qpos[ids]+dq,lo,hi)
+        dump(self.output/'ik-failure.json',{'arm':arm,'phase':self.phase,'target_m':np.asarray(target).tolist(),
+            'position_error_m':best_errors[0],'rotation_error_rad':best_errors[1]})
         raise ValueError('local IK did not converge; best weighted residual '+str(round(best,5)))
 
     def visual_align(self,max_steps=30,yaw_deg=0,pitch_deg=-15,target_pixels=None,offset_m=(0,0,0),step_m=.006,tolerance_px=4.):

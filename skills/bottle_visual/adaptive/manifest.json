@@ -3,9 +3,35 @@
   "version": 4,
   "admitted": false,
   "development_results": {
-    "passed": 22,
-    "total": 24
+    "round_1": {
+      "passed": 22,
+      "total": 24
+    },
+    "round_2": {
+      "passed": 24,
+      "total": 24
+    },
+    "regression": {
+      "passed": 6,
+      "total": 6
+    }
   },
-  "scope": "development only; heldout untouched; no hardware",
-  "report": "runs/20261026-adaptive/development/round-1/index.html"
+  "scope": "frozen candidate; heldout pending; no hardware",
+  "report": "runs/20261026-adaptive/development/round-1/index.html",
+  "program_sha256": "cd4011ec50313b92d437575dcc465f0b4cbeb5bc3fe61c223d4daecee33dab54",
+  "runtime_sources": {
+    "harness/aspire/visual_relay.py": "a7834b3ecd9e32dea5394ce86babb77615c4890362d066b265e4c32764cf5b5e",
+    "harness/aspire/visual_geometry.py": "c119b3755d5c9b8aabea46c4fe2fbcf9b82722616f4b27b89debb780a914490e",
+    "harness/aspire/visual.py": "8c880dc9b16b9f2eed2407ebe5335f57a16c213c42ff360c4be22207400929f8",
+    "harness/aspire/visual_control.py": "285a368672c941d259d8f36d943061252e3ec1853154c260f9ea743763a75dc6",
+    "tools/relay_benchmark.py": "166685cf375eb3e825802c3f8237b6742389ae30ac85820a9dfac1a119ad6577",
+    "tools/visual_benchmark.py": "d5b167921f5e559fabc8656bf6c42544115697d2b56941298a494c07dfaad0da",
+    "skills/bottle_visual/relay/program.py": "0f46058ad163abc63a8211ce2c27f86290a98483d3e23001e94fe60f14a46993",
+    "harness/aspire/visual_relay_checks.py": "e7a0020d6178b33c7ded3215dec7408e7b8e265feab434071f5323233033ff51",
+    "tools/relay_motion.py": "e0e2e4d908dd0e9c00bf312b12d2eb0e852621168721e6c56c63b48ae2bb5c19",
+    "harness/aspire/visual_adaptive.py": "8b18e8a87b6414fbe8c1b446e69e101f509871e036f6fde82e72b9ea0d4eb639",
+    "harness/aspire/adaptive_checks.py": "c8f7dd1597a30b6265b35e88e685e6c6e07519264ee17166ffefda235e92be98",
+    "tools/relay_campaign.py": "fb87ef0998ff64025a70ca9062f6b6e0c6b90bd408af1a45f192aab026fd853a",
+    "skills/bottle_visual/adaptive/program.py": "cd4011ec50313b92d437575dcc465f0b4cbeb5bc3fe61c223d4daecee33dab54"
+  }
 }
