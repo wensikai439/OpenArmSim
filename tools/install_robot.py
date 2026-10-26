@@ -37,7 +37,11 @@ private=root/'.private/api.json';private_before=hashlib.sha256(private.read_byte
 def snapshot():
  result={}
  for name,old in baseline.items():
-  p=Path(name);st=p.stat();row={'size':st.st_size,'mtime_ns':st.st_mtime_ns,'mode':st.st_mode}
+  p=Path(name)
+  try:st=p.stat()
+  except FileNotFoundError:
+   result[name]={'exists':False,'symlink':p.is_symlink()};continue
+  row={'exists':True,'size':st.st_size,'mtime_ns':st.st_mtime_ns,'mode':st.st_mode}
   if 'sha256' in old:row['sha256']=hashlib.sha256(p.read_bytes()).hexdigest()
   result[name]=row
  return result
@@ -92,6 +96,7 @@ if not same_api:raise ValueError('private API changed')
 receipt={'schema':'openarm-install/3','runtime_release':manifest.get('runtime_release'),'source_commit':manifest['source_commit'],
  'installed_files':len(manifest['files']),'simulator_included':False,'hardware_access':False,
  'devices_started':False,'motion_commands':0,'protected_files_checked':len(before),
+ 'protected_files_missing_before':[name for name,row in before.items() if row.get('exists') is False],
  'protected_files_changed':changed,'same_api_preserved':same_api,
  'root_entries':sorted(p.name for p in root.iterdir()),
  'real_tool_implementation_included':True,'real_perception_connected':False,'real_motion_provider_admitted':False,
@@ -104,13 +109,14 @@ print(json.dumps(receipt,ensure_ascii=False))
 
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('archive',type=Path)
-    p.add_argument('--record',type=Path,default=ROOT/'runs/20261026-deploy')
+    p.add_argument('--record',type=Path,default=ROOT/'runs/20261026-ready')
     a=p.parse_args()
     folder=a.record.resolve()
     if not folder.is_relative_to(ROOT/'runs'):raise ValueError('deployment record must stay in project runs')
     data=a.archive.read_bytes()
     command='PYTHONDONTWRITEBYTECODE=1 python3 -B -c '+shlex.quote(INSTALL)
-    r=subprocess.run(['ssh','-o','BatchMode=yes','data-cs',command],input=data,capture_output=True,check=True)
+    r=subprocess.run(['ssh','-o','BatchMode=yes','data-cs',command],input=data,capture_output=True)
+    if r.returncode:raise RuntimeError('robot installation failed: '+r.stderr.decode(errors='replace')[-2000:])
     receipt=json.loads(r.stdout)
     folder.mkdir(parents=True,exist_ok=True)
     (folder/'deployment.json').write_text(json.dumps(receipt,ensure_ascii=False,indent=2)+'\n')
