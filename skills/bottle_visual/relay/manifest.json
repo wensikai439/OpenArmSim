@@ -3,7 +3,7 @@
   "version": 3,
   "admitted": true,
   "admission_scope": "local simulation complete skill; independent entry; not main-chat default or hardware certified",
-  "entrypoint": "./run relay",
+  "entrypoint": "./run relay-v3",
   "program_sha256": "0f46058ad163abc63a8211ce2c27f86290a98483d3e23001e94fe60f14a46993",
   "runtime_sources": {
     "harness/aspire/visual_relay.py": "a7834b3ecd9e32dea5394ce86babb77615c4890362d066b265e4c32764cf5b5e",

@@ -1,7 +1,7 @@
 {
   "schema": "adaptive-visual-relay/1",
   "version": 4,
-  "admitted": false,
+  "admitted": true,
   "development_results": {
     "round_1": {
       "passed": 22,
@@ -16,7 +16,7 @@
       "total": 6
     }
   },
-  "scope": "frozen candidate; heldout pending; no hardware",
+  "scope": "known scene conditional generalization; boundary failures retained; not an all-positions guarantee",
   "report": "runs/20261026-adaptive/development/round-1/index.html",
   "program_sha256": "cd4011ec50313b92d437575dcc465f0b4cbeb5bc3fe61c223d4daecee33dab54",
   "runtime_sources": {
@@ -33,5 +33,82 @@
     "harness/aspire/adaptive_checks.py": "c8f7dd1597a30b6265b35e88e685e6c6e07519264ee17166ffefda235e92be98",
     "tools/relay_campaign.py": "fb87ef0998ff64025a70ca9062f6b6e0c6b90bd408af1a45f192aab026fd853a",
     "skills/bottle_visual/adaptive/program.py": "cd4011ec50313b92d437575dcc465f0b4cbeb5bc3fe61c223d4daecee33dab54"
-  }
+  },
+  "admission_scope": "local simulation on declared conditions; independent entry; no hardware certification",
+  "entrypoint": "./run relay",
+  "previous_baseline_entrypoint": "./run relay-v3",
+  "entrypoint_sha256": "5e009e9b6f030c9843324fe9ee2f99fa4ef9c7011bff55f5a0f2c129eccd1415",
+  "scenario_sha256": "1430bf418e160bdc596febcc137d4bdebcb6d1c18d2fb6502a2e57e17e1b5969",
+  "latest_results": {
+    "groups": {
+      "development": {
+        "passed": 24,
+        "total": 24,
+        "median_seconds": 58.53349999995429,
+        "min_seconds": 53.83299999996524,
+        "max_seconds": 67.03299999995602,
+        "failures": []
+      },
+      "regression": {
+        "passed": 6,
+        "total": 6,
+        "median_seconds": 56.633499999958715,
+        "min_seconds": 54.232999999964306,
+        "max_seconds": 67.63299999995888,
+        "failures": []
+      },
+      "heldout": {
+        "passed": 40,
+        "total": 40,
+        "median_seconds": 58.382999999954635,
+        "min_seconds": 53.73299999996547,
+        "max_seconds": 66.89999999995538,
+        "failures": []
+      },
+      "stress": {
+        "passed": 10,
+        "total": 12,
+        "median_seconds": 58.04999999995541,
+        "min_seconds": 55.99999999996019,
+        "max_seconds": 66.399999999953,
+        "failures": [
+          {
+            "name": "stress-02",
+            "error": "execution_failed: program execution failed: ValueError: local IK did not converge; best weighted residual 0.00236"
+          },
+          {
+            "name": "stress-08",
+            "error": "execution_failed: program execution failed: ValueError: local IK did not converge; best weighted residual 0.00197"
+          }
+        ]
+      }
+    },
+    "motion": {
+      "median_time_change_percent": -19.632826470063435,
+      "median_jerk_p95_change_percent": -20.598739523711032,
+      "median_jerk_rms_change_percent": 8.503257174381273,
+      "gates_passed": true
+    },
+    "simulations_total": 110,
+    "distinct_declared_conditions": 82,
+    "report": "runs/20261026-adaptive/index.html"
+  },
+  "training_method": "program refinement, measured closed-loop controller engineering, and simulation evaluation; no neural/RL training",
+  "model_role": "review of engineered program and bounded waits; not per-control-cycle inference or neural training",
+  "model_api_usage": {
+    "requests": 1,
+    "reported_tokens": 5750
+  },
+  "sensor_scope": "known upright black bottle, fixed white basket, two synthetic RGB views and virtual tool marks; no hardware",
+  "hardware_enabled": false,
+  "transfer_ready": false,
+  "neural_training": false,
+  "legacy_tamp_calls": 0,
+  "official_runtime": "NVlabs/ASPIRE ProgramExecutor + ToolRegistry",
+  "official_source_commit": "fa00f0ef2bc1d91d594b9aa502c22133c9f538f7",
+  "test_protocols": [
+    "runs/20261026-adaptive/development/round-2/protocol.json",
+    "runs/20261026-adaptive/validation/protocol.json"
+  ],
+  "remaining_failure": "stress-02 and stress-08: right-hand fixed-orientation local IK fails during final visual approach at bottle [0.54,-0.26]; no motion reset or success claim"
 }

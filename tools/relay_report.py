@@ -56,9 +56,10 @@ def main():
         plots.append(f'<g transform="translate({len(plots)%2*470},{len(plots)//2*295})"><text x="55" y="25" fill="#625b50" font-size="15">{group} {groups[group]["passed"]}/{groups[group]["total"]}</text><path d="M55 45V245H415" stroke="#cfc5b6" fill="none"/><text x="55" y="267">x 0.45 m</text><text x="343" y="267">0.55 m</text><text x="3" y="50">−0.15</text><text x="3" y="248">−0.27</text>'+''.join(points)+'</g>')
     (root/'coverage.svg').write_text('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 590" style="font:12px system-ui;background:#fffefa;color:#8d8171">'+''.join(plots)+'</svg>')
     table=[]
+    labels={'development':'开发调优','regression':'配对回归','heldout':'新留出','stress':'边界压力'}
     for group,g in groups.items():
         seconds=f'{g["median_seconds"]:.1f} 秒' if g['median_seconds'] is not None else '—'
-        table.append(f'<tr><td>{group}</td><td>{g["passed"]} / {g["total"]}</td><td>{seconds}</td></tr>')
+        table.append(f'<tr><td>{labels[group]}</td><td>{g["passed"]} / {g["total"]}</td><td>{seconds}</td></tr>')
     failures=[r for r in validation['cases'] if not r['full_task_success']]
     failure_text='；'.join(html.escape(r['name']+': '+str(r.get('error'))) for r in failures) or '本次留出与压力测试没有执行失败。'
     held=groups['heldout'];reg=groups['regression'];stress=groups['stress']
@@ -71,6 +72,9 @@ def main():
     page+='''<div class="links"><a href="validation/index.html">查看全部新测试与失败 →</a><a href="development/round-2/index.html">开发与配对回归 →</a><a href="../20261026-smooth/index.html">上一版录像 →</a></div>
     <details><summary>泛化覆盖与失败位置</summary><img src="coverage.svg" alt="全部声明瓶位与测试结果；红色为失败"/><p>开发与留出位置采用分层采样，额外联合改变相机公共及独立角度、距离、曝光、像素噪声与首次闭爪丢失。相机与物体在每次任务内仍保持固定，瓶型、尺寸、篮子和机器人动力学保持不变。</p><p>'''+failure_text+'</p></details>'
     page+=f'''<details><summary>关键调优过程与运动数据</summary><p>第一轮开发 22/24；两例暴露“目标点可达，但中间接近路径不可达”。修正为整段走廊检查后，重新跑全部开发条件。没有放宽 IK 精度、8 mm 实际到位检查或原生接触评分。</p><p>六例配对：耗时中位变化 {motion['median_time_change_percent']:+.1f}%；实际关节 jerk 95 分位变化 {motion['median_jerk_p95_change_percent']:+.1f}%，RMS 变化 {motion['median_jerk_rms_change_percent']:+.1f}%。运动与接触指标均由原始实测关节记录计算，不以视频观感代替。</p><p>Haiku API {summary['model_requests']} 次，服务报告 {summary['model_reported_tokens']:,} token（不包含 Codex 自身用量）；模型审阅工程程序并调整有界等待，底层视觉与控制器由工程实现。不是每个控制周期调用 API，也没有训练神经网络。</p><p><a href="记录.md">实验记录</a> · <a href="analysis.json">完整统计与配对指标</a> · <a href="splits.json">预声明场景</a> · <a href="model/review.json">模型修改审查</a></p></details><footer>仅本地仿真 · 官方 ASPIRE 执行器与工具注册 · 旧 TAMP 演示保留 · 真机未操作</footer></main></html>'''
+    failure_video=root/'validation/stress-08/rollout.mp4'
+    if failure_video.exists():
+        page=page.replace('<footer>', '<details><summary>边界失败录像（未计为成功）</summary><video controls playsinline preload="metadata" src="validation/stress-08/rollout.mp4"></video><p>瓶位 [0.54, −0.26]，相机公共偏角 +10°：右手固定朝向的精细接近 IK 未收敛，程序停止；没有放宽门槛、重置物体或计为成功。</p></details><footer>')
     (root/'index.html').write_text(page)
     print(json.dumps({'groups':groups,'motion':motion},ensure_ascii=False))
 

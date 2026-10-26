@@ -13,6 +13,10 @@ fi
 case "$1" in
   relay)
     shift
+    exec .venv/bin/python -B -m harness.aspire.visual_adaptive "$@"
+    ;;
+  relay-v3)
+    shift
     exec .venv/bin/python -B -m harness.aspire.visual_relay "$@"
     ;;
   visual)

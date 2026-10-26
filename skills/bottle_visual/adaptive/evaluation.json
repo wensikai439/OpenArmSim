@@ -1,0 +1,1700 @@
+{
+  "schema": "adaptive-relay-splits/1",
+  "declared_before_development": true,
+  "groups": {
+    "regression": [
+      {
+        "name": "nominal",
+        "label": "完整动作回归",
+        "group": "paired-regression-v3",
+        "case": {
+          "seed": 2300,
+          "bottle_xy_m": [
+            0.5,
+            -0.21
+          ]
+        }
+      },
+      {
+        "name": "previous-stop",
+        "label": "旧运输偏差反例回归",
+        "group": "paired-regression-v3",
+        "case": {
+          "seed": 2203,
+          "bottle_xy_m": [
+            0.492,
+            -0.188
+          ]
+        }
+      },
+      {
+        "name": "new-1",
+        "label": "偏移瓶位 A",
+        "group": "paired-regression-v3",
+        "case": {
+          "seed": 2301,
+          "bottle_xy_m": [
+            0.489,
+            -0.224
+          ],
+          "camera_yaw_deg": 0,
+          "close_drop_once": false,
+          "pixel_noise": 0
+        }
+      },
+      {
+        "name": "new-2",
+        "label": "偏移瓶位 B",
+        "group": "paired-regression-v3",
+        "case": {
+          "seed": 2302,
+          "bottle_xy_m": [
+            0.509,
+            -0.196
+          ],
+          "camera_yaw_deg": 0,
+          "close_drop_once": false,
+          "pixel_noise": 0
+        }
+      },
+      {
+        "name": "new-3",
+        "label": "偏移瓶位与视角 +3°",
+        "group": "paired-regression-v3",
+        "case": {
+          "seed": 2303,
+          "bottle_xy_m": [
+            0.494,
+            -0.184
+          ],
+          "camera_yaw_deg": 3,
+          "close_drop_once": false,
+          "pixel_noise": 0
+        }
+      },
+      {
+        "name": "new-4",
+        "label": "偏移瓶位、视角 −3° 与闭爪丢失",
+        "group": "paired-regression-v3",
+        "case": {
+          "seed": 2304,
+          "bottle_xy_m": [
+            0.503,
+            -0.232
+          ],
+          "camera_yaw_deg": -3,
+          "close_drop_once": true,
+          "pixel_noise": 0.1
+        }
+      }
+    ],
+    "development": [
+      {
+        "name": "development-01",
+        "label": "development 01",
+        "group": "development",
+        "case": {
+          "seed": 4100,
+          "bottle_xy_m": [
+            0.50218,
+            -0.23298
+          ],
+          "camera_yaw_deg": -2.297,
+          "camera_delta_deg": [
+            -0.93,
+            -0.783
+          ],
+          "camera_distance_scale": 1.042,
+          "exposure": 0.9334,
+          "pixel_noise": 0.022,
+          "close_drop_once": true,
+          "record_video": false
+        }
+      },
+      {
+        "name": "development-02",
+        "label": "development 02",
+        "group": "development",
+        "case": {
+          "seed": 4101,
+          "bottle_xy_m": [
+            0.47063,
+            -0.24103
+          ],
+          "camera_yaw_deg": 4.553,
+          "camera_delta_deg": [
+            1.278,
+            0.589
+          ],
+          "camera_distance_scale": 0.9878,
+          "exposure": 1.0206,
+          "pixel_noise": 0.294,
+          "close_drop_once": false,
+          "record_video": false
+        }
+      },
+      {
+        "name": "development-03",
+        "label": "development 03",
+        "group": "development",
+        "case": {
+          "seed": 4102,
+          "bottle_xy_m": [
+            0.5182,
+            -0.18931
+          ],
+          "camera_yaw_deg": 5.501,
+          "camera_delta_deg": [
+            -1.385,
+            -1.235
+          ],
+          "camera_distance_scale": 0.9961,
+          "exposure": 0.9788,
+          "pixel_noise": 0.184,
+          "close_drop_once": false,
+          "record_video": false
+        }
+      },
+      {
+        "name": "development-04",
+        "label": "development 04",
+        "group": "development",
+        "case": {
+          "seed": 4103,
+          "bottle_xy_m": [
+            0.50847,
+            -0.21857
+          ],
+          "camera_yaw_deg": -2.569,
+          "camera_delta_deg": [
+            0.847,
+            0.314
+          ],
+          "camera_distance_scale": 0.9656,
+          "exposure": 0.9494,
+          "pixel_noise": 0.195,
+          "close_drop_once": false,
+          "record_video": false
+        }
+      },
+      {
+        "name": "development-05",
+        "label": "development 05",
+        "group": "development",
+        "case": {
+          "seed": 4104,
+          "bottle_xy_m": [
+            0.52745,
+            -0.21346
+          ],
+          "camera_yaw_deg": -3.905,
+          "camera_delta_deg": [
+            0.139,
+            1.688
+          ],
+          "camera_distance_scale": 0.9696,
+          "exposure": 0.9393,
+          "pixel_noise": 0.042,
+          "close_drop_once": false,
+          "record_video": false
+        }
+      },
+      {
+        "name": "development-06",
+        "label": "development 06",
+        "group": "development",
+        "case": {
+          "seed": 4105,
+          "bottle_xy_m": [
+            0.49731,
+            -0.1713
+          ],
+          "camera_yaw_deg": 5.319,
+          "camera_delta_deg": [
+            0.516,
+            -0.977
+          ],
+          "camera_distance_scale": 1.0251,
+          "exposure": 0.9629,
+          "pixel_noise": 0.087,
+          "close_drop_once": true,
+          "record_video": false
+        }
+      },
+      {
+        "name": "development-07",
+        "label": "development 07",
+        "group": "development",
+        "case": {
+          "seed": 4106,
+          "bottle_xy_m": [
+            0.47876,
+            -0.19206
+          ],
+          "camera_yaw_deg": -5.551,
+          "camera_delta_deg": [
+            -0.802,
+            1.035
+          ],
+          "camera_distance_scale": 1.0242,
+          "exposure": 0.9985,
+          "pixel_noise": 0.132,
+          "close_drop_once": false,
+          "record_video": false
+        }
+      },
+      {
+        "name": "development-08",
+        "label": "development 08",
+        "group": "development",
+        "case": {
+          "seed": 4107,
+          "bottle_xy_m": [
+            0.49003,
+            -0.21291
+          ],
+          "camera_yaw_deg": 2.323,
+          "camera_delta_deg": [
+            -0.018,
+            1.206
+          ],
+          "camera_distance_scale": 0.995,
+          "exposure": 0.9866,
+          "pixel_noise": 0.242,
+          "close_drop_once": false,
+          "record_video": false
+        }
+      },
+      {
+        "name": "development-09",
+        "label": "development 09",
+        "group": "development",
+        "case": {
+          "seed": 4108,
+          "bottle_xy_m": [
+            0.50682,
+            -0.22723
+          ],
+          "camera_yaw_deg": 0.752,
+          "camera_delta_deg": [
+            0.783,
+            -0.461
+          ],
+          "camera_distance_scale": 1.0183,
+          "exposure": 0.9557,
+          "pixel_noise": 0.073,
+          "close_drop_once": false,
+          "record_video": false
+        }
+      },
+      {
+        "name": "development-10",
+        "label": "development 10",
+        "group": "development",
+        "case": {
+          "seed": 4109,
+          "bottle_xy_m": [
+            0.52297,
+            -0.20702
+          ],
+          "camera_yaw_deg": 3.285,
+          "camera_delta_deg": [
+            -0.589,
+            -0.082
+          ],
+          "camera_distance_scale": 0.9775,
+          "exposure": 1.0063,
+          "pixel_noise": 0.213,
+          "close_drop_once": false,
+          "record_video": false
+        }
+      },
+      {
+        "name": "development-11",
+        "label": "development 11",
+        "group": "development",
+        "case": {
+          "seed": 4110,
+          "bottle_xy_m": [
+            0.51131,
+            -0.23612
+          ],
+          "camera_yaw_deg": 4.324,
+          "camera_delta_deg": [
+            -1.272,
+            -0.287
+          ],
+          "camera_distance_scale": 1.0053,
+          "exposure": 1.0272,
+          "pixel_noise": 0.156,
+          "close_drop_once": true,
+          "record_video": false
+        }
+      },
+      {
+        "name": "development-12",
+        "label": "development 12",
+        "group": "development",
+        "case": {
+          "seed": 4111,
+          "bottle_xy_m": [
+            0.49808,
+            -0.22465
+          ],
+          "camera_yaw_deg": -5.338,
+          "camera_delta_deg": [
+            1.711,
+            0.97
+          ],
+          "camera_distance_scale": 0.9506,
+          "exposure": 1.0318,
+          "pixel_noise": 0.104,
+          "close_drop_once": false,
+          "record_video": false
+        }
+      },
+      {
+        "name": "development-13",
+        "label": "development 13",
+        "group": "development",
+        "case": {
+          "seed": 4112,
+          "bottle_xy_m": [
+            0.51298,
+            -0.17852
+          ],
+          "camera_yaw_deg": -0.563,
+          "camera_delta_deg": [
+            -0.31,
+            1.66
+          ],
+          "camera_distance_scale": 1.0329,
+          "exposure": 0.9686,
+          "pixel_noise": 0.012,
+          "close_drop_once": false,
+          "record_video": false
+        }
+      },
+      {
+        "name": "development-14",
+        "label": "development 14",
+        "group": "development",
+        "case": {
+          "seed": 4113,
+          "bottle_xy_m": [
+            0.52869,
+            -0.23752
+          ],
+          "camera_yaw_deg": 1.9,
+          "camera_delta_deg": [
+            0.471,
+            -1.398
+          ],
+          "camera_distance_scale": 0.9557,
+          "exposure": 1.048,
+          "pixel_noise": 0.262,
+          "close_drop_once": false,
+          "record_video": false
+        }
+      },
+      {
+        "name": "development-15",
+        "label": "development 15",
+        "group": "development",
+        "case": {
+          "seed": 4114,
+          "bottle_xy_m": [
+            0.48279,
+            -0.20172
+          ],
+          "camera_yaw_deg": 1.268,
+          "camera_delta_deg": [
+            -1.165,
+            -1.915
+          ],
+          "camera_distance_scale": 0.9847,
+          "exposure": 0.9529,
+          "pixel_noise": 0.237,
+          "close_drop_once": false,
+          "record_video": false
+        }
+      },
+      {
+        "name": "development-16",
+        "label": "development 16",
+        "group": "development",
+        "case": {
+          "seed": 4115,
+          "bottle_xy_m": [
+            0.48161,
+            -0.20549
+          ],
+          "camera_yaw_deg": -4.428,
+          "camera_delta_deg": [
+            -0.493,
+            -1.018
+          ],
+          "camera_distance_scale": 1.0008,
+          "exposure": 0.9918,
+          "pixel_noise": 0.203,
+          "close_drop_once": true,
+          "record_video": false
+        }
+      },
+      {
+        "name": "development-17",
+        "label": "development 17",
+        "group": "development",
+        "case": {
+          "seed": 4116,
+          "bottle_xy_m": [
+            0.494,
+            -0.18102
+          ],
+          "camera_yaw_deg": -0.154,
+          "camera_delta_deg": [
+            1.941,
+            0.161
+          ],
+          "camera_distance_scale": 1.0166,
+          "exposure": 1.0018,
+          "pixel_noise": 0.094,
+          "close_drop_once": false,
+          "record_video": false
+        }
+      },
+      {
+        "name": "development-18",
+        "label": "development 18",
+        "group": "development",
+        "case": {
+          "seed": 4117,
+          "bottle_xy_m": [
+            0.4897,
+            -0.19764
+          ],
+          "camera_yaw_deg": -1.793,
+          "camera_delta_deg": [
+            1.059,
+            0.485
+          ],
+          "camera_distance_scale": 1.0499,
+          "exposure": 1.0428,
+          "pixel_noise": 0.172,
+          "close_drop_once": false,
+          "record_video": false
+        }
+      },
+      {
+        "name": "development-19",
+        "label": "development 19",
+        "group": "development",
+        "case": {
+          "seed": 4118,
+          "bottle_xy_m": [
+            0.51561,
+            -0.19418
+          ],
+          "camera_yaw_deg": -4.761,
+          "camera_delta_deg": [
+            -1.939,
+            -1.647
+          ],
+          "camera_distance_scale": 0.9711,
+          "exposure": 1.0376,
+          "pixel_noise": 0.118,
+          "close_drop_once": false,
+          "record_video": false
+        }
+      },
+      {
+        "name": "development-20",
+        "label": "development 20",
+        "group": "development",
+        "case": {
+          "seed": 4119,
+          "bottle_xy_m": [
+            0.52053,
+            -0.24902
+          ],
+          "camera_yaw_deg": -1.176,
+          "camera_delta_deg": [
+            0.282,
+            -1.73
+          ],
+          "camera_distance_scale": 1.0105,
+          "exposure": 0.9848,
+          "pixel_noise": 0.026,
+          "close_drop_once": false,
+          "record_video": false
+        }
+      },
+      {
+        "name": "development-21",
+        "label": "development 21",
+        "group": "development",
+        "case": {
+          "seed": 4120,
+          "bottle_xy_m": [
+            0.50497,
+            -0.18552
+          ],
+          "camera_yaw_deg": 2.887,
+          "camera_delta_deg": [
+            -1.783,
+            1.853
+          ],
+          "camera_distance_scale": 0.9609,
+          "exposure": 0.974,
+          "pixel_noise": 0.279,
+          "close_drop_once": true,
+          "record_video": false
+        }
+      },
+      {
+        "name": "development-22",
+        "label": "development 22",
+        "group": "development",
+        "case": {
+          "seed": 4121,
+          "bottle_xy_m": [
+            0.47456,
+            -0.24609
+          ],
+          "camera_yaw_deg": 0.19,
+          "camera_delta_deg": [
+            1.394,
+            -0.544
+          ],
+          "camera_distance_scale": 0.9831,
+          "exposure": 1.0182,
+          "pixel_noise": 0.149,
+          "close_drop_once": false,
+          "record_video": false
+        }
+      },
+      {
+        "name": "development-23",
+        "label": "development 23",
+        "group": "development",
+        "case": {
+          "seed": 4122,
+          "bottle_xy_m": [
+            0.47737,
+            -0.17589
+          ],
+          "camera_yaw_deg": -3.011,
+          "camera_delta_deg": [
+            1.504,
+            0.83
+          ],
+          "camera_distance_scale": 1.0347,
+          "exposure": 0.9436,
+          "pixel_noise": 0.268,
+          "close_drop_once": false,
+          "record_video": false
+        }
+      },
+      {
+        "name": "development-24",
+        "label": "development 24",
+        "group": "development",
+        "case": {
+          "seed": 4123,
+          "bottle_xy_m": [
+            0.48668,
+            -0.22234
+          ],
+          "camera_yaw_deg": 3.545,
+          "camera_delta_deg": [
+            -1.602,
+            1.371
+          ],
+          "camera_distance_scale": 1.0403,
+          "exposure": 1.0108,
+          "pixel_noise": 0.058,
+          "close_drop_once": false,
+          "record_video": false
+        }
+      }
+    ],
+    "heldout": [
+      {
+        "name": "heldout-01",
+        "label": "heldout 01",
+        "group": "heldout",
+        "case": {
+          "seed": 5100,
+          "bottle_xy_m": [
+            0.49691,
+            -0.17552
+          ],
+          "camera_yaw_deg": 0.472,
+          "camera_delta_deg": [
+            0.833,
+            -0.494
+          ],
+          "camera_distance_scale": 1.0301,
+          "exposure": 0.9328,
+          "pixel_noise": 0.346,
+          "close_drop_once": true,
+          "record_video": true
+        }
+      },
+      {
+        "name": "heldout-02",
+        "label": "heldout 02",
+        "group": "heldout",
+        "case": {
+          "seed": 5101,
+          "bottle_xy_m": [
+            0.47723,
+            -0.22978
+          ],
+          "camera_yaw_deg": -5.048,
+          "camera_delta_deg": [
+            1.207,
+            -0.664
+          ],
+          "camera_distance_scale": 0.9999,
+          "exposure": 0.9953,
+          "pixel_noise": 0.044,
+          "close_drop_once": false,
+          "record_video": false
+        }
+      },
+      {
+        "name": "heldout-03",
+        "label": "heldout 03",
+        "group": "heldout",
+        "case": {
+          "seed": 5102,
+          "bottle_xy_m": [
+            0.49009,
+            -0.23751
+          ],
+          "camera_yaw_deg": 2.362,
+          "camera_delta_deg": [
+            1.486,
+            0.054
+          ],
+          "camera_distance_scale": 0.9792,
+          "exposure": 1.0422,
+          "pixel_noise": 0.055,
+          "close_drop_once": false,
+          "record_video": false
+        }
+      },
+      {
+        "name": "heldout-04",
+        "label": "heldout 04",
+        "group": "heldout",
+        "case": {
+          "seed": 5103,
+          "bottle_xy_m": [
+            0.47033,
+            -0.16658
+          ],
+          "camera_yaw_deg": 1.172,
+          "camera_delta_deg": [
+            -0.848,
+            -0.751
+          ],
+          "camera_distance_scale": 1.0211,
+          "exposure": 1.0056,
+          "pixel_noise": 0.022,
+          "close_drop_once": false,
+          "record_video": false
+        }
+      },
+      {
+        "name": "heldout-05",
+        "label": "heldout 05",
+        "group": "heldout",
+        "case": {
+          "seed": 5104,
+          "bottle_xy_m": [
+            0.49491,
+            -0.2367
+          ],
+          "camera_yaw_deg": 7.699,
+          "camera_delta_deg": [
+            -0.465,
+            1.545
+          ],
+          "camera_distance_scale": 0.9629,
+          "exposure": 0.9845,
+          "pixel_noise": 0.268,
+          "close_drop_once": false,
+          "record_video": false
+        }
+      },
+      {
+        "name": "heldout-06",
+        "label": "heldout 06",
+        "group": "heldout",
+        "case": {
+          "seed": 5105,
+          "bottle_xy_m": [
+            0.52601,
+            -0.17191
+          ],
+          "camera_yaw_deg": -2.576,
+          "camera_delta_deg": [
+            1.109,
+            0.886
+          ],
+          "camera_distance_scale": 1.0063,
+          "exposure": 1.0172,
+          "pixel_noise": 0.309,
+          "close_drop_once": true,
+          "record_video": false
+        }
+      },
+      {
+        "name": "heldout-07",
+        "label": "heldout 07",
+        "group": "heldout",
+        "case": {
+          "seed": 5106,
+          "bottle_xy_m": [
+            0.47201,
+            -0.20797
+          ],
+          "camera_yaw_deg": -0.95,
+          "camera_delta_deg": [
+            1.774,
+            -1.38
+          ],
+          "camera_distance_scale": 0.9824,
+          "exposure": 1.0482,
+          "pixel_noise": 0.191,
+          "close_drop_once": false,
+          "record_video": false
+        }
+      },
+      {
+        "name": "heldout-08",
+        "label": "heldout 08",
+        "group": "heldout",
+        "case": {
+          "seed": 5107,
+          "bottle_xy_m": [
+            0.49251,
+            -0.20737
+          ],
+          "camera_yaw_deg": -1.794,
+          "camera_delta_deg": [
+            -1.545,
+            -1.52
+          ],
+          "camera_distance_scale": 0.9536,
+          "exposure": 0.9972,
+          "pixel_noise": 0.081,
+          "close_drop_once": false,
+          "record_video": false
+        }
+      },
+      {
+        "name": "heldout-09",
+        "label": "heldout 09",
+        "group": "heldout",
+        "case": {
+          "seed": 5108,
+          "bottle_xy_m": [
+            0.48787,
+            -0.19654
+          ],
+          "camera_yaw_deg": -7.987,
+          "camera_delta_deg": [
+            -1.456,
+            0.496
+          ],
+          "camera_distance_scale": 1.0329,
+          "exposure": 0.9888,
+          "pixel_noise": 0.072,
+          "close_drop_once": false,
+          "record_video": false
+        }
+      },
+      {
+        "name": "heldout-10",
+        "label": "heldout 10",
+        "group": "heldout",
+        "case": {
+          "seed": 5109,
+          "bottle_xy_m": [
+            0.46536,
+            -0.25457
+          ],
+          "camera_yaw_deg": -6.244,
+          "camera_delta_deg": [
+            -1.753,
+            0.746
+          ],
+          "camera_distance_scale": 0.9754,
+          "exposure": 0.9362,
+          "pixel_noise": 0.116,
+          "close_drop_once": false,
+          "record_video": false
+        }
+      },
+      {
+        "name": "heldout-11",
+        "label": "heldout 11",
+        "group": "heldout",
+        "case": {
+          "seed": 5110,
+          "bottle_xy_m": [
+            0.52354,
+            -0.18496
+          ],
+          "camera_yaw_deg": -6.799,
+          "camera_delta_deg": [
+            -0.793,
+            -1.888
+          ],
+          "camera_distance_scale": 1.0148,
+          "exposure": 0.9636,
+          "pixel_noise": 0.135,
+          "close_drop_once": true,
+          "record_video": false
+        }
+      },
+      {
+        "name": "heldout-12",
+        "label": "heldout 12",
+        "group": "heldout",
+        "case": {
+          "seed": 5111,
+          "bottle_xy_m": [
+            0.50317,
+            -0.24764
+          ],
+          "camera_yaw_deg": -5.693,
+          "camera_delta_deg": [
+            1.931,
+            -1.169
+          ],
+          "camera_distance_scale": 1.0497,
+          "exposure": 0.9527,
+          "pixel_noise": 0.222,
+          "close_drop_once": false,
+          "record_video": false
+        }
+      },
+      {
+        "name": "heldout-13",
+        "label": "heldout 13",
+        "group": "heldout",
+        "case": {
+          "seed": 5112,
+          "bottle_xy_m": [
+            0.52912,
+            -0.23378
+          ],
+          "camera_yaw_deg": 7.56,
+          "camera_delta_deg": [
+            -0.161,
+            -0.995
+          ],
+          "camera_distance_scale": 1.0427,
+          "exposure": 0.9783,
+          "pixel_noise": 0.104,
+          "close_drop_once": false,
+          "record_video": false
+        }
+      },
+      {
+        "name": "heldout-14",
+        "label": "heldout 14",
+        "group": "heldout",
+        "case": {
+          "seed": 5113,
+          "bottle_xy_m": [
+            0.51676,
+            -0.20171
+          ],
+          "camera_yaw_deg": 5.049,
+          "camera_delta_deg": [
+            0.93,
+            -0.392
+          ],
+          "camera_distance_scale": 0.9605,
+          "exposure": 1.0257,
+          "pixel_noise": 0.289,
+          "close_drop_once": false,
+          "record_video": true
+        }
+      },
+      {
+        "name": "heldout-15",
+        "label": "heldout 15",
+        "group": "heldout",
+        "case": {
+          "seed": 5114,
+          "bottle_xy_m": [
+            0.47725,
+            -0.25048
+          ],
+          "camera_yaw_deg": 3.074,
+          "camera_delta_deg": [
+            1.339,
+            1.373
+          ],
+          "camera_distance_scale": 1.0179,
+          "exposure": 1.0209,
+          "pixel_noise": 0.014,
+          "close_drop_once": false,
+          "record_video": false
+        }
+      },
+      {
+        "name": "heldout-16",
+        "label": "heldout 16",
+        "group": "heldout",
+        "case": {
+          "seed": 5115,
+          "bottle_xy_m": [
+            0.46958,
+            -0.1873
+          ],
+          "camera_yaw_deg": 1.758,
+          "camera_delta_deg": [
+            0.335,
+            -1.942
+          ],
+          "camera_distance_scale": 0.9726,
+          "exposure": 0.9811,
+          "pixel_noise": 0.193,
+          "close_drop_once": true,
+          "record_video": false
+        }
+      },
+      {
+        "name": "heldout-17",
+        "label": "heldout 17",
+        "group": "heldout",
+        "case": {
+          "seed": 5116,
+          "bottle_xy_m": [
+            0.46691,
+            -0.18935
+          ],
+          "camera_yaw_deg": 6.669,
+          "camera_delta_deg": [
+            -1.322,
+            1.672
+          ],
+          "camera_distance_scale": 0.9695,
+          "exposure": 0.9416,
+          "pixel_noise": 0.204,
+          "close_drop_once": false,
+          "record_video": false
+        }
+      },
+      {
+        "name": "heldout-18",
+        "label": "heldout 18",
+        "group": "heldout",
+        "case": {
+          "seed": 5117,
+          "bottle_xy_m": [
+            0.4823,
+            -0.23134
+          ],
+          "camera_yaw_deg": -4.188,
+          "camera_delta_deg": [
+            -0.981,
+            1.277
+          ],
+          "camera_distance_scale": 1.0458,
+          "exposure": 1.036,
+          "pixel_noise": 0.031,
+          "close_drop_once": false,
+          "record_video": false
+        }
+      },
+      {
+        "name": "heldout-19",
+        "label": "heldout 19",
+        "group": "heldout",
+        "case": {
+          "seed": 5118,
+          "bottle_xy_m": [
+            0.51458,
+            -0.20547
+          ],
+          "camera_yaw_deg": -2.179,
+          "camera_delta_deg": [
+            0.291,
+            -0.257
+          ],
+          "camera_distance_scale": 0.9839,
+          "exposure": 0.9929,
+          "pixel_noise": 0.319,
+          "close_drop_once": false,
+          "record_video": false
+        }
+      },
+      {
+        "name": "heldout-20",
+        "label": "heldout 20",
+        "group": "heldout",
+        "case": {
+          "seed": 5119,
+          "bottle_xy_m": [
+            0.52715,
+            -0.22798
+          ],
+          "camera_yaw_deg": -4.619,
+          "camera_delta_deg": [
+            -1.85,
+            1.109
+          ],
+          "camera_distance_scale": 0.985,
+          "exposure": 0.9345,
+          "pixel_noise": 0.271,
+          "close_drop_once": false,
+          "record_video": false
+        }
+      },
+      {
+        "name": "heldout-21",
+        "label": "heldout 21",
+        "group": "heldout",
+        "case": {
+          "seed": 5120,
+          "bottle_xy_m": [
+            0.52131,
+            -0.1705
+          ],
+          "camera_yaw_deg": 5.64,
+          "camera_delta_deg": [
+            -0.203,
+            0.595
+          ],
+          "camera_distance_scale": 0.9893,
+          "exposure": 0.9566,
+          "pixel_noise": 0.172,
+          "close_drop_once": true,
+          "record_video": false
+        }
+      },
+      {
+        "name": "heldout-22",
+        "label": "heldout 22",
+        "group": "heldout",
+        "case": {
+          "seed": 5121,
+          "bottle_xy_m": [
+            0.48056,
+            -0.22087
+          ],
+          "camera_yaw_deg": -6.89,
+          "camera_delta_deg": [
+            -1.021,
+            -1.088
+          ],
+          "camera_distance_scale": 0.9925,
+          "exposure": 0.9496,
+          "pixel_noise": 0.069,
+          "close_drop_once": false,
+          "record_video": false
+        }
+      },
+      {
+        "name": "heldout-23",
+        "label": "heldout 23",
+        "group": "heldout",
+        "case": {
+          "seed": 5122,
+          "bottle_xy_m": [
+            0.53145,
+            -0.21552
+          ],
+          "camera_yaw_deg": 1.527,
+          "camera_delta_deg": [
+            1.608,
+            1.087
+          ],
+          "camera_distance_scale": 0.9706,
+          "exposure": 1.0083,
+          "pixel_noise": 0.09,
+          "close_drop_once": false,
+          "record_video": false
+        }
+      },
+      {
+        "name": "heldout-24",
+        "label": "heldout 24",
+        "group": "heldout",
+        "case": {
+          "seed": 5123,
+          "bottle_xy_m": [
+            0.53361,
+            -0.24101
+          ],
+          "camera_yaw_deg": 6.029,
+          "camera_delta_deg": [
+            -0.318,
+            1.811
+          ],
+          "camera_distance_scale": 1.0405,
+          "exposure": 1.0283,
+          "pixel_noise": 0.182,
+          "close_drop_once": false,
+          "record_video": false
+        }
+      },
+      {
+        "name": "heldout-25",
+        "label": "heldout 25",
+        "group": "heldout",
+        "case": {
+          "seed": 5124,
+          "bottle_xy_m": [
+            0.50158,
+            -0.21718
+          ],
+          "camera_yaw_deg": -0.059,
+          "camera_delta_deg": [
+            -1.962,
+            -1.719
+          ],
+          "camera_distance_scale": 1.0255,
+          "exposure": 1.0001,
+          "pixel_noise": 0.238,
+          "close_drop_once": false,
+          "record_video": false
+        }
+      },
+      {
+        "name": "heldout-26",
+        "label": "heldout 26",
+        "group": "heldout",
+        "case": {
+          "seed": 5125,
+          "bottle_xy_m": [
+            0.48277,
+            -0.22268
+          ],
+          "camera_yaw_deg": 3.351,
+          "camera_delta_deg": [
+            0.622,
+            -0.188
+          ],
+          "camera_distance_scale": 1.0376,
+          "exposure": 0.9684,
+          "pixel_noise": 0.217,
+          "close_drop_once": true,
+          "record_video": false
+        }
+      },
+      {
+        "name": "heldout-27",
+        "label": "heldout 27",
+        "group": "heldout",
+        "case": {
+          "seed": 5126,
+          "bottle_xy_m": [
+            0.50854,
+            -0.2257
+          ],
+          "camera_yaw_deg": 6.972,
+          "camera_delta_deg": [
+            0.168,
+            -1.422
+          ],
+          "camera_distance_scale": 1.0234,
+          "exposure": 0.9599,
+          "pixel_noise": 0.33,
+          "close_drop_once": false,
+          "record_video": false
+        }
+      },
+      {
+        "name": "heldout-28",
+        "label": "heldout 28",
+        "group": "heldout",
+        "case": {
+          "seed": 5127,
+          "bottle_xy_m": [
+            0.50877,
+            -0.21215
+          ],
+          "camera_yaw_deg": -7.429,
+          "camera_delta_deg": [
+            1.039,
+            0.34
+          ],
+          "camera_distance_scale": 1.0285,
+          "exposure": 1.0327,
+          "pixel_noise": 0.236,
+          "close_drop_once": false,
+          "record_video": true
+        }
+      },
+      {
+        "name": "heldout-29",
+        "label": "heldout 29",
+        "group": "heldout",
+        "case": {
+          "seed": 5128,
+          "bottle_xy_m": [
+            0.50401,
+            -0.18983
+          ],
+          "camera_yaw_deg": -0.782,
+          "camera_delta_deg": [
+            0.506,
+            0.179
+          ],
+          "camera_distance_scale": 1.0012,
+          "exposure": 1.0031,
+          "pixel_noise": 0.285,
+          "close_drop_once": false,
+          "record_video": false
+        }
+      },
+      {
+        "name": "heldout-30",
+        "label": "heldout 30",
+        "group": "heldout",
+        "case": {
+          "seed": 5129,
+          "bottle_xy_m": [
+            0.51809,
+            -0.25077
+          ],
+          "camera_yaw_deg": 4.114,
+          "camera_delta_deg": [
+            -1.134,
+            1.956
+          ],
+          "camera_distance_scale": 0.9912,
+          "exposure": 0.9464,
+          "pixel_noise": 0.334,
+          "close_drop_once": false,
+          "record_video": false
+        }
+      },
+      {
+        "name": "heldout-31",
+        "label": "heldout 31",
+        "group": "heldout",
+        "case": {
+          "seed": 5130,
+          "bottle_xy_m": [
+            0.50684,
+            -0.19624
+          ],
+          "camera_yaw_deg": -2.965,
+          "camera_delta_deg": [
+            0.796,
+            1.498
+          ],
+          "camera_distance_scale": 0.9661,
+          "exposure": 1.0293,
+          "pixel_noise": 0.124,
+          "close_drop_once": true,
+          "record_video": false
+        }
+      },
+      {
+        "name": "heldout-32",
+        "label": "heldout 32",
+        "group": "heldout",
+        "case": {
+          "seed": 5131,
+          "bottle_xy_m": [
+            0.49828,
+            -0.16786
+          ],
+          "camera_yaw_deg": -1.278,
+          "camera_delta_deg": [
+            -0.044,
+            -0.51
+          ],
+          "camera_distance_scale": 0.9577,
+          "exposure": 0.9444,
+          "pixel_noise": 0.163,
+          "close_drop_once": false,
+          "record_video": false
+        }
+      },
+      {
+        "name": "heldout-33",
+        "label": "heldout 33",
+        "group": "heldout",
+        "case": {
+          "seed": 5132,
+          "bottle_xy_m": [
+            0.49315,
+            -0.19201
+          ],
+          "camera_yaw_deg": -3.312,
+          "camera_delta_deg": [
+            1.537,
+            -0.064
+          ],
+          "camera_distance_scale": 1.0357,
+          "exposure": 1.0393,
+          "pixel_noise": 0.11,
+          "close_drop_once": false,
+          "record_video": false
+        }
+      },
+      {
+        "name": "heldout-34",
+        "label": "heldout 34",
+        "group": "heldout",
+        "case": {
+          "seed": 5133,
+          "bottle_xy_m": [
+            0.48731,
+            -0.24154
+          ],
+          "camera_yaw_deg": 3.669,
+          "camera_delta_deg": [
+            0.431,
+            -1.229
+          ],
+          "camera_distance_scale": 1.011,
+          "exposure": 0.9757,
+          "pixel_noise": 0.145,
+          "close_drop_once": false,
+          "record_video": false
+        }
+      },
+      {
+        "name": "heldout-35",
+        "label": "heldout 35",
+        "group": "heldout",
+        "case": {
+          "seed": 5134,
+          "bottle_xy_m": [
+            0.53212,
+            -0.21266
+          ],
+          "camera_yaw_deg": -5.283,
+          "camera_delta_deg": [
+            0.011,
+            0.226
+          ],
+          "camera_distance_scale": 0.997,
+          "exposure": 0.9745,
+          "pixel_noise": 0.036,
+          "close_drop_once": false,
+          "record_video": false
+        }
+      },
+      {
+        "name": "heldout-36",
+        "label": "heldout 36",
+        "group": "heldout",
+        "case": {
+          "seed": 5135,
+          "bottle_xy_m": [
+            0.47524,
+            -0.18062
+          ],
+          "camera_yaw_deg": -3.972,
+          "camera_delta_deg": [
+            -0.576,
+            1.718
+          ],
+          "camera_distance_scale": 1.0033,
+          "exposure": 1.0468,
+          "pixel_noise": 0.248,
+          "close_drop_once": true,
+          "record_video": false
+        }
+      },
+      {
+        "name": "heldout-37",
+        "label": "heldout 37",
+        "group": "heldout",
+        "case": {
+          "seed": 5136,
+          "bottle_xy_m": [
+            0.48472,
+            -0.20023
+          ],
+          "camera_yaw_deg": 5.22,
+          "camera_delta_deg": [
+            -1.646,
+            -0.831
+          ],
+          "camera_distance_scale": 0.955,
+          "exposure": 1.012,
+          "pixel_noise": 0.154,
+          "close_drop_once": false,
+          "record_video": false
+        }
+      },
+      {
+        "name": "heldout-38",
+        "label": "heldout 38",
+        "group": "heldout",
+        "case": {
+          "seed": 5137,
+          "bottle_xy_m": [
+            0.51306,
+            -0.18152
+          ],
+          "camera_yaw_deg": 2.428,
+          "camera_delta_deg": [
+            1.822,
+            0.963
+          ],
+          "camera_distance_scale": 0.9509,
+          "exposure": 0.971,
+          "pixel_noise": 0.007,
+          "close_drop_once": false,
+          "record_video": false
+        }
+      },
+      {
+        "name": "heldout-39",
+        "label": "heldout 39",
+        "group": "heldout",
+        "case": {
+          "seed": 5138,
+          "bottle_xy_m": [
+            0.51069,
+            -0.2457
+          ],
+          "camera_yaw_deg": 0.19,
+          "camera_delta_deg": [
+            -1.263,
+            0.698
+          ],
+          "camera_distance_scale": 1.0162,
+          "exposure": 1.016,
+          "pixel_noise": 0.261,
+          "close_drop_once": false,
+          "record_video": false
+        }
+      },
+      {
+        "name": "heldout-40",
+        "label": "heldout 40",
+        "group": "heldout",
+        "case": {
+          "seed": 5139,
+          "bottle_xy_m": [
+            0.52051,
+            -0.17772
+          ],
+          "camera_yaw_deg": 4.609,
+          "camera_delta_deg": [
+            -0.678,
+            -1.652
+          ],
+          "camera_distance_scale": 1.0084,
+          "exposure": 0.962,
+          "pixel_noise": 0.298,
+          "close_drop_once": false,
+          "record_video": false
+        }
+      }
+    ],
+    "stress": [
+      {
+        "name": "stress-01",
+        "label": "边界压力 01",
+        "group": "stress",
+        "case": {
+          "seed": 6100,
+          "bottle_xy_m": [
+            0.46,
+            -0.26
+          ],
+          "camera_yaw_deg": -10,
+          "pixel_noise": 0.5,
+          "close_drop_once": true,
+          "record_video": true
+        }
+      },
+      {
+        "name": "stress-02",
+        "label": "边界压力 02",
+        "group": "stress",
+        "case": {
+          "seed": 6101,
+          "bottle_xy_m": [
+            0.54,
+            -0.26
+          ],
+          "camera_yaw_deg": -10,
+          "pixel_noise": 0.5,
+          "close_drop_once": false,
+          "record_video": false
+        }
+      },
+      {
+        "name": "stress-03",
+        "label": "边界压力 03",
+        "group": "stress",
+        "case": {
+          "seed": 6102,
+          "bottle_xy_m": [
+            0.5,
+            -0.26
+          ],
+          "camera_yaw_deg": -10,
+          "pixel_noise": 0.5,
+          "close_drop_once": true,
+          "record_video": false
+        }
+      },
+      {
+        "name": "stress-04",
+        "label": "边界压力 04",
+        "group": "stress",
+        "case": {
+          "seed": 6103,
+          "bottle_xy_m": [
+            0.46,
+            -0.16
+          ],
+          "camera_yaw_deg": -10,
+          "pixel_noise": 0.5,
+          "close_drop_once": false,
+          "record_video": false
+        }
+      },
+      {
+        "name": "stress-05",
+        "label": "边界压力 05",
+        "group": "stress",
+        "case": {
+          "seed": 6104,
+          "bottle_xy_m": [
+            0.54,
+            -0.16
+          ],
+          "camera_yaw_deg": -10,
+          "pixel_noise": 0.5,
+          "close_drop_once": true,
+          "record_video": false
+        }
+      },
+      {
+        "name": "stress-06",
+        "label": "边界压力 06",
+        "group": "stress",
+        "case": {
+          "seed": 6105,
+          "bottle_xy_m": [
+            0.5,
+            -0.16
+          ],
+          "camera_yaw_deg": -10,
+          "pixel_noise": 0.5,
+          "close_drop_once": false,
+          "record_video": false
+        }
+      },
+      {
+        "name": "stress-07",
+        "label": "边界压力 07",
+        "group": "stress",
+        "case": {
+          "seed": 6106,
+          "bottle_xy_m": [
+            0.46,
+            -0.26
+          ],
+          "camera_yaw_deg": 10,
+          "pixel_noise": 0.5,
+          "close_drop_once": true,
+          "record_video": false
+        }
+      },
+      {
+        "name": "stress-08",
+        "label": "边界压力 08",
+        "group": "stress",
+        "case": {
+          "seed": 6107,
+          "bottle_xy_m": [
+            0.54,
+            -0.26
+          ],
+          "camera_yaw_deg": 10,
+          "pixel_noise": 0.5,
+          "close_drop_once": false,
+          "record_video": true
+        }
+      },
+      {
+        "name": "stress-09",
+        "label": "边界压力 09",
+        "group": "stress",
+        "case": {
+          "seed": 6108,
+          "bottle_xy_m": [
+            0.5,
+            -0.26
+          ],
+          "camera_yaw_deg": 10,
+          "pixel_noise": 0.5,
+          "close_drop_once": true,
+          "record_video": false
+        }
+      },
+      {
+        "name": "stress-10",
+        "label": "边界压力 10",
+        "group": "stress",
+        "case": {
+          "seed": 6109,
+          "bottle_xy_m": [
+            0.46,
+            -0.16
+          ],
+          "camera_yaw_deg": 10,
+          "pixel_noise": 0.5,
+          "close_drop_once": false,
+          "record_video": false
+        }
+      },
+      {
+        "name": "stress-11",
+        "label": "边界压力 11",
+        "group": "stress",
+        "case": {
+          "seed": 6110,
+          "bottle_xy_m": [
+            0.54,
+            -0.16
+          ],
+          "camera_yaw_deg": 10,
+          "pixel_noise": 0.5,
+          "close_drop_once": true,
+          "record_video": false
+        }
+      },
+      {
+        "name": "stress-12",
+        "label": "边界压力 12",
+        "group": "stress",
+        "case": {
+          "seed": 6111,
+          "bottle_xy_m": [
+            0.5,
+            -0.16
+          ],
+          "camera_yaw_deg": 10,
+          "pixel_noise": 0.5,
+          "close_drop_once": false,
+          "record_video": false
+        }
+      }
+    ]
+  },
+  "physical_parameters": "unchanged; known upright bottle and fixed basket",
+  "notes": "no in-episode camera/object changes; heldout never used for tuning; stress reported separately; all initialisation errors count as failures"
+}
