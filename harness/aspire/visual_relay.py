@@ -7,10 +7,51 @@ import uuid
 import mujoco
 import numpy as np
 from PIL import Image
+from scipy.interpolate import BSpline
 from scipy.spatial.transform import Rotation, Slerp
 
 from .runtime import ROOT, dump
 from .visual_control import RobotWorld
+
+
+def smooth_joint_path(table, hz=30., velocity=.60, acceleration=2., jerk=20.):
+    """C2 bounded B-spline with a rest-to-rest clock and derivative retiming.
+
+    Limits apply to the nominal arm trajectory, not contact impulses or the
+    encoder-based compensation. Actual motion is evaluated independently.
+    """
+    table=np.asarray(table,float)
+    if table.ndim!=2 or len(table)<2 or not np.isfinite(table).all():
+        raise ValueError('finite joint waypoint table required')
+    if min(hz,velocity,acceleration,jerk)<=0:raise ValueError('positive motion limits required')
+    lengths=np.max(abs(np.diff(table,axis=0)),axis=1)
+    keep=np.r_[True,lengths>1e-10];table=table[keep]
+    if len(table)==1:return np.repeat(table,6,axis=0),{'ticks':6,'stationary':True}
+    knots=np.r_[0.,np.cumsum(np.max(abs(np.diff(table,axis=0)),axis=1))]
+    knots/=knots[-1]
+    # A clamped control polygon is C2 at interior knots and stays within the
+    # joint waypoint envelope. Interior waypoints are approximated, so loaded
+    # Cartesian paths are sampled densely before making this polygon.
+    degree=min(3,len(table)-1)
+    interior=[np.mean(knots[j:j+degree]) for j in range(1,len(table)-degree)]
+    path=BSpline(np.r_[np.zeros(degree+1),interior,np.ones(degree+1)],table,degree,axis=0)
+    def sample(u):
+        s=u**3*(10+u*(-15+6*u))
+        d1=30*u*u*(1-u)**2;d2=60*u-180*u*u+120*u**3;d3=60-360*u+360*u*u
+        # Do not ask the installed spline backend for derivatives above degree.
+        p1,p2,p3=(path(s,n) if n<=degree else np.zeros((len(s),table.shape[1])) for n in (1,2,3))
+        return path(s),p1*d1[:,None],p2*d1[:,None]**2+p1*d2[:,None],(
+            p3*d1[:,None]**3+3*p2*(d1*d2)[:,None]+p1*d3[:,None])
+    _,v,a,j=sample(np.linspace(0,1,max(2001,128*len(table))))
+    duration=max(.2,np.max(abs(v))/velocity,np.sqrt(np.max(abs(a))/acceleration),
+                 np.cbrt(np.max(abs(j))/jerk))*1.02
+    count=max(6,int(np.ceil(duration*hz)));duration=count/hz
+    samples,_,_,_=sample(np.linspace(0,1,count+1))
+    return samples[1:],{'ticks':count,'seconds':duration,'knots':len(table),'degree':degree,
+        'nominal_peak_velocity_rad_s':float(np.max(abs(v))/duration),
+        'nominal_peak_acceleration_rad_s2':float(np.max(abs(a))/duration**2),
+        'nominal_peak_jerk_rad_s3':float(np.max(abs(j))/duration**3),
+        'limits':{'velocity_rad_s':velocity,'acceleration_rad_s2':acceleration,'jerk_rad_s3':jerk}}
 
 
 class RelayWorld(RobotWorld):
@@ -28,6 +69,8 @@ class RelayWorld(RobotWorld):
         self.stages = []; self.done = False
         self.planning_seed = {}
         self.closed_flags = {'left':False,'right':False}
+        self.motion_profiles=[]
+        self.gripper_profiles=[]
 
     def locate_pixels(self,pixels):
         self._guard();position,error=self.rig.locate(pixels)
@@ -88,6 +131,7 @@ class RelayWorld(RobotWorld):
                 'elevation':-24.,'distance':1.2,'lookat':[.43,0.,1.19]}).tobytes())
         self.trace.append({'tick':env.tick,'time_s':float(env.data.time),'phase':self.phase,
             'requested':q.tolist(),'applied':action.tolist(),'measured':env.state().astype(float).tolist(),
+            'measured_velocity_rad_s':np.concatenate([env.data.qvel[env.dids[s]] for s in ('left','right')]).tolist(),
             'tcp':{s:self.pose(s)[0].tolist() for s in ('left','right')},
             'evaluation_only':{'bottle':env.data.xpos[env.bottle_id].tolist(),
                  'bottle_axis':env.data.xmat[env.bottle_id].reshape(3,3)[:,2].tolist(),
@@ -115,7 +159,7 @@ class RelayWorld(RobotWorld):
         off=0 if arm=='left' else 8;start=self.target.copy()
         table=[start.copy()]
         cartesian=self.closed_flags[arm] or (angle<.15 and distance>.02)
-        count_points=max(1,int(np.ceil(max(distance/.012,angle/.10)))) if cartesian else 1
+        count_points=max(1,int(np.ceil(max(distance/.006,angle/.05)))) if cartesian else 1
         slerp=Slerp([0,1],Rotation.from_matrix(np.stack([r0,rotation])))
         try:
             for f in np.linspace(0,1,count_points+1)[1:]:
@@ -125,13 +169,17 @@ class RelayWorld(RobotWorld):
                 row=start.copy();row[off:off+7]=q;table.append(row)
         finally:self.planning_seed.clear()
         table=np.array(table);goal=table[-1]
-        # Quintic timing: zero velocity and acceleration at segment boundaries.
-        arc=np.sum(np.max(abs(np.diff(table,axis=0)),axis=1))
-        count=max(6,int(np.ceil(1.875*arc/.024)))
-        for t in np.linspace(0,1,count+1)[1:]:
-            f=t*t*t*(10+t*(-15+6*t));position=f*(len(table)-1)
-            index=min(int(position),len(table)-2);fraction=position-index
-            self._tick(table[index]*(1-fraction)+table[index+1]*fraction)
+        samples,profile=smooth_joint_path(table,hz=self.env.profile['control_hz'])
+        # Independently verify bounds; never repair a trajectory by clipping it.
+        for offset in (0,8):
+            low=self.env.action_space.low[offset:offset+7].astype(float)
+            high=self.env.action_space.high[offset:offset+7].astype(float)
+            violation=np.maximum(low-np.min(samples[:,offset:offset+7],axis=0),np.max(samples[:,offset:offset+7],axis=0)-high)
+            if np.any(violation>1e-8):
+                raise ValueError('smooth joint path exceeds joint limits: '+str(violation.tolist()))
+        self.motion_profiles.append({'arm':arm,'phase':self.phase,'start_tick':self.env.tick,**profile})
+        dump(self.output/'motion-profiles.json',self.motion_profiles)
+        for q in samples:self._tick(q)
         self.target=goal
         for _ in range(4):self._tick(self.target)
         for _ in range(8):
@@ -185,11 +233,15 @@ class RelayWorld(RobotWorld):
         goal[idx]=self.env.grippers[arm].open_motor if opened else self.env.grippers[arm].closed_motor
         if arm=='right' and not opened and self.case.get('close_drop_once') and not self.close_loss_used:
             goal[idx]=self.env.grippers[arm].open_motor;self.close_loss_used=True
-        start=self.target.copy();count=14 if opened else 22
+        start=self.target.copy();count=14 if opened else 22;start_tick=self.env.tick
         for t in np.linspace(0,1,count+1)[1:]:
             f=t*t*t*(10+t*(-15+6*t));self._tick(start+(goal-start)*f)
         self.target=goal
         for _ in range(8):self._tick(goal)
+        self.gripper_profiles.append({'arm':arm,'opened':opened,'start_tick':start_tick,
+            'end_tick':self.env.tick,'command_rad':float(goal[idx]),
+            'measured_rad':float(self.env.state()[idx])})
+        dump(self.output/'gripper-profiles.json',self.gripper_profiles)
         self.closed_flags[arm]=not opened
         if not opened:self.grip_reference=self.pose(arm)[0].copy()
         return {'ok':True,'motor_rad':float(self.env.state()[idx])}

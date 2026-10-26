@@ -7,9 +7,35 @@ import numpy as np
 
 from .runtime import ROOT, ProgramExecutor, ToolRegistry
 from .visual_geometry import fit_camera, project, triangulate, basket_opening
+from .visual_relay import smooth_joint_path
 
 
 class RelayChecks(unittest.TestCase):
+    def test_smooth_path_actual_sample_limits_and_rest_boundaries(self):
+        table=np.array([[0,0,0],[.15,.03,-.02],[.22,.13,.01],[.35,.16,.10]])
+        samples,profile=smooth_joint_path(table,velocity=.6,acceleration=2.,jerk=20.)
+        np.testing.assert_allclose(samples[-1],table[-1],atol=1e-12)
+        q=np.vstack([np.repeat(table[:1],3,axis=0),samples,np.repeat(table[-1:],3,axis=0)])
+        for order,limit in ((1,.6),(2,2.),(3,20.)):
+            derivative=np.diff(q,n=order,axis=0)*30**order
+            self.assertLess(np.max(abs(derivative)),limit*1.08)
+        self.assertGreater(profile['seconds'],.2)
+
+    def test_duplicate_and_stationary_waypoints(self):
+        table=np.array([[.1,-.2],[.1,-.2],[.2,.1],[.2,.1]])
+        q,_=smooth_joint_path(table)
+        self.assertTrue(np.isfinite(q).all())
+        np.testing.assert_allclose(q[-1],table[-1])
+        still,profile=smooth_joint_path(np.repeat(table[:1],4,axis=0))
+        np.testing.assert_allclose(still,np.repeat(table[:1],6,axis=0))
+        self.assertTrue(profile['stationary'])
+
+    def test_smooth_path_preserves_waypoint_envelope_at_extrema(self):
+        table=np.array([[0,.3],[.19,.31],[.2,-.15],[.195,-.2],[.199,-.19]])
+        samples,_=smooth_joint_path(table)
+        self.assertTrue(np.all(samples>=np.min(table,axis=0)-1e-12))
+        self.assertTrue(np.all(samples<=np.max(table,axis=0)+1e-12))
+
     def test_noisy_independent_projection_and_triangulation(self):
         rng=np.random.default_rng(2);xyz=rng.normal(size=(120,3))*.1+[.45,0,1.3]
         truth=[np.array([[700,0,300,10],[0,750,240,-100],[.1,.2,1,0.]]),

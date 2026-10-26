@@ -1,21 +1,23 @@
 {
-  "schema": "complete-rgb-relay/2",
+  "schema": "complete-rgb-relay/3",
   "program": "skills/bottle_visual/relay/program.py",
   "sources": {
-    "harness/aspire/visual_relay.py": "86321d309c62e754f687148776d24718a3ebf4b5e89e72a177f2dfa440e9fe9d",
+    "harness/aspire/visual_relay.py": "a7834b3ecd9e32dea5394ce86babb77615c4890362d066b265e4c32764cf5b5e",
     "harness/aspire/visual_geometry.py": "c119b3755d5c9b8aabea46c4fe2fbcf9b82722616f4b27b89debb780a914490e",
     "harness/aspire/visual.py": "8c880dc9b16b9f2eed2407ebe5335f57a16c213c42ff360c4be22207400929f8",
     "harness/aspire/visual_control.py": "285a368672c941d259d8f36d943061252e3ec1853154c260f9ea743763a75dc6",
     "tools/relay_benchmark.py": "166685cf375eb3e825802c3f8237b6742389ae30ac85820a9dfac1a119ad6577",
     "tools/visual_benchmark.py": "d5b167921f5e559fabc8656bf6c42544115697d2b56941298a494c07dfaad0da",
-    "skills/bottle_visual/relay/program.py": "0f46058ad163abc63a8211ce2c27f86290a98483d3e23001e94fe60f14a46993"
+    "skills/bottle_visual/relay/program.py": "0f46058ad163abc63a8211ce2c27f86290a98483d3e23001e94fe60f14a46993",
+    "harness/aspire/visual_relay_checks.py": "e7a0020d6178b33c7ded3215dec7408e7b8e265feab434071f5323233033ff51",
+    "tools/relay_motion.py": "e0e2e4d908dd0e9c00bf312b12d2eb0e852621168721e6c56c63b48ae2bb5c19"
   },
   "legacy_manifest_sha256": "cf197480fba7d5b214ed7060cfa996f3f560a4a48c27c8130032634333c13a44",
   "cases": [
     {
       "name": "nominal",
       "label": "完整动作回归",
-      "group": "regression",
+      "group": "paired-regression-v3",
       "case": {
         "seed": 2300,
         "bottle_xy_m": [
@@ -27,7 +29,7 @@
     {
       "name": "previous-stop",
       "label": "旧运输偏差反例回归",
-      "group": "regression",
+      "group": "paired-regression-v3",
       "case": {
         "seed": 2203,
         "bottle_xy_m": [
@@ -38,8 +40,8 @@
     },
     {
       "name": "new-1",
-      "label": "新瓶位 A",
-      "group": "heldout-v2",
+      "label": "偏移瓶位 A",
+      "group": "paired-regression-v3",
       "case": {
         "seed": 2301,
         "bottle_xy_m": [
@@ -53,8 +55,8 @@
     },
     {
       "name": "new-2",
-      "label": "新瓶位 B",
-      "group": "heldout-v2",
+      "label": "偏移瓶位 B",
+      "group": "paired-regression-v3",
       "case": {
         "seed": 2302,
         "bottle_xy_m": [
@@ -68,8 +70,8 @@
     },
     {
       "name": "new-3",
-      "label": "新瓶位与视角 +3°",
-      "group": "heldout-v2",
+      "label": "偏移瓶位与视角 +3°",
+      "group": "paired-regression-v3",
       "case": {
         "seed": 2303,
         "bottle_xy_m": [
@@ -83,8 +85,8 @@
     },
     {
       "name": "new-4",
-      "label": "新瓶位、视角 −3° 与闭爪丢失",
-      "group": "heldout-v2",
+      "label": "偏移瓶位、视角 −3° 与闭爪丢失",
+      "group": "paired-regression-v3",
       "case": {
         "seed": 2304,
         "bottle_xy_m": [
@@ -98,6 +100,17 @@
     }
   ],
   "success": "program completed AND original native full-task success (right lift, dual contact, left after right release, whole bottle contained, released, basket support stable >=1s, no native invalidity) AND initial right contact in bottom 0..50% body",
-  "model_role": "Haiku reviewed engineered program; raw revision 2 failed review (late home read and repeated lift); compiled by Codex with home-derived shared plane and bounded actual-state recovery before freeze",
-  "scope": "known upright black bottle and fixed white basket; RGB/robot-FK-derived estimates; no simulator object/camera matrices to controller; no hardware"
+  "model_role": "Haiku previously reviewed task program; v3 trajectory smoothing engineered locally, no additional model API or neural training",
+  "scope": "known upright black bottle and fixed white basket; RGB/robot-FK-derived estimates; no simulator object/camera matrices to controller; no hardware",
+  "motion_comparison": {
+    "baseline": "runs/20261026-relay/validation-v2",
+    "metric": "14 measured arm joints, raw timestamp-aware finite-difference velocity/acceleration/jerk; grippers excluded; contact effects included",
+    "acceptance": "all six original full-task passes; jerk RMS and p95 each reduced >=30% in every paired case; report duration and maxima even if worse",
+    "retiming_targets": {
+      "velocity_rad_s": 0.6,
+      "acceleration_rad_s2": 2.0,
+      "jerk_rad_s3": 20.0
+    },
+    "note": "nominal path targets are not actual contact/hardware jerk limits; previously used cases are regressions, not unseen heldout"
+  }
 }
