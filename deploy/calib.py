@@ -340,10 +340,21 @@ def measure(store=None,console=None):
     console.say('','── 量尺寸（只填数，不开设备；回车用方括号里的值）','','[标定板]')
     r={'board_marker_mm':n('标定板单个黑方块边长',old.get('board_marker_mm',40),20,80),
        'board_gap_mm':n('标定板方块之间的间距',old.get('board_gap_mm',10),3,30)}
-    console.say('','[桌面] 相对 URDF 基座坐标原点的竖直高度；请按安装图确认原点，不能把桌腿长度填进来。',
-        '若不能确认原点，请先停止；程序不会忽略桌面避碰来初始化。')
+    console.say('','[桌面] 可量固定肩关节转轴中心到桌面的竖直距离，无需寻找基座原点。',
+        '固定肩关节是最靠机架的第1关节，不是移动的肘部；认不准就先停下。')
     previous=cal.get('table_top_z_m')
-    r['table_top_z_mm']=n('桌面 z（桌面高于基座原点为正）',old.get('table_top_z_mm',None if previous is None else previous*1000),-500,1500)
+    method=console.choice('量肩关节到桌面(shoulder)，或已知基座坐标 z(base)？',['shoulder','base'],old.get('table_reference','shoulder'))
+    r['table_reference']=method
+    if method=='shoulder':
+        kin=Kinematics(hw['urdf']);zero={j['name']:0. for j in kin.joints.values()}
+        zs=[kin.pose('openarm_'+side+'_link1',zero)[2,3]*1000 for side in ['left','right']]
+        if abs(zs[0]-zs[1])>1.:raise ValueError('双肩高度不一致，不能使用肩关节量法')
+        shoulder=float(np.mean(zs));console.say('  按当前 URDF：肩关节中心 z=%.1fmm；桌面 z=此值减去实测竖直距离。'%shoulder)
+        r['shoulder_table_drop_mm']=n('肩关节转轴中心高于桌面的竖直距离',old.get('shoulder_table_drop_mm'),-500,1500)
+        r['table_top_z_mm']=shoulder-r['shoulder_table_drop_mm']
+        r['shoulder_reference_z_mm']=shoulder
+    else:
+        r['table_top_z_mm']=n('桌面 z（桌面高于基座原点为正）',old.get('table_top_z_mm',None if previous is None else previous*1000),-500,1500)
     cal['table_top_z_m']=r['table_top_z_mm']/1000
     console.say('','[瓶子]  以瓶底中心为原点')
     r['bottle_height_mm']=n('瓶子总高度（含瓶盖）',old.get('bottle_height_mm'),50,400)
