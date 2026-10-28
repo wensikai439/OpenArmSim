@@ -13,12 +13,14 @@ unset PYTHONPATH
 cd "$ROOT"
 if [ "$#" -eq 0 ]; then set -- help; fi
 case "$1" in
-    check) exec "$ROOT/.venv/bin/python" -B -m unittest app.robot_checks app.service_checks app.checks app.relative_checks app.motion_checks app.calib_checks ;;
+    check) exec "$ROOT/.venv/bin/python" -B -m unittest app.robot_checks app.service_checks app.checks app.relative_checks app.motion_checks app.calib_checks app.handeye_checks ;;
     calib|标定) shift; exec "$ROOT/.venv/bin/python" -B "$ROOT/app/calib.py" "$@" ;;
     grab|抓瓶) shift; exec "$ROOT/.venv/bin/python" -B "$ROOT/app/grab.py" "$@" ;;
+    handeye) shift; exec "$ROOT/.venv/bin/python" -B "$ROOT/app/handeye.py" "$@" ;;
     help|帮助|-h|--help)
         echo 'OpenArm 真机入口'
         echo '  ./run calib        标定进度和下一步（markers / measure / handeye / grip / accept）'
+        echo '  ./run handeye      实验室棋盘预览（只开相机，不开 CAN）；首次采样需要独立现场确认'
         echo '  ./run grab         一键抓瓶：预检 → 现场确认 → 启动设备 → Haiku 执行（也可写 ./run 抓瓶）'
         echo '  ./run grab "任务"   换一句任务描述'
         echo '  ./run preflight    查看缺项（不开设备）'

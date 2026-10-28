@@ -67,6 +67,7 @@ class Runtime:
             self.planner=Planner(self.hardware,self.cal,self.collision);self.pipeline=EvidencePipeline(self.cal)
             attach_global(self.planner,self.root,self.hardware,self.cal)
             camera=self.cal['camera'];cfg=copy.deepcopy(next(c for c in self.hardware['cameras'].values() if c.get('serial')==camera['serial']))
+            if camera.get('stream_profile'):cfg.update(copy.deepcopy(camera['stream_profile']))
             cfg['clock_model']=camera['clock_model'];self.camera=Camera(cfg,self.record)
             self.driver=LegacyArm(self.hardware,self.record)
             self.camera.open(operator_confirmed=True);self.driver.open(operator_confirmed=True)

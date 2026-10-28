@@ -21,7 +21,7 @@ CATEGORIES=('camera_extrinsics','object_geometry','gripper_contact','timing','mo
 def implementation(root):
     result={name:hashlib.sha256((Path(root)/'app'/(name+'.py')).read_bytes()).hexdigest()
         for name in ['robot','service','devices','evidence','motion','planning','runtime','relative','calibration',
-                     'autoplan','cumotion','calib','calib_math']
+                     'autoplan','cumotion','calib','calib_math','handeye']
         if (Path(root)/'app'/(name+'.py')).is_file()}
     for name in ['app/skill/program.py','config/robot.json','config/curobo.yml']:
         p=Path(root)/name
@@ -46,6 +46,11 @@ def check(cal,hardware,collision,root):
     def positive(value):return type(value) in (float,int) and math.isfinite(value) and value>0
     need('table geometry',lambda:math.isfinite(cal['table_top_z_m']) and positive(cal['support_tolerance_m']) and cal['support_tolerance_m']<=.01)
     need('camera identity/mount',lambda:bool(cal['camera']['serial']) and bool(cal['camera']['mounted_link']))
+    if cal.get('camera',{}).get('stream_profile'):
+        def camera_profile():
+            p=cal['camera']['stream_profile'];size=p['resolution']
+            return len(size)==2 and all(type(v) is int and 240<=v<=1920 for v in size) and type(p['fps']) is int and 5<=p['fps']<=60
+        need('camera stream profile',camera_profile)
     need('camera extrinsic transform',lambda:bool(transform(cal['camera']['T_link_camera']).shape==(4,4)))
     def clock():
         c=cal['camera'];m=c['clock_model']

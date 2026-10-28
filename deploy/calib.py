@@ -419,7 +419,7 @@ def handeye(store=None,console=None,*,camera='right',rig_factory=None):
     store=store or Store();console=console or Console()
     cal=store.read('calibration.json');hw=store.read('hardware.json');aids=cal.get('calibration_aids',{})
     if not aids.get('measured'):console.say('请先完成：./run calib measure');return None
-    collision=store.read('collision.json');board=cm.grid_board(aids['board']['marker_m'],aids['board']['gap_m'])
+    collision=store.read('collision.json');board=cm.calibration_board(aids['board'])
     console.say('','── 手眼标定（%s腕相机）'%('右' if camera=='right' else '左'),
         '把标定板放在机器人正前方约 40~60cm（平放在桌上，或靠着东西立起来略向后仰），',
         '让%s手腕相机在初始姿态能看到整块板。标定过程中不要碰标定板。'%('右' if camera=='right' else '左'),

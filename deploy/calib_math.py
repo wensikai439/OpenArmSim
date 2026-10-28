@@ -36,6 +36,42 @@ def grid_board(marker_m,gap_m):
     return cv2.aruco.GridBoard((BOARD['columns'],BOARD['rows']),float(marker_m),float(gap_m),dictionary,ids)
 
 
+def calibration_board(spec):
+    """Construct a measured board; checkerboard state resolves its 180° ambiguity."""
+    if spec.get('kind')!='checkerboard':return grid_board(spec['marker_m'],spec['gap_m'])
+    columns,rows=spec['inner_corners'];square=float(spec['square_m'])
+    if type(columns) is not int or type(rows) is not int or not 3<=columns<=20 or not 3<=rows<=20:
+        raise ValueError('invalid checkerboard inner corner count')
+    if not math.isfinite(square) or not .005<=square<=.1:raise ValueError('invalid checkerboard square size')
+    return {'kind':'checkerboard','inner_corners':(columns,rows),'square_m':square,'previous':None}
+
+
+def checkerboard_pose(frame,board):
+    import cv2
+    columns,rows=board['inner_corners'];square=board['square_m']
+    gray=cv2.cvtColor(frame['bgr'],cv2.COLOR_BGR2GRAY)
+    ok,pixels=cv2.findChessboardCorners(gray,(columns,rows),cv2.CALIB_CB_ADAPTIVE_THRESH|cv2.CALIB_CB_NORMALIZE_IMAGE)
+    if ok:
+        cv2.cornerSubPix(gray,pixels,(5,5),(-1,-1),(cv2.TERM_CRITERIA_EPS|cv2.TERM_CRITERIA_MAX_ITER,30,.001))
+    else:
+        ok,pixels=cv2.findChessboardCornersSB(gray,(columns,rows),flags=cv2.CALIB_CB_NORMALIZE_IMAGE)
+    if not ok:return None
+    points=np.zeros((columns*rows,3),np.float32)
+    points[:,:2]=np.mgrid[0:columns,0:rows].T.reshape(-1,2)*square
+    ok,rv,tv=cv2.solvePnP(points,pixels,frame['K'],frame['distortion'])
+    if not ok or tv[2,0]<=0:return None
+    T=rigid(cv2.Rodrigues(rv)[0],tv[:,0]);projected,_=cv2.projectPoints(points,rv,tv,frame['K'],frame['distortion'])
+    rms=float(np.sqrt(np.mean(np.sum((projected.reshape(-1,2)-pixels.reshape(-1,2))**2,axis=1))))
+    previous=board.get('previous')
+    if previous is not None:
+        flip=rigid(np.diag([-1.,-1.,1.]),((columns-1)*square,(rows-1)*square,0))
+        T=min([T,T@flip],key=lambda p:angle(previous[:3,:3].T@p[:3,:3]))
+        if angle(previous[:3,:3].T@T[:3,:3])>.75:
+            raise ValueError('checkerboard pose changed too far to resolve corner ordering; restart sampling')
+    board['previous']=T.copy()
+    return {'T_camera_board':T,'reprojection_rms_px':rms,'markers':columns*rows,'kind':'checkerboard'}
+
+
 def rigid(r=None,t=(0,0,0)):
     out=np.eye(4)
     if r is not None:out[:3,:3]=r
@@ -120,6 +156,7 @@ def marker_sheets(board_mm=40,gap_mm=10,bottle_mm=40,basket_mm=60,dpi=300):
 
 def board_pose(frame,board):
     """T_camera_board, RMS reprojection px and marker count; None if unusable."""
+    if isinstance(board,dict) and board.get('kind')=='checkerboard':return checkerboard_pose(frame,board)
     cv2,dictionary=aruco()
     detector=cv2.aruco.ArucoDetector(dictionary,cv2.aruco.DetectorParameters())
     corners,ids,_=detector.detectMarkers(frame['bgr'])
@@ -163,11 +200,16 @@ def solve_hand_eye(base_link,camera_board):
     turns=[angle(a[0][:3,:3].T@p[:3,:3]) for p in a[1:]]
     axes=np.array([Rotation.from_matrix(a[0][:3,:3].T@p[:3,:3]).as_rotvec() for p in a[1:]])
     rank=int(np.sum(np.linalg.svd(axes,compute_uv=False)>.05))
-    if max(turns)<.15 or rank<2:raise ValueError('wrist rotations too small or about one axis only')
+    pair_turn=max(angle(p[:3,:3].T@q[:3,:3]) for p in a for q in a)
+    if pair_turn<.15 or rank<2:raise ValueError('wrist rotations too small or about one axis only')
     best=None
-    for method in [cv2.CALIB_HAND_EYE_TSAI,cv2.CALIB_HAND_EYE_PARK,cv2.CALIB_HAND_EYE_HORAUD,cv2.CALIB_HAND_EYE_DANIILIDIS]:
-        r,t=cv2.calibrateHandEye([p[:3,:3] for p in a],[p[:3,3].reshape(3,1) for p in a],
-            [p[:3,:3] for p in b],[p[:3,3].reshape(3,1) for p in b],method=method)
+    methods=[cv2.CALIB_HAND_EYE_PARK,cv2.CALIB_HAND_EYE_HORAUD,cv2.CALIB_HAND_EYE_DANIILIDIS]
+    if pair_turn>=.3:methods.insert(0,cv2.CALIB_HAND_EYE_TSAI)
+    for method in methods:
+        try:
+            r,t=cv2.calibrateHandEye([p[:3,:3] for p in a],[p[:3,3].reshape(3,1) for p in a],
+                [p[:3,:3] for p in b],[p[:3,3].reshape(3,1) for p in b],method=method)
+        except cv2.error:continue
         x=rigid(r,t[:,0])
         if not np.isfinite(x).all():continue
         score=spread([p@x@q for p,q in zip(a,b)])
@@ -188,7 +230,7 @@ def solve_hand_eye(base_link,camera_board):
         'rotation_spread_rad':rotation,
         'translation_rms_m':float(np.sqrt(np.mean([np.sum((v[:3,3]-board[:3,3])**2) for v in views]))),
         'rotation_rms_rad':float(np.sqrt(np.mean([angle(board[:3,:3].T@v[:3,:3])**2 for v in views]))),
-        'largest_wrist_turn_rad':float(max(turns)),'rotation_axes_rank':rank}
+        'largest_wrist_turn_rad':float(pair_turn),'rotation_axes_rank':rank}
 
 
 # ---------------------------------------------------------------- timing
