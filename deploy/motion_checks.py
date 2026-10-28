@@ -15,7 +15,7 @@ import numpy as np
 
 from . import robot as client
 from .motion import retime
-from .runtime import Runtime
+from .runtime import Runtime,basket_clearance
 from .relative import goal_error
 from .relative_checks import Fixture,pose
 from .service import setup_groups
@@ -27,6 +27,50 @@ except ImportError:
 
 
 class MotionChecks(unittest.TestCase):
+    def test_calibration_never_opens_devices_without_a_measured_table(self):
+        from .calib import Rig,session_calibration
+        rig=object.__new__(Rig);rig.cal={'table_top_z_m':-10.}
+        with self.assertRaisesRegex(RuntimeError,'桌面高度'):
+            rig.open()
+        cal={'table_top_z_m':.28,'grippers':{s:{'motor_limits':[-1.,.05]} for s in ['left','right']},
+             'motion':{},'support_tolerance_m':.008}
+        self.assertEqual(session_calibration(cal)['table_top_z_m'],.28)
+
+    def test_online_search_budget_expires_before_any_dispatch(self):
+        from .autoplan import Search
+        from types import SimpleNamespace
+        cal={'objects':{'bottle':{'body_height_m':.2,'body_radius_m':.03,'body_bottom_m':0.}},'motion':{}}
+        p=SimpleNamespace(plan=lambda *a,**k:self.fail('planner must not be called after budget expires'))
+        s=Search(p,cal,np.zeros(16),{},max_seconds=1.);s.deadline=time.monotonic()-1
+        with self.assertRaises(TimeoutError):s.plan(np.zeros(16),'right',np.eye(4))
+
+    def test_silent_device_service_startup_has_a_bounded_wait(self):
+        import subprocess
+        from .grab import wait_service
+        p=subprocess.Popen([sys.executable,'-c','import time; time.sleep(5)'],stdout=subprocess.PIPE,text=True)
+        out=io.StringIO()
+        try:
+            t=time.monotonic();ready,tail=wait_service(p,out,timeout=.05)
+            self.assertIsNone(ready);self.assertLess(time.monotonic()-t,.5)
+            self.assertTrue(tail)
+        finally:p.terminate();p.wait();p.stdout.close()
+
+    def test_basket_approach_clears_rim_and_carried_sphere_cover(self):
+        cal={'motion':{'lift_m':.06,'collision_margin_m':.005},'support_tolerance_m':.008,
+             'objects':{'basket':{'inner_size_m':[.16,.2,.1]},'bottle':{'body_radius_m':.032}}}
+        self.assertAlmostEqual(basket_clearance(cal),.145)
+        cal['motion']['lift_m']=.3
+        self.assertEqual(basket_clearance(cal),.3)
+
+    def test_old_planning_snapshot_never_counts_as_fresh_dispatch_evidence(self):
+        from .planning import Planner
+        from types import SimpleNamespace
+        p=SimpleNamespace(motion={'scene_max_age_s':.2},valid=lambda q,s:True)
+        scene={'timestamp_unix_s':time.time()-10}
+        path=[np.zeros(16),np.ones(16)*.005]
+        self.assertFalse(Planner.validate_path(p,path,scene))
+        self.assertTrue(Planner.validate_path(p,path,scene,require_fresh=False))
+
     def ready_fixture(self):
         f=Fixture();f.hardware={'startup_target':[0.]*16}
         f.servo.state={'q':[0.]*16,'timestamp_unix_s':time.time()}

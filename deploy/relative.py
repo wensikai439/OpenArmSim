@@ -5,15 +5,16 @@ synthetic cameras, virtual tool marks, dimensions, gains or joint trajectories.
 All object/tool transforms below come from the admitted real perception/FK path.
 """
 import copy
+import time
 import numpy as np
 
 try:
     from .evidence import finite,transform
-    from .runtime import Runtime
+    from .runtime import Runtime,pregrasp_distance
     from .robot import RELATIVE_TOOLS
 except ImportError:
     from evidence import finite,transform
-    from runtime import Runtime
+    from runtime import Runtime,pregrasp_distance
     from robot import RELATIVE_TOOLS
 
 
@@ -59,10 +60,34 @@ class RelativeRuntime(Runtime):
 
     def begin_session(self):
         super().begin_session()
+        if self.cal['motion'].get('task_poses')=='online':self._online_poses()
         self.start_tools=copy.deepcopy(self.planner.tools(self.servo.state['q']))
         self.transfer_target=None;self.donor_withdrawn=False
         self.record('relative_session_anchor',{'source':'measured_FK_after_ACT_initialization',
             'tools':{s:t.tolist() for s,t in self.start_tools.items()}})
+
+    def _online_poses(self):
+        """Grasp, handover, retreat and place for THIS scene, searched with the
+        same planner before the task clock starts; nothing moves meanwhile."""
+        try:from .autoplan import session_poses
+        except ImportError:from autoplan import session_poses
+        state=self.observe();objects={k:np.array(state['object_poses'][k]) for k in ('bottle','basket')}
+        with self.servo.lock:start=self.servo.target.copy()
+        r=session_poses(self.planner,self.cal,start,objects,log=lambda *_:None);m=self.cal['motion']
+        fresh=self.observe()
+        if np.max(abs(np.asarray(self.servo.state['q'])-start))>.01:
+            raise RuntimeError('robot moved during online task planning; no task started')
+        for name in ('bottle','basket'):
+            distance,angle=goal_error(objects[name],fresh['object_poses'][name])
+            if distance>self.relative['maximum_target_shift_m'] or angle>.15:
+                raise RuntimeError(name+' moved during online task planning; no task started')
+        m.update(right_grasps=[{'id':'online','T_object_tool':np.asarray(r['T_object_tool']).tolist()}],
+            T_bottle_left_tool=np.asarray(r['T_bottle_left_tool']).tolist(),T_basket_bottle=np.asarray(r['T_basket_bottle']).tolist(),
+            T_base_handover_bottle=np.asarray(r['T_base_handover_bottle']).tolist(),pregrasp_m=float(r['pregrasp_m']),ik_seeds=r['ik_seeds'])
+        m['pregrasp_by_arm']=r['pregrasp_by_arm']
+        m['relative'].update(handover_offset_m=np.asarray(r['handover_offset_m']).tolist(),donor_retreat_base_m=np.asarray(r['donor_retreat_base_m']).tolist())
+        self.record('online_task_poses',{k:np.asarray(v).tolist() for k,v in r.items() if k!='points'})
+        self.started=time.monotonic()
 
     def _checked_bottle(self,state,anchor):
         pose=transform(state['object_poses']['bottle'])
@@ -135,11 +160,13 @@ class RelativeRuntime(Runtime):
             if phase=='position':
                 if self.transfer_target is None:raise RuntimeError('relative transfer anchor missing')
                 right=self.transfer_target@np.linalg.inv(bottle)@tools['right']
-                left=self.transfer_target@transform(self.cal['motion']['T_bottle_left_tool'])
-                left[:3,3]-=left[:3,2]*self.cal['motion']['pregrasp_m']
-                # Entire dual-arm path, with carried object, must pass FCL.
-                self._move({'right':right,'left':left},contact=('right',))
-                op['phase']='receiver_approach'
+                self._move({'right':right},contact=('right',))
+                op['phase']='receiver_pregrasp'
+                return self._result(done=False)
+            if phase=='receiver_pregrasp':
+                left=bottle@transform(self.cal['motion']['T_bottle_left_tool'])
+                left[:3,3]-=left[:3,2]*pregrasp_distance(self.cal,'left')
+                self._move({'left':left},contact=('right',));op['phase']='receiver_approach'
                 return self._result(done=False)
             if phase=='receiver_approach':
                 target=bottle@transform(self.cal['motion']['T_bottle_left_tool'])

@@ -97,7 +97,9 @@ class RuntimeChecks(unittest.TestCase):
                 self.bottle=np.eye(4);self.bottle[:3,3]=[x,-.1,.3];self.basket=np.eye(4);self.basket[:3,3]=[.4,.2,.1]
                 self.cal={'motion':{'right_grasps':[{'id':'g0','T_object_tool':np.eye(4).tolist()}],
                     'pregrasp_m':.06,'lift_m':.08,'T_base_handover_bottle':np.eye(4).tolist(),
-                    'T_bottle_left_tool':np.eye(4).tolist(),'T_basket_bottle':np.eye(4).tolist()}}
+                    'T_bottle_left_tool':np.eye(4).tolist(),'T_basket_bottle':np.eye(4).tolist(),
+                    'collision_margin_m':.005},'support_tolerance_m':.008,
+                    'objects':{'basket':{'inner_size_m':[.2,.2,.1]},'bottle':{'body_radius_m':.03}}}
                 self.poses={s:np.eye(4) for s in ['left','right']}
                 class Planner:
                     def tools(_,q):return copy.deepcopy(self.poses)

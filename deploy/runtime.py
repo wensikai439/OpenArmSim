@@ -28,6 +28,27 @@ except ImportError:
     from service import EvidencePipeline
 
 
+def attach_global(planner,root,hardware,calibration):
+    """cuRobo fallback for moves the local IK cannot reach (GPU, plans only)."""
+    if (Path(root)/'config/curobo.yml').is_file():
+        try:from .cumotion import CuMotion
+        except ImportError:from cumotion import CuMotion
+        planner.global_planner=CuMotion(root,hardware,calibration)
+        table=calibration.get('table_top_z_m');planner.global_planner.warm(hardware['startup_target'],table if table is not None else -10.)
+
+
+def basket_clearance(calibration):
+    """Clear the measured rim, including the carried-cylinder sphere cover."""
+    m=calibration['motion'];b=calibration['objects']['basket'];o=calibration['objects']['bottle']
+    return max(float(m['lift_m']),float(b['inner_size_m'][2])+float(o['body_radius_m'])+
+               float(m['collision_margin_m'])+float(calibration['support_tolerance_m']))
+
+
+def pregrasp_distance(calibration,side):
+    m=calibration['motion']
+    return float(m.get('pregrasp_by_arm',{}).get(side,m['pregrasp_m']))
+
+
 class Runtime:
     tools=TOOLS
     def __init__(self,root,record):
@@ -44,6 +65,7 @@ class Runtime:
         if not operator_confirmed:raise RuntimeError('on-site confirmation required')
         try:
             self.planner=Planner(self.hardware,self.cal,self.collision);self.pipeline=EvidencePipeline(self.cal)
+            attach_global(self.planner,self.root,self.hardware,self.cal)
             camera=self.cal['camera'];cfg=copy.deepcopy(next(c for c in self.hardware['cameras'].values() if c.get('serial')==camera['serial']))
             cfg['clock_model']=camera['clock_model'];self.camera=Camera(cfg,self.record)
             self.driver=LegacyArm(self.hardware,self.record)
@@ -267,7 +289,7 @@ class Runtime:
         for row in self.cal['motion']['right_grasps']:
             ident=row['id']
             if ident in exclude_ids:continue
-            target=pose@transform(row['T_object_tool']);pre=target.copy();pre[:3,3]-=target[:3,2]*self.cal['motion']['pregrasp_m']
+            target=pose@transform(row['T_object_tool']);pre=target.copy();pre[:3,3]-=target[:3,2]*pregrasp_distance(self.cal,'right')
             self.candidates[ident]={'target':target,'pre':pre,'bottle':pose.copy()}
             candidates.append({'id':ident,'source':'measured_object_relative_transform','pose_revision':state['pose_revision']})
         return {'candidates':candidates}
@@ -342,9 +364,12 @@ class Runtime:
         if op['kind']=='transfer':
             if phase=='position':
                 desired=transform(self.cal['motion']['T_base_handover_bottle'])
-                right=desired@np.linalg.inv(bottle)@tools['right'];left=desired@transform(self.cal['motion']['T_bottle_left_tool'])
-                left[:3,3]-=left[:3,2]*self.cal['motion']['pregrasp_m']
-                self._move({'right':right,'left':left},contact=('right',));op['phase']='receiver_approach'
+                right=desired@np.linalg.inv(bottle)@tools['right']
+                self._move({'right':right},contact=('right',));op['phase']='receiver_pregrasp'
+            elif phase=='receiver_pregrasp':
+                left=bottle@transform(self.cal['motion']['T_bottle_left_tool'])
+                left[:3,3]-=left[:3,2]*pregrasp_distance(self.cal,'left')
+                self._move({'left':left},contact=('right',));op['phase']='receiver_approach'
             elif phase=='receiver_approach':
                 self._move({'left':bottle@transform(self.cal['motion']['T_bottle_left_tool'])},contact=('left','right'));op['phase']='receiver_close'
             elif phase=='receiver_close':
@@ -357,7 +382,7 @@ class Runtime:
             target_bottle=transform(s['object_poses']['basket'])@transform(self.cal['motion']['T_basket_bottle'])
             target=target_bottle@np.linalg.inv(bottle)@tools['left']
             if phase=='above_basket':
-                target[2,3]+=self.cal['motion']['lift_m'];self._move({'left':target},contact=('left',));op['phase']='lower'
+                target[2,3]+=basket_clearance(self.cal);self._move({'left':target},contact=('left',));op['phase']='lower'
             elif phase=='lower':
                 self._move({'left':target},contact=('left',));op['phase']='release_left'
             elif phase=='release_left':

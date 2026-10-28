@@ -20,9 +20,10 @@ CATEGORIES=('camera_extrinsics','object_geometry','gripper_contact','timing','mo
 
 def implementation(root):
     result={name:hashlib.sha256((Path(root)/'app'/(name+'.py')).read_bytes()).hexdigest()
-        for name in ['robot','service','devices','evidence','motion','planning','runtime','relative','calibration']
+        for name in ['robot','service','devices','evidence','motion','planning','runtime','relative','calibration',
+                     'autoplan','cumotion','calib','calib_math']
         if (Path(root)/'app'/(name+'.py')).is_file()}
-    for name in ['app/skill/program.py','config/robot.json']:
+    for name in ['app/skill/program.py','config/robot.json','config/curobo.yml']:
         p=Path(root)/name
         if p.is_file():result[name]=hashlib.sha256(p.read_bytes()).hexdigest()
     return result
@@ -83,16 +84,25 @@ def check(cal,hardware,collision,root):
         if set(c['tool_links'])!={'left','right'} or not all(c['tool_links'].values()):return False
         if not all(positive(c[k]) for k in ['collision_margin_m','velocity_rad_s','acceleration_rad_s2','jerk_rad_s3','scene_max_age_s','lift_m','pregrasp_m']):return False
         if c['velocity_rad_s']>.15 or c['acceleration_rad_s2']>.3 or c['jerk_rad_s3']>2. or c['scene_max_age_s']>.2:return False
-        if not c['right_grasps'] or len(c['right_grasps'])>32:return False
-        for row in c['right_grasps']:transform(row['T_object_tool'])
-        transform(c['T_bottle_left_tool']);transform(c['T_basket_bottle'])
+        # Online task poses are searched per session from the measured scene.
+        online=c.get('task_poses')=='online'
+        if not online:
+            if not c['right_grasps'] or len(c['right_grasps'])>32:return False
+            for row in c['right_grasps']:transform(row['T_object_tool'])
+            transform(c['T_bottle_left_tool']);transform(c['T_basket_bottle'])
+        if len(c.get('ik_seeds',[]))>16:return False
+        for row in c.get('ik_seeds',[]):finite(row,(16,))
+        if 'pregrasp_by_arm' in c:
+            if set(c['pregrasp_by_arm'])!={'left','right'}:return False
+            if not all(positive(v) and v<=.3 for v in c['pregrasp_by_arm'].values()):return False
         if 'relative' in c or relative_required:
             r=c['relative']
             if r['schema']!='openarm-relative-goals/1' or r['handover_frame']!='session_start_tool_midpoint':return False
-            for name in ['handover_offset_m','donor_retreat_base_m']:
-                vector=finite(r[name],(3,))
-                if np.linalg.norm(vector)>.3:return False
-            if np.linalg.norm(r['donor_retreat_base_m'])<.01:return False
+            if not online:
+                for name in ['handover_offset_m','donor_retreat_base_m']:
+                    vector=finite(r[name],(3,))
+                    if np.linalg.norm(vector)>.3:return False
+                if np.linalg.norm(r['donor_retreat_base_m'])<.01:return False
             if not 0<r['correction_step_m']<=.006 or not 0<r['correction_tolerance_m']<=.003:return False
             if not 0<r['rotation_tolerance_rad']<=.03 or not 0<r['maximum_target_shift_m']<=.02:return False
         else:transform(c['T_base_handover_bottle'])

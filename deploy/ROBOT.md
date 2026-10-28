@@ -1,6 +1,6 @@
 # OpenArm Harness
 
-AI 调度、相对目标抓瓶 skill 和真实设备适配。r8 使用连续粗接近与末段视觉纠偏；不包含仿真平台、网页、模型权重或训练数据。
+AI 调度、相对目标抓瓶 skill 和真实设备适配。r9 在 r8（连续粗接近与末段视觉纠偏）基础上加入通用标定向导、一键运行、cuRobo 全局规划，以及按当前场景在线搜索抓取/交接/放置位姿；不包含仿真平台、网页、模型权重或训练数据。
 
 ```text
 LLMHarness/
@@ -13,6 +13,19 @@ LLMHarness/
 ```
 
 环境在 `.venv/`，复用原 Python 3.10 机器人环境中的 OpenCV、RealSense、CAN、SciPy；FCL 仅安装在本目录。API 配置仍在 `.private/api.json`，不需重复填写。所有缓存留在 `.runtime/`。
+
+## 现场只需要记两条
+
+```sh
+./run calib          # 标定进度和下一步：markers → measure → handeye → grip → accept
+./run grab           # 一键抓瓶（也可 ./run 抓瓶）：预检 → 现场确认 → 启动设备 → Haiku 执行 → 关闭
+```
+
+本机（wsk）上可以直接敲 `oa calib`、`oa grab`，等价于 ssh 过来再运行。逐步说明、键位与安全事项见 [试运行](app/试运行.md)。
+
+首次现场准备版本，尚未通过真机验收。合成完整规划仍有失败；搜索到预算上限会退出，不能把入口已安装当成能完成抓瓶。标定初始化也必须保留实测桌面避碰。
+
+r9 起 ACT 参考源码指向 `openarm_deploy_bk_20261026`：原 `openarm_deploy` 于 2026-10-26 被替换，带日期的这份保留了绑定的 7 个文件，哈希全部一致。
 
 ## 常用入口
 

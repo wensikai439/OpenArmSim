@@ -1,6 +1,6 @@
 {
   "schema": "openarm-hardware-reference/1",
-  "deploy_root": "/home/sj/Desktop/wuji/lerobot_20260116/openarm_deploy",
+  "deploy_root": "/home/sj/Desktop/wuji/lerobot_20260116/openarm_deploy_bk_20261026",
   "source_hashes": {
     "model_launchers/configs/act_startup_target.json": "c81ef06e92eceda576322fc942eed21bca173ae50aea043c425b85b22f3ec42e",
     "openarm/openarm_controller.py": "d4a69c2d54ab2442403d927168681697e38eb989bfc2a979976d35ddfc79acda",
@@ -101,5 +101,6 @@
       "path": "/home/sj/Desktop/wuji/lerobot_20260116/openarm_deploy/openarm/openarm_can/python/build/cp310/openarm_can.cpython-310-x86_64-linux-gnu.so",
       "sha256": "6abc28762646f418739e5eab9c765f12996c5c44742209978c7dbb22466fe06d"
     }
-  }
+  },
+  "deploy_root_note": "live openarm_deploy was replaced on 2026-10-26; this dated copy holds the pinned ACT sources (all 7 hashes match)"
 }

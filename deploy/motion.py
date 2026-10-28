@@ -154,4 +154,6 @@ def retime(start,goal,*,rate=30,velocity=.15,acceleration=.3,jerk=2.,minimum_sec
         np.sqrt(5.774*distance/acceleration),np.cbrt(60*distance/jerk))
     ticks=max(2,int(np.ceil(duration*rate)))
     t=np.arange(1,ticks+1)/ticks;s=10*t**3-15*t**4+6*t**5
-    return [start+(goal-start)*v for v in s]
+    # The last point is the goal itself: start+(goal-start)*1 can exceed a
+    # goal that sits exactly on a joint/jaw limit by one rounding step.
+    return [start+(goal-start)*v for v in s[:-1]]+[goal.copy()]

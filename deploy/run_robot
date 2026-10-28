@@ -8,11 +8,22 @@ export XDG_CONFIG_HOME="$ROOT/.runtime/config"
 export XDG_DATA_HOME="$ROOT/.runtime/data"
 export PIP_CONFIG_FILE=/dev/null PIP_DISABLE_PIP_VERSION_CHECK=1
 export NUMBA_CACHE_DIR="$ROOT/.runtime/cache/numba" MPLCONFIGDIR="$ROOT/.runtime/cache/matplotlib"
+export WARP_CACHE_PATH="$ROOT/.runtime/cache/warp" CUDA_CACHE_PATH="$ROOT/.runtime/cache/nv"
 unset PYTHONPATH
 cd "$ROOT"
-if [ "$#" -eq 0 ]; then set -- status; fi
+if [ "$#" -eq 0 ]; then set -- help; fi
 case "$1" in
-    check) exec "$ROOT/.venv/bin/python" -B -m unittest app.robot_checks app.service_checks app.checks app.relative_checks app.motion_checks ;;
+    check) exec "$ROOT/.venv/bin/python" -B -m unittest app.robot_checks app.service_checks app.checks app.relative_checks app.motion_checks app.calib_checks ;;
+    calib|标定) shift; exec "$ROOT/.venv/bin/python" -B "$ROOT/app/calib.py" "$@" ;;
+    grab|抓瓶) shift; exec "$ROOT/.venv/bin/python" -B "$ROOT/app/grab.py" "$@" ;;
+    help|帮助|-h|--help)
+        echo 'OpenArm 真机入口'
+        echo '  ./run calib        标定进度和下一步（markers / measure / handeye / grip / accept）'
+        echo '  ./run grab         一键抓瓶：预检 → 现场确认 → 启动设备 → Haiku 执行（也可写 ./run 抓瓶）'
+        echo '  ./run grab "任务"   换一句任务描述'
+        echo '  ./run preflight    查看缺项（不开设备）'
+        echo '  ./run status       API 与服务状态'
+        echo '  ./run check        无设备回归测试' ;;
     prepare) shift; exec "$ROOT/.venv/bin/python" -B "$ROOT/app/prepare.py" "$@" ;;
     preflight|service|audit-log) exec "$ROOT/.venv/bin/python" -B "$ROOT/app/service.py" "$@" ;;
     *) exec "$ROOT/.venv/bin/python" -B "$ROOT/app/robot.py" "$@" ;;

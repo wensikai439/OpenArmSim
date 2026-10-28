@@ -98,7 +98,18 @@
       "left": "openarm_left_hand_tcp",
       "right": "openarm_right_hand_tcp"
     },
-    "workspace_bounds_m": null,
+    "workspace_bounds_m": [
+      [
+        -0.3,
+        -0.9,
+        -0.5
+      ],
+      [
+        1.0,
+        0.9,
+        1.5
+      ]
+    ],
     "collision_margin_m": 0.01,
     "velocity_rad_s": 0.1,
     "acceleration_rad_s2": 0.2,
@@ -138,6 +149,7 @@
       "maximum_target_shift_m": 0.02,
       "qualification": "candidate software motion bounds; continuous checked coarse reach, final 3x6mm correction; measured offsets and physical acceptance still required"
     },
-    "jerk_rad_s3": 2.0
+    "jerk_rad_s3": 2.0,
+    "task_poses": "online"
   }
 }

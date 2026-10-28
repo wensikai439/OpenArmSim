@@ -34,7 +34,8 @@ class Fixture(RelativeRuntime):
         self.poses={'left':pose(.4,.2,.35),'right':pose(.4,-.2,.35)}
         self.cal={'motion':{'right_grasps':[{'id':'g0','T_object_tool':np.eye(4).tolist()}],
             'pregrasp_m':.06,'lift_m':.08,'T_bottle_left_tool':np.eye(4).tolist(),
-            'T_basket_bottle':np.eye(4).tolist()}}
+            'T_basket_bottle':np.eye(4).tolist(),'collision_margin_m':.005},'support_tolerance_m':.008,
+            'objects':{'basket':{'inner_size_m':[.2,.2,.1]},'bottle':{'body_radius_m':.03}}}
         self.relative={'correction_step_m':.006,'correction_tolerance_m':.002,
             'rotation_tolerance_rad':.02,'maximum_target_shift_m':.02,
             'handover_offset_m':[.04,0.,.08],'donor_retreat_base_m':[0.,-.06,0.]}

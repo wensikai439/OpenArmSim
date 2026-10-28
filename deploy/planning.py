@@ -127,7 +127,7 @@ class Planner:
         self.disabled={tuple(sorted(p)) for p in collision['disabled_pairs']}
         import fcl
         import trimesh
-        self.fcl=fcl;self.hulls=[];self._scene_ref=None;self._obstacles=[]
+        self.fcl=fcl;self.hulls=[];self._scene_ref=None;self._obstacles=[];self.global_planner=None;self._walking=False;self.global_attempts=3
         for row in collision['hulls']:
             vertices=np.array(row['vertices'],float);faces=np.array(row['faces'],dtype=np.int64)
             if row.get('jaw_sweep_hull_vertices'):
@@ -140,8 +140,10 @@ class Planner:
                 origin=transform(row['mesh_origin']);actual=actual@origin[:3,:3].T+origin[:3,3]
                 geometry=fcl.BVHModel();geometry.beginModel(len(actual),len(mesh.faces))
                 geometry.addSubModel(actual,np.array(mesh.faces,dtype=np.int32));geometry.endModel()
-            else:geometry=fcl.Convex(vertices,len(faces),polygons)
-            self.hulls.append((row['link'],vertices,fcl.CollisionObject(geometry)))
+                # The k-DOP hull encloses every mesh vertex: a clear hull proves a clear mesh.
+                coarse=fcl.CollisionObject(fcl.Convex(vertices,len(faces),polygons))
+            else:geometry=fcl.Convex(vertices,len(faces),polygons);coarse=None
+            self.hulls.append((row['link'],vertices,fcl.CollisionObject(geometry),coarse))
 
     def joints(self,q):
         q=finite(q,(16,));return {n:float(q[i+k]) for side,i in [('left',0),('right',8)] for k,n in enumerate(self.names[side])}
@@ -171,9 +173,10 @@ class Planner:
         tools=self.tools(q);lo,hi=self.motion['workspace_bounds_m']
         if any(np.any(p[:3,3]<lo) or np.any(p[:3,3]>hi) for p in tools.values()):return False
         contact=set(scene.get('contact_links',[]));values=self.joints(q);cache={};shapes=[]
-        for name,vertices,shape in self.hulls:
-            t=self.kin.pose(name,values,cache);shape.setTransform(self.fcl.Transform(t[:3,:3],t[:3,3]))
-            points=vertices@t[:3,:3].T+t[:3,3];shapes.append((name,shape,points.min(axis=0),points.max(axis=0)))
+        for name,vertices,shape,coarse in self.hulls:
+            t=self.kin.pose(name,values,cache);pose=self.fcl.Transform(t[:3,:3],t[:3,3]);shape.setTransform(pose)
+            if coarse is not None:coarse.setTransform(pose)
+            points=vertices@t[:3,:3].T+t[:3,3];shapes.append((name,shape,points.min(axis=0),points.max(axis=0),coarse))
         carried_pose=None;carried_bottom=None;basket_support=False
         if scene.get('carried'):
             carried_pose=tools[scene['carried']['arm']]@transform(scene['carried']['T_tool_object']);obj=self.config['objects']['bottle']
@@ -187,7 +190,7 @@ class Planner:
             shape=self.fcl.CollisionObject(self.fcl.Cylinder(obj['body_radius_m'],obj['body_height_m']),
                 self.fcl.Transform(cylinder[:3,:3],cylinder[:3,3]))
             radius=obj['body_radius_m']+obj['body_height_m']/2
-            shapes.append(('carried_bottle',shape,cylinder[:3,3]-radius,cylinder[:3,3]+radius))
+            shapes.append(('carried_bottle',shape,cylinder[:3,3]-radius,cylinder[:3,3]+radius,None))
         if self._scene_ref is not scene:
             self._obstacles=[]
             for row in scene['obstacles']:
@@ -201,30 +204,41 @@ class Planner:
                     shape=self.fcl.CollisionObject(geometry,self.fcl.Transform(rotation,(c+d)/2))
                     self._obstacles.append((row['id'],shape,np.minimum(c,d)-r,np.maximum(c,d)+r))
             self._scene_ref=scene
-        def clear(a,b,margin):
-            if np.any(a[3]+margin<b[2]) or np.any(b[3]+margin<a[2]):return True
-            distance=self.fcl.distance(a[1],b[1],self.fcl.DistanceRequest(),self.fcl.DistanceResult())
+        def exact(a,b,margin,ca=None,cb=None):
+            if ca is not None or cb is not None:
+                coarse=self.fcl.distance(ca or a,cb or b,self.fcl.DistanceRequest(),self.fcl.DistanceResult())
+                if np.isfinite(coarse) and coarse>=margin:return True
+            distance=self.fcl.distance(a,b,self.fcl.DistanceRequest(),self.fcl.DistanceResult())
             return bool(np.isfinite(distance) and distance>=margin)
-        for i,(name,shape,minimum,maximum) in enumerate(shapes):
+        # Axis-aligned bounds separated by more than the margin are clear; all
+        # remaining pairs get the exact FCL distance (same verdicts, vectorised).
+        def near(lo1,hi1,lo2,hi2,margin):
+            return ~(np.any(hi1[:,None]+margin<lo2[None],axis=2)|np.any(hi2[None]+margin<lo1[:,None],axis=2))
+        lo=np.array([s[2] for s in shapes]);hi=np.array([s[3] for s in shapes]);selfm=self.motion.get('self_collision_margin_m',self.margin)
+        pairs=near(lo,hi,lo,hi,selfm)
+        if self._obstacles:
+            olo=np.array([o[2] for o in self._obstacles]);ohi=np.array([o[3] for o in self._obstacles]);hits=near(lo,hi,olo,ohi,self.margin)
+        for i,(name,shape,minimum,maximum,coarse) in enumerate(shapes):
             # Base mounts are stationary and may intersect the physical table.
             if name=='carried_bottle':
                 if carried_bottom<scene['table_z_m']-self.config['support_tolerance_m']:return False
             elif name not in self.motion['table_mount_links'] and minimum[2]<scene['table_z_m']+self.margin:return False
-            current=(name,shape,minimum,maximum)
-            for other in shapes[i+1:]:
-                name2=other[0]
+            for j in np.flatnonzero(pairs[i,i+1:])+i+1:
+                name2=shapes[j][0]
                 if tuple(sorted([name,name2])) in self.disabled:continue
                 if 'carried_bottle' in [name,name2] and (name in contact or name2 in contact):continue
-                if not clear(current,other,self.motion.get('self_collision_margin_m',self.margin)):return False
-            for obstacle in self._obstacles:
+                if not exact(shape,shapes[j][1],selfm,coarse,shapes[j][4]):return False
+            if not self._obstacles:continue
+            for j in np.flatnonzero(hits[i]):
+                obstacle=self._obstacles[j]
                 if obstacle[0]=='bottle' and (scene.get('carried') or name in contact):continue
                 if obstacle[0]=='basket_floor' and name=='carried_bottle' and basket_support:continue
-                if not clear(current,obstacle,self.margin):return False
+                if not exact(shape,obstacle[1],self.margin,coarse):return False
         return True
 
-    def validate_path(self,path,scene):
+    def validate_path(self,path,scene,*,require_fresh=True):
         import time
-        if not fresh(scene.get('timestamp_unix_s'),time.time(),self.motion['scene_max_age_s']):return False
+        if require_fresh and not fresh(scene.get('timestamp_unix_s'),time.time(),self.motion['scene_max_age_s']):return False
         prior=None
         for q in path:
             q=finite(q,(16,))
@@ -256,6 +270,10 @@ class Planner:
         # Deterministic nearby restarts, bounded time/pose range. Never execute
         # an approximate IK result and never clip a failed IK into a command.
         seeds=[start[active]]+[np.clip(start[active]+v,lo+1e-6,hi-1e-6) for v in [.1,-.1]]
+        # Then joint configurations recorded at the operator-taught key poses:
+        # the wrists start near their limits, so some targets need another
+        # branch. Any result still passes the same full path validation.
+        seeds+=[finite(row,(16,))[active] for row in self.motion.get('ik_seeds',[])]
         for seed in seeds:
             solved=least_squares(residual,np.clip(seed,lo+1e-6,hi-1e-6),bounds=(lo,hi),max_nfev=80)
             goal=full(solved.x);poses=self.tools(goal)
@@ -263,5 +281,62 @@ class Planner:
                 np.linalg.norm(Rotation.from_matrix(t[:3,:3].T@poses[s][:3,:3]).as_rotvec())>.01 for s,t in targets.items()):continue
             path=retime(start,goal,velocity=self.motion['velocity_rad_s'],acceleration=self.motion['acceleration_rad_s2'],
                 jerk=self.motion['jerk_rad_s3'])
-            if self.validate_path([start,*path],scene):return path
+            # Check geometry against the captured planning snapshot. Dispatch
+            # re-observes and validates with require_fresh=True in Servo.follow.
+            if self.validate_path([start,*path],scene,require_fresh=False):return path
+        if not self._walking:
+            try:return self._walk(start,targets,scene)
+            except RuntimeError:pass
+        if self.global_planner is not None:
+            try:return self._global(start,targets,scene)
+            except (RuntimeError,ValueError) as exc:
+                raise RuntimeError('no fully checked path: local IK failed and '+str(exc)) from None
         raise RuntimeError('no fully checked path in bounded local IK search; no unchecked fallback')
+
+    def _walk(self,start,targets,scene,step=.02):
+        """Deterministic straight-line approach in 2 cm local IK steps per arm;
+        every step passes the same dense FCL validation as a one-shot plan."""
+        import time
+        from scipy.spatial.transform import Rotation,Slerp
+        q=finite(start,(16,)).copy();path=[];cached=self.global_planner;self.global_planner=None;self._walking=True
+        try:
+            for side,target in targets.items():
+                a=self.tools(q)[side];target=transform(target)
+                n=max(1,int(np.ceil(max(np.linalg.norm(target[:3,3]-a[:3,3])/step,
+                    np.linalg.norm(Rotation.from_matrix(a[:3,:3].T@target[:3,:3]).as_rotvec())/.15))))
+                if n>40:raise RuntimeError('straight-line walk too long')
+                turn=Slerp([0,1],Rotation.from_matrix([a[:3,:3],target[:3,:3]]))
+                for i in range(1,n+1):
+                    w=np.eye(4);w[:3,:3]=turn(i/n).as_matrix();w[:3,3]=a[:3,3]+(target[:3,3]-a[:3,3])*i/n
+                    segment=self.plan(q,{side:w},scene);path+=segment;q=segment[-1]
+        finally:self.global_planner=cached;self._walking=False
+        return path
+
+    def _global(self,start,targets,scene,attempts=None):
+        """cuRobo geometric path per arm, retimed to the same limits and then
+        accepted only by the same dense FCL validation as local plans. cuRobo
+        is stochastic, so an FCL rejection triggers a fresh attempt."""
+        import time
+        from scipy.spatial.transform import Rotation
+        try:from .cumotion import resample
+        except ImportError:from cumotion import resample
+        reason='cuRobo path rejected by FCL recheck'
+        for _ in range(attempts or self.global_attempts):
+            q=finite(start,(16,)).copy();path=[]
+            for side,target in targets.items():
+                carried=scene.get('carried');bottle=None
+                if carried and carried['arm']!=side:bottle=self.tools(q)[carried['arm']]@transform(carried['T_tool_object'])
+                geometric=self.global_planner.plan_arm(q,side,target,scene,bottle_pose=bottle)
+                segment=resample([q,*geometric],velocity=self.motion['velocity_rad_s'],
+                    acceleration=self.motion['acceleration_rad_s2'],jerk=self.motion['jerk_rad_s3'])
+                path+=segment;q=segment[-1]
+            poses=self.tools(q)
+            for s,t in targets.items():
+                t=transform(t)
+                if (np.linalg.norm(poses[s][:3,3]-t[:3,3])>.001 or
+                    np.linalg.norm(Rotation.from_matrix(t[:3,:3].T@poses[s][:3,:3]).as_rotvec())>.01):
+                    raise RuntimeError('cuRobo end pose outside 1 mm / 0.01 rad')
+            # Same scene geometry the plan used; GPU planning can outlast the 0.2 s
+            # snapshot age, and the caller re-observes before dispatch anyway.
+            if self.validate_path([start,*path],scene,require_fresh=False):return path
+        raise RuntimeError(reason)

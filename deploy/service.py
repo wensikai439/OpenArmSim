@@ -334,6 +334,8 @@ def main():
             previous_term=signal.signal(signal.SIGTERM,interrupted)
             try:
                 if a.devices:
+                    # Servo, perception and planning threads share the GIL.
+                    sys.setswitchinterval(.001)
                     if service.config.get('robot_contract')=='openarm-relative-v1/1':
                         try:from .relative import RelativeRuntime as Runtime
                         except ImportError:from relative import RelativeRuntime as Runtime
