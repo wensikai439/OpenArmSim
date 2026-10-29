@@ -1,6 +1,7 @@
 """Directory-local web variant; original simulation and control code is reused."""
 from __future__ import annotations
 import os
+import json
 from pathlib import Path
 import sys
 import subprocess
@@ -18,7 +19,8 @@ def simple_page(content):
     content = content.replace('<span>固定相机</span>', '')
     content = content.replace('<div class="header-meta">', '<div class="header-meta"><form method="post" action="/logout"><button class="quiet">退出</button></form>')
     content = content.replace('<form id="model-form" class="model-form">', '''<form id="model-form" class="model-form">
-        <label for="profile-name">姓名或昵称<input id="profile-name" required maxlength="40" autocomplete="nickname"></label>''')
+        <label for="profile-name">姓名或昵称<input id="profile-name" required maxlength="40" autocomplete="nickname"></label>
+        <label for="profile-results">个人实验目录名<input id="profile-results" required maxlength="40" placeholder="例如 wsk"></label>''')
     content = content.replace('<div class="actions"><button id="model-save"', '''<label class="checkbox-row"><input id="profile-confirm" type="checkbox" required>确认使用本人的地址、模型和 Key 发送任务与相机图像</label>
         <a href="https://zzq.si/keys" target="_blank" rel="noopener">前往零词元获取 Key ↗</a>
         <div class="actions"><button id="model-save"''')
@@ -40,12 +42,26 @@ def simple_page(content):
 
 def main():
     import server as web
-    from deploy.server.profiles import PROFILE, profile_id, model_settings, bind_harness
+    from deploy.server.profiles import PROFILE, profile_id, model_settings, bind_harness, results_dir
+    from deploy.server.records import install_service, workspace_factory
+    from urllib.parse import urlsplit
+    install_service()
     web.SecretStore = lambda: None
     web.ModelSettings = model_settings(web.ModelSettings)
     original_file = web.Handler._file
     def serve_file(self, path, root):
         relative = path.resolve().relative_to(ROOT)
+        if relative.parts and relative.parts[0] == 'runs':
+            try:
+                own = results_dir()
+                if len(relative.parts) > 1 and relative.parts[1] == 'users':
+                    if not path.resolve().is_relative_to(own.resolve()):
+                        return self._json(404, {'error': 'file not found'})
+                else:
+                    path = own.joinpath(*relative.parts[1:])
+                return original_file(self, path, own)
+            except ValueError:
+                return self._json(404, {'error': 'file not found'})
         if str(relative) == 'ui/profile.js':
             return self._send(200, (ROOT / 'deploy/server/profile.js').read_bytes(), 'text/javascript; charset=utf-8')
         if str(relative) == 'ui/index.html':
@@ -60,8 +76,9 @@ def main():
             content = content.replace('function renderModel(config, editing=false){', '''function renderModel(config, editing=false){
               document.getElementById('model-title').textContent=config.confirmed?'模型配置':'首次使用';
               document.getElementById('profile-name').value=config.display_name||'';
+              document.getElementById('profile-results').value=config.results_folder||'';
               document.getElementById('profile-confirm').checked=false;''')
-            content = content.replace("const values={base_url:", "const values={confirmed:document.getElementById('profile-confirm').checked,display_name:document.getElementById('profile-name').value,base_url:")
+            content = content.replace("const values={base_url:", "const values={confirmed:document.getElementById('profile-confirm').checked,display_name:document.getElementById('profile-name').value,results_folder:document.getElementById('profile-results').value,base_url:")
             return self._send(200, content.encode(), 'text/javascript; charset=utf-8')
         return original_file(self, path, root)
     web.Handler._file = serve_file
@@ -69,6 +86,8 @@ def main():
     original_builder = object_workbench.build_backend
     def build_backend(**kwargs):
         factory, harness = original_builder(**kwargs)
+        import harness.bottle as bottle
+        bottle.BottleWorkspace = workspace_factory(bottle.BottleWorkspace)
         return factory, bind_harness(harness)
     object_workbench.build_backend = build_backend
     # This subclass applies the variant before the upstream page shortcut.
@@ -79,11 +98,33 @@ def main():
             finally: PROFILE.reset(token)
         def do_POST(self):
             token = PROFILE.set(profile_id(self.headers.get('X-OpenArm-Profile')))
-            try: return super().do_POST()
+            try:
+                if urlsplit(self.path).path not in ('/api/model', '/api/model/clear', '/api/model/test'):
+                    try: results_dir()
+                    except ValueError: return self._json(400, {'error': '请先设置个人实验目录'})
+                return super().do_POST()
             finally: PROFILE.reset(token)
         def _send(self, status, data, content_type):
             if content_type.startswith('text/html') and b'<title>OpenArm Lab</title>' in data:
                 data = simple_page(data.decode()).encode()
+            if status == 200 and content_type.startswith('application/json') and urlsplit(self.path).path == '/api/status':
+                value = json.loads(data)
+                try:
+                    own = results_dir()
+                    value['runs'] = sorted([p.name for p in own.glob('*') if p.is_dir() and (p / 'summary.json').is_file()], reverse=True)[:30]
+                except ValueError: value['runs'] = []
+                data = json.dumps(value, ensure_ascii=False, allow_nan=False).encode()
+            if status == 200 and content_type.startswith('application/json') and urlsplit(self.path).path == '/api/experiments':
+                rows = []
+                try:
+                    for path in sorted(results_dir().glob('*'), reverse=True):
+                        if path.is_symlink() or not (path / 'manifest.json').is_file(): continue
+                        manifest = json.loads((path / 'manifest.json').read_text())
+                        summary = json.loads((path / 'summary.json').read_text()) if (path / 'summary.json').exists() else {}
+                        rows.append({'run_id': path.name, 'kind': manifest.get('kind'), 'status': summary.get('status', 'incomplete'), 'scope': 'simulation'})
+                        if len(rows) >= 60: break
+                except (ValueError, OSError): pass
+                data = json.dumps({'experiments': rows}, ensure_ascii=False).encode()
             return super()._send(status, data, content_type)
     web.Handler = PageHandler
     if os.environ.get('OPENARM_GPU_START') == '0':

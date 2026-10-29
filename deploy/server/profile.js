@@ -3,10 +3,11 @@ if (response.ok) {
   const config = await response.json();
   const dialog = document.getElementById('model-dialog');
   document.getElementById('profile-name').value = config.display_name || '';
+  document.getElementById('profile-results').value = config.results_folder || '';
   document.getElementById('model-base').value = config.base_url || '';
   document.getElementById('model-name').value = config.model || '';
   document.getElementById('model-vision').checked = config.vision;
-  if (!config.confirmed && !dialog.open) {
+  if ((!config.confirmed || !config.results_folder) && !dialog.open) {
     document.getElementById('model-title').textContent = '首次使用';
     dialog.showModal();
   }

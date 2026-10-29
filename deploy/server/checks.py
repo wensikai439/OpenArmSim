@@ -81,16 +81,21 @@ class GatewayChecks(unittest.TestCase):
             a, b = secrets.token_hex(24), secrets.token_hex(24)
             profiles.PROFILE.set(a)
             values = {'base_url': 'https://first.invalid/v1', 'model': 'model-a',
-                      'vision': True, 'api_key': secrets.token_hex(24), 'display_name': 'A', 'confirmed': True}
+                      'vision': True, 'api_key': secrets.token_hex(24), 'display_name': 'A', 'results_folder': '实验A', 'confirmed': True}
             settings.configure(values)
             self.assertNotIn('api_key', settings.public())
             profiles.PROFILE.set(b)
             self.assertFalse(settings.public()['configured'])
             with self.assertRaises(ValueError): settings.configure({**values, 'confirmed': False})
-            values_b = {**values, 'base_url': 'https://second.invalid/v1', 'api_key': secrets.token_hex(24), 'display_name': 'B'}
+            values_b = {**values, 'base_url': 'https://second.invalid/v1', 'api_key': secrets.token_hex(24), 'display_name': 'B', 'results_folder': '实验B'}
             settings.configure(values_b)
+            folder_b = profiles.results_dir()
             self.assertEqual(settings.snapshot()['api_key'], values_b['api_key'])
             profiles.PROFILE.set(a)
+            folder_a = profiles.results_dir()
+            self.assertNotEqual(folder_a, folder_b)
+            self.assertTrue(folder_a.is_relative_to(profiles.ROOT / 'runs'))
+            with self.assertRaises(ValueError): settings.configure({**values, 'results_folder': '../other'})
             self.assertEqual(settings.snapshot()['api_key'], values['api_key'])
             self.assertEqual(settings_type().snapshot()['base_url'], values['base_url'])
             self.assertEqual((profiles.ROOT / '.private/profiles' / (a + '.json')).stat().st_mode & 0o777, 0o600)
@@ -105,6 +110,34 @@ class GatewayChecks(unittest.TestCase):
             profiles.PROFILE.set(b)
             self.assertEqual(harness.chat('review', session_id='task-a'), a)
             self.assertEqual(profiles.PROFILE.get(), b)
+
+    def test_queue_and_workspace_keep_owner(self):
+        from deploy.server import profiles, records
+        old_root = profiles.ROOT
+        with tempfile.TemporaryDirectory() as temporary:
+            profiles.ROOT = Path(temporary)
+            try:
+                owners = [secrets.token_hex(24), secrets.token_hex(24)]
+                for owner in owners:
+                    store = profiles.ProfileStore(owner)
+                    store.save({'results_folder': 'team'})
+                q = records.OwnedQueue()
+                profiles.PROFILE.set(owners[0]); q.put('first')
+                profiles.PROFILE.set(owners[1]); q.put('second')
+                self.assertEqual(q.get(), 'first')
+                self.assertEqual(profiles.PROFILE.get(), owners[0])
+                self.assertEqual(q.get(), 'second')
+                self.assertEqual(profiles.PROFILE.get(), owners[1])
+                class Base:
+                    def __init__(self, path): self.path = path; self.busy = False
+                workspace = records.workspace_factory(Base)()
+                profiles.PROFILE.set(owners[0]); path_a = workspace.path; workspace.busy = True
+                profiles.PROFILE.set(owners[1]); path_b = workspace.path
+                self.assertNotEqual(path_a, path_b)
+                self.assertFalse(workspace.busy)
+                profiles.PROFILE.set(owners[0]); self.assertTrue(workspace.busy)
+            finally:
+                profiles.ROOT = old_root
 
 
 if __name__ == '__main__': unittest.main()

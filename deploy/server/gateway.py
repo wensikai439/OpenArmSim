@@ -96,7 +96,9 @@ class Gateway(BaseHTTPRequestHandler):
                 (not origin or origin in (f'http://{host}', f'https://{host}')))
 
     def cookie(self, token, *, clear=False, name=COOKIE):
-        return f'{name}={token}; Path=/; Max-Age={0 if clear else YEAR}; HttpOnly; SameSite=Strict'
+        secure = ('; Secure' if self.client_address[0] in ('127.0.0.1', '::1')
+                  and self.headers.get('X-Forwarded-Proto', '').lower() == 'https' else '')
+        return f'{name}={token}; Path=/; Max-Age={0 if clear else YEAR}; HttpOnly; SameSite=Strict{secure}'
 
     def remember(self, profile):
         return [self.cookie(self.server.auth.issue(profile)),
