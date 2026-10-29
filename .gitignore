@@ -5,6 +5,8 @@ __pycache__/
 .venv/
 .history/
 .runtime/
+.private/
+third_party/
 /harness/state/
 *.sqlite
 *.sqlite3
