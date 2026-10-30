@@ -2,6 +2,7 @@
 from __future__ import annotations
 import os
 import json
+import io
 from pathlib import Path
 import sys
 import subprocess
@@ -20,7 +21,7 @@ def simple_page(content):
     content = content.replace('<div class="header-meta">', '<div class="header-meta"><form method="post" action="/logout"><button class="quiet">退出</button></form>')
     content = content.replace('<form id="model-form" class="model-form">', '''<form id="model-form" class="model-form">
         <label for="profile-name">姓名或昵称<input id="profile-name" required maxlength="40" autocomplete="nickname"></label>
-        <label for="profile-results">个人实验目录名<input id="profile-results" required maxlength="40" placeholder="例如 wsk"></label>''')
+        <label for="profile-results">个人实验目录名（服务器 runs/users 下）<input id="profile-results" required maxlength="40" placeholder="例如 wsk"></label>''')
     content = content.replace('<div class="actions"><button id="model-save"', '''<label class="checkbox-row"><input id="profile-confirm" type="checkbox" required>确认使用本人的地址、模型和 Key 发送任务与相机图像</label>
         <a href="https://zzq.si/keys" target="_blank" rel="noopener">前往零词元获取 Key ↗</a>
         <div class="actions"><button id="model-save"''')
@@ -98,12 +99,30 @@ def main():
             finally: PROFILE.reset(token)
         def do_POST(self):
             token = PROFILE.set(profile_id(self.headers.get('X-OpenArm-Profile')))
+            original_stream = self.rfile
             try:
-                if urlsplit(self.path).path not in ('/api/model', '/api/model/clear', '/api/model/test'):
+                route = urlsplit(self.path).path
+                if route not in ('/api/model', '/api/model/clear', '/api/model/test'):
                     try: results_dir()
                     except ValueError: return self._json(400, {'error': '请先设置个人实验目录'})
+                # Research tools use the legacy shared runs directory. They are not
+                # available on the shared web platform until separately isolated.
+                if route in ('/api/tools', '/api/chat'):
+                    try:
+                        size = int(self.headers.get('Content-Length', '0'))
+                        if not 0 < size <= web.MAX_BODY: raise ValueError('invalid request size')
+                        raw = self.rfile.read(size)
+                        body = json.loads(raw)
+                        if not isinstance(body, dict): raise ValueError('JSON object required')
+                        if body.get('role', 'execute') != 'execute':
+                            return self._json(403, {'error': '共享平台暂不开放实验与训练工具'})
+                        self.rfile = io.BytesIO(raw)
+                    except (ValueError, TypeError, UnicodeError):
+                        return self._json(400, {'error': '请求格式不正确'})
                 return super().do_POST()
-            finally: PROFILE.reset(token)
+            finally:
+                self.rfile = original_stream
+                PROFILE.reset(token)
         def _send(self, status, data, content_type):
             if content_type.startswith('text/html') and b'<title>OpenArm Lab</title>' in data:
                 data = simple_page(data.decode()).encode()
