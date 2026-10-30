@@ -36,7 +36,7 @@ export function richText(text){
 }
 
 export function createAgentUI({api,toast,message}){
-  let revision='',fetching=false,modelBusy=false,submitting=false,local={turns:[],memory:{notes:[],episodes:[]}},planToken='',selectedBackend='tamp',skillCatalogue=null,memoryObject=null;
+  let revision='',fetching=false,modelBusy=false,submitting=false,local={turns:[],memory:{notes:[],episodes:[]}},planToken='',selectedBackend='tamp',skillCatalogue=null,memoryObject=null,skillsRequest=0;
   const cards=new Map();
   function role(){return $('agent-role').value;}
   function shortDetail(event){
@@ -184,18 +184,18 @@ export function createAgentUI({api,toast,message}){
   }
   async function refresh(force=false){
     if(fetching)return;fetching=true;const selected=role();
-    try{const data=await api('/api/agent?role='+selected);if(selected!==role())return;local=data;revision=data.revision;renderTurns();}
+    try{const data=await api('/api/agent?role='+selected);if(selected!==role())return;local=data;revision=data.revision;renderTurns();if($('memory-dialog').open)renderMemory();}
     catch(e){if(force)toast(e.message);}finally{fetching=false;}
   }
   $('chat-form').addEventListener('submit',async event=>{
     event.preventDefault();const text=$('chat-input').value.trim();if(!text||submitting||modelBusy)return;
     submitting=true;$('send-button').disabled=true;$('agent-role').disabled=true;$('chat-input').value='';
     $('agent-activity').textContent='正在提交给模型…';
-    try{const result=await api('/api/chat',{message:text,role:role()});if(result.mode==='not_configured')message(result.message,'note');}
-    catch(e){toast(e.message);}finally{submitting=false;await refresh(true);$('send-button').disabled=modelBusy;$('agent-role').disabled=modelBusy;}
+    try{const result=await api('/api/chat',{message:text,role:role()});if(result.mode==='not_configured'){if(!$('chat-input').value)$('chat-input').value=text;message(result.message,'note');}}
+    catch(e){if(!$('chat-input').value)$('chat-input').value=text;toast(e.message);}finally{submitting=false;await refresh(true);$('send-button').disabled=modelBusy;$('agent-role').disabled=modelBusy;}
   });
   $('agent-role').addEventListener('change',()=>{revision='';$('memory-note').value='';delete $('memory-note').dataset.replaces;for(const card of cards.values())card.remove();cards.clear();refresh(true);});
-  $('memory-button').addEventListener('click',async()=>{await refresh(true);renderMemory();$('memory-dialog').showModal();});
+  $('memory-button').addEventListener('click',async()=>{renderMemory();$('memory-dialog').showModal();await refresh(true);if($('memory-dialog').open)renderMemory();});
   $('memory-search').addEventListener('input',renderMemory);
   $('memory-outcome').addEventListener('change',renderMemory);
   $('memory-context').addEventListener('change',renderMemory);
@@ -226,14 +226,18 @@ export function createAgentUI({api,toast,message}){
     $('tamp-demo').hidden=id!=='tamp';$('motion-form').hidden=!['tamp','curobo'].includes(id);$('motion-run').disabled=!backend.ready;$('motion-result').textContent='';
   }
   $('skills-button').addEventListener('click',async()=>{
+    const request=++skillsRequest;
+    $('skills-dialog').showModal();
+    $('backend-list').replaceChildren();$('skills-list').replaceChildren();
+    $('skills-scope').textContent='正在加载技能…';$('tamp-demo').hidden=true;$('motion-form').hidden=true;
     try{
-      const data=await api('/api/skills');$('backend-list').replaceChildren();$('skills-list').replaceChildren();
+      const data=await api('/api/skills');if(request!==skillsRequest)return;$('backend-list').replaceChildren();$('skills-list').replaceChildren();
       skillCatalogue=data;
       for(const backend of data.adapters){const ready=backend.callable??backend.ready;const item=node('button',`backend ${ready?'ready':'unavailable'}`);item.type='button';item.id='backend-'+backend.id;item.dataset.backend=backend.id;item.setAttribute('role','tab');item.setAttribute('aria-controls','backend-panel');item.append(node('strong','',backend.id==='pi05'?'π0.5':backend.id==='curobo'?'cuRobo':backend.id.toUpperCase()),node('small','',ready?'可调用':'未接入'));item.title=backend.reason||backend.validation_note||(backend.performance_verified?'任务效果已验证':'接口可用不代表任务效果已验证');item.addEventListener('click',()=>selectBackend(backend.id));item.addEventListener('keydown',e=>{const ids=data.adapters.map(b=>b.id),index=ids.indexOf(backend.id);const next=e.key==='ArrowRight'?ids[(index+1)%ids.length]:e.key==='ArrowLeft'?ids[(index+ids.length-1)%ids.length]:e.key==='Home'?ids[0]:e.key==='End'?ids.at(-1):null;if(next){e.preventDefault();selectBackend(next);$('backend-'+next).focus();}});$('backend-list').append(item);}
       selectBackend(selectedBackend);
-      $('skills-dialog').showModal();
-    }catch(e){toast(e.message);}
+    }catch(e){if(request===skillsRequest){$('skills-scope').textContent='加载失败，请关闭后重试。';toast(e.message);}}
   });
+  $('skills-dialog').addEventListener('close',()=>{skillsRequest++;});
   $('motion-form').addEventListener('submit',async event=>{
     event.preventDefault();const button=$('motion-run');button.disabled=true;
     try{const delta=['motion-x','motion-y','motion-z'].map(id=>Number($(id).value)/100);if(!delta.every(Number.isFinite)||Math.hypot(...delta)>.15)throw new Error('位移总长度须在 15 cm 内');const obs=await api('/api/tools',{name:'observe',arguments:{}});const result=await api('/api/tools',{name:'move_relative',arguments:{observation_id:obs.observation_id,arm:$('motion-arm').value,delta_m:delta,frame:'world',speed_scale:.5,planner:selectedBackend}});$('motion-result').textContent='已提交规划 · 执行反馈见场景与运行阶段';message('已提交末端相对移动，执行编号 '+result.execution_id,'note');}
@@ -254,8 +258,8 @@ export function createAgentUI({api,toast,message}){
       if(selected!==memoryObject){memoryObject=selected;$('memory-context').options[0].textContent=selected?`当前对象：${({bottle:'瓶子',block:'长方体',can:'圆柱'})[selected]||selected}`:'当前任务';if($('memory-dialog').open)renderMemory();}
       modelBusy=!!data.agent?.busy;
       $('send-button').disabled=submitting||modelBusy;$('agent-role').disabled=submitting||modelBusy;
-      $('agent-activity').textContent=modelBusy?'模型正在处理 · 调用过程见下方':data.llm?`${data.llm_model} · API 已配置`:'尚未接入 API';
-      $('agent-activity').classList.toggle('active',modelBusy);
+      $('agent-activity').textContent=submitting&&!modelBusy?'正在提交给模型…':modelBusy?'模型正在处理 · 调用过程见下方':data.llm?`${data.llm_model} · API 已配置`:'尚未接入 API';
+      $('agent-activity').classList.toggle('active',submitting||modelBusy);
       if(data.agent&&data.agent.revision!==revision)refresh();
       const plan=data.agent?.plan,token=JSON.stringify(plan);
       if(token!==planToken){planToken=token;if(plan){
