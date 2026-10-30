@@ -5,11 +5,13 @@ import json
 import os
 from pathlib import Path
 import re
+import stat
 import tempfile
 import threading
 import time
 
 ROOT = Path(__file__).resolve().parents[2]
+DATA_ROOT = Path('/data_ssdb')
 PROFILE = ContextVar('openarm_api_profile', default=None)
 
 
@@ -17,24 +19,32 @@ def profile_id(value):
     return value if isinstance(value, str) and re.fullmatch(r'[a-f0-9]{48}', value) else None
 
 
-def folder_name(value):
-    if not isinstance(value, str) or not re.fullmatch(r'[\w-]{1,40}', value, re.UNICODE):
-        raise ValueError('目录名请使用 1–40 个中文、字母、数字、下划线或短横线')
-    return value
+def existing_directory(value):
+    if not isinstance(value, str) or not value or len(value) > 1024:
+        raise ValueError('请填写已经创建的个人实验目录完整路径')
+    path = Path(value)
+    if not path.is_absolute() or '..' in path.parts:
+        raise ValueError('请填写 /data_ssdb/ 下的完整目录路径')
+    root = DATA_ROOT.resolve(strict=True)
+    if path == root or not path.is_relative_to(root):
+        raise ValueError('个人实验目录必须位于 /data_ssdb/ 下')
+    current = root
+    for part in path.relative_to(root).parts:
+        current = current / part
+        if current.is_symlink(): raise ValueError('个人实验目录不能包含符号链接')
+    if not path.is_dir(): raise ValueError('个人实验目录不存在，请先在服务器创建')
+    if not os.access(path, os.W_OK | os.X_OK): raise ValueError('平台无法写入该目录')
+    return path
 
 
 def results_dir(profile=None, *, create=False):
     profile = profile_id(profile or PROFILE.get())
     if not profile: raise ValueError('请先登录并设置个人实验目录')
     values = ProfileStore(profile).load() or {}
-    name = folder_name(values.get('results_folder'))
-    root = ROOT / 'runs'
-    parent = root / 'users'
-    path = parent / (name + '-' + profile[:16])
-    for item in (root, parent, path):
-        if item.is_symlink(): raise ValueError('个人实验目录不能使用符号链接')
-    if not path.resolve().is_relative_to(root.resolve()): raise ValueError('个人实验目录超出允许范围')
-    if create: path.mkdir(mode=0o700, parents=True, exist_ok=True)
+    path = existing_directory(values.get('results_path'))
+    stat = path.stat()
+    if (stat.st_dev, stat.st_ino) != (values.get('results_dev'), values.get('results_ino')):
+        raise ValueError('个人实验目录已变化，请重新确认')
     return path
 
 
@@ -82,13 +92,16 @@ def model_settings(base):
             values = selected.snapshot() if selected else {}
             if not values.get('confirmed'):
                 return {'base_url': 'https://zzq.si/v1', 'model': '', 'api_key': '', 'vision': True,
-                        'confirmed': False, 'display_name': '', 'results_folder': ''}
+                        'confirmed': False, 'display_name': '', 'results_path': ''}
             return values
 
         def public(self):
             values = self.snapshot()
-            return {key: value for key, value in values.items() if key != 'api_key'} | {
-                'configured': bool(values['api_key']) and values.get('confirmed', False) and bool(values.get('results_folder')),
+            try: results_dir(); directory_ready = True
+            except (ValueError, OSError): directory_ready = False
+            return {key: value for key, value in values.items() if key not in ('api_key', 'results_dev', 'results_ino')} | {
+                'configured': bool(values['api_key']) and values.get('confirmed', False) and directory_ready,
+                'directory_ready': directory_ready,
                 'storage': 'private_browser_profile', 'storage_error': None}
 
         def configure(self, values):
@@ -97,21 +110,28 @@ def model_settings(base):
             values = dict(values)
             confirmed = values.pop('confirmed', False)
             name = values.pop('display_name', '')
-            folder = folder_name(values.pop('results_folder', ''))
+            folder = existing_directory(values.pop('results_path', ''))
             if confirmed is not True: raise ValueError('请先确认本人的请求地址、模型与 Key')
             if not isinstance(name, str) or not 1 <= len(name.strip()) <= 40:
                 raise ValueError('请输入姓名或昵称')
-            selected.store.metadata = {'confirmed': True, 'display_name': name.strip(), 'results_folder': folder}
-            selected.configure(values)
+            info = folder.stat()
+            metadata = {'confirmed': True, 'display_name': name.strip(), 'results_path': str(folder),
+                        'results_dev': info.st_dev, 'results_ino': info.st_ino}
+            previous = selected.store.metadata
+            selected.store.metadata = metadata
+            try: selected.configure(values)
+            except Exception:
+                selected.store.metadata = previous
+                raise
             # ModelSettings keeps its in-memory override separately from Store.
             selected.override.update(selected.store.metadata)
-            results_dir(create=True)
+            results_dir()
             return self.public()
 
         def clear(self):
             selected = self.selected()
             if selected is None: raise ValueError('请先登录')
-            selected.store.metadata = {'confirmed': False, 'display_name': '', 'results_folder': ''}
+            selected.store.metadata = {'confirmed': False, 'display_name': '', 'results_path': ''}
             selected.clear(); selected.override.update(selected.store.metadata)
             return self.public()
 
@@ -168,7 +188,11 @@ def bind_harness(base):
             snapshot = self.service.snapshot()
             active = snapshot.get('job')
             run_id = active.get('run_id') if active else (snapshot.get('last_run') or {}).get('run_id')
-            with (path / 'harness.jsonl').open('a') as stream:
+            fd = os.open(path / 'harness.jsonl', os.O_WRONLY | os.O_CREAT | os.O_APPEND | os.O_NOFOLLOW, 0o600)
+            if not stat.S_ISREG(os.fstat(fd).st_mode):
+                os.close(fd)
+                raise ValueError('实验日志必须是普通文件')
+            with os.fdopen(fd, 'a') as stream:
                 stream.write(json.dumps({'time': time.time(), 'run_id': run_id, 'tool': name,
                                          'arguments': args, 'result': result}, ensure_ascii=False) + '\n')
     return BrowserHarness

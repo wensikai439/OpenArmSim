@@ -21,7 +21,7 @@ def simple_page(content):
     content = content.replace('<div class="header-meta">', '<div class="header-meta"><form method="post" action="/logout"><button class="quiet">退出</button></form>')
     content = content.replace('<form id="model-form" class="model-form">', '''<form id="model-form" class="model-form">
         <label for="profile-name">姓名或昵称<input id="profile-name" required maxlength="40" autocomplete="nickname"></label>
-        <label for="profile-results">个人实验目录名（服务器 runs/users 下）<input id="profile-results" required maxlength="40" placeholder="例如 wsk"></label>''')
+        <label for="profile-results">服务器个人实验目录<input id="profile-results" required maxlength="1024" placeholder="/data_ssdb/你的目录/实验目录"></label>''')
     content = content.replace('<div class="actions"><button id="model-save"', '''<label class="checkbox-row"><input id="profile-confirm" type="checkbox" required>确认使用本人的地址、模型和 Key 发送任务与相机图像</label>
         <a href="https://zzq.si/keys" target="_blank" rel="noopener">前往零词元获取 Key ↗</a>
         <div class="actions"><button id="model-save"''')
@@ -55,11 +55,7 @@ def main():
         if relative.parts and relative.parts[0] == 'runs':
             try:
                 own = results_dir()
-                if len(relative.parts) > 1 and relative.parts[1] == 'users':
-                    if not path.resolve().is_relative_to(own.resolve()):
-                        return self._json(404, {'error': 'file not found'})
-                else:
-                    path = own.joinpath(*relative.parts[1:])
+                path = own.joinpath(*relative.parts[1:])
                 return original_file(self, path, own)
             except ValueError:
                 return self._json(404, {'error': 'file not found'})
@@ -75,11 +71,12 @@ def main():
             content = content.replace("message('描述任务后，模型会制定阶段、调用工具，并在运行后复查。过程与记忆都会保留。');", '')
             content = content.replace("config.storage==='system_keyring'?'密钥保存在本机系统密钥环，重启后自动恢复。':'当前密钥只在服务内存，保存配置后会使用本机存储。'", "'配置仅属于当前浏览器。'")
             content = content.replace('function renderModel(config, editing=false){', '''function renderModel(config, editing=false){
-              document.getElementById('model-title').textContent=config.confirmed?'模型配置':'首次使用';
+              document.getElementById('model-title').textContent=config.configured?'模型配置':'首次使用';
+              document.getElementById('model-close').disabled=!config.configured;
               document.getElementById('profile-name').value=config.display_name||'';
-              document.getElementById('profile-results').value=config.results_folder||'';
+              document.getElementById('profile-results').value=config.results_path||'';
               document.getElementById('profile-confirm').checked=false;''')
-            content = content.replace("const values={base_url:", "const values={confirmed:document.getElementById('profile-confirm').checked,display_name:document.getElementById('profile-name').value,results_folder:document.getElementById('profile-results').value,base_url:")
+            content = content.replace("const values={base_url:", "const values={confirmed:document.getElementById('profile-confirm').checked,display_name:document.getElementById('profile-name').value,results_path:document.getElementById('profile-results').value,base_url:")
             return self._send(200, content.encode(), 'text/javascript; charset=utf-8')
         return original_file(self, path, root)
     web.Handler._file = serve_file
@@ -104,7 +101,7 @@ def main():
                 route = urlsplit(self.path).path
                 if route not in ('/api/model', '/api/model/clear', '/api/model/test'):
                     try: results_dir()
-                    except ValueError: return self._json(400, {'error': '请先设置个人实验目录'})
+                    except (ValueError, OSError): return self._json(400, {'error': '请先确认已存在的个人实验目录'})
                 # Research tools use the legacy shared runs directory. They are not
                 # available on the shared web platform until separately isolated.
                 if route in ('/api/tools', '/api/chat'):

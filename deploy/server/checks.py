@@ -76,29 +76,48 @@ class GatewayChecks(unittest.TestCase):
         llm = module('llm_test', Path(__file__).resolve().parents[2] / 'harness/llm.py')
         with tempfile.TemporaryDirectory() as temporary:
             profiles.ROOT = Path(temporary)
+            profiles.DATA_ROOT = Path(temporary) / 'data_ssdb'
+            profiles.DATA_ROOT.mkdir()
+            folder_a, folder_b = profiles.DATA_ROOT / 'a', profiles.DATA_ROOT / 'b'
+            folder_a.mkdir(); folder_b.mkdir()
             settings_type = profiles.model_settings(llm.ModelSettings)
             settings = settings_type()
             a, b = secrets.token_hex(24), secrets.token_hex(24)
             profiles.PROFILE.set(a)
             values = {'base_url': 'https://first.invalid/v1', 'model': 'model-a',
-                      'vision': True, 'api_key': secrets.token_hex(24), 'display_name': 'A', 'results_folder': '实验A', 'confirmed': True}
+                      'vision': True, 'api_key': secrets.token_hex(24), 'display_name': 'A', 'results_path': str(folder_a), 'confirmed': True}
             settings.configure(values)
             self.assertNotIn('api_key', settings.public())
             profiles.PROFILE.set(b)
             self.assertFalse(settings.public()['configured'])
             with self.assertRaises(ValueError): settings.configure({**values, 'confirmed': False})
-            values_b = {**values, 'base_url': 'https://second.invalid/v1', 'api_key': secrets.token_hex(24), 'display_name': 'B', 'results_folder': '实验B'}
+            values_b = {**values, 'base_url': 'https://second.invalid/v1', 'api_key': secrets.token_hex(24), 'display_name': 'B', 'results_path': str(folder_b)}
             settings.configure(values_b)
             folder_b = profiles.results_dir()
             self.assertEqual(settings.snapshot()['api_key'], values_b['api_key'])
             profiles.PROFILE.set(a)
             folder_a = profiles.results_dir()
             self.assertNotEqual(folder_a, folder_b)
-            self.assertTrue(folder_a.is_relative_to(profiles.ROOT / 'runs'))
-            with self.assertRaises(ValueError): settings.configure({**values, 'results_folder': '../other'})
+            self.assertTrue(folder_a.is_relative_to(profiles.DATA_ROOT))
+            with self.assertRaises(ValueError): settings.configure({**values, 'results_path': '../other'})
+            with self.assertRaises(ValueError): settings.configure({**values, 'results_path': str(profiles.DATA_ROOT / 'missing')})
+            self.assertFalse((profiles.DATA_ROOT / 'missing').exists())
+            outside = profiles.ROOT / 'elsewhere'; outside.mkdir()
+            with self.assertRaises(ValueError): settings.configure({**values, 'results_path': str(outside)})
+            symlink = profiles.DATA_ROOT / 'link'; symlink.symlink_to(folder_a, target_is_directory=True)
+            with self.assertRaises(ValueError): settings.configure({**values, 'results_path': str(symlink)})
             self.assertEqual(settings.snapshot()['api_key'], values['api_key'])
             self.assertEqual(settings_type().snapshot()['base_url'], values['base_url'])
             self.assertEqual((profiles.ROOT / '.private/profiles' / (a + '.json')).stat().st_mode & 0o777, 0o600)
+            folder_a.rename(profiles.DATA_ROOT / 'renamed'); folder_a.mkdir()
+            self.assertFalse(settings.public()['configured'])
+            with self.assertRaises(ValueError): profiles.results_dir(create=True)
+            folder_a.rmdir()
+            self.assertFalse(settings.public()['configured'])
+            with self.assertRaises(ValueError): profiles.results_dir(create=True)
+            self.assertFalse(folder_a.exists())
+            (profiles.DATA_ROOT / 'renamed').rename(folder_a)
+            self.assertTrue(settings.public()['configured'])
             class Base:
                 def __init__(self): self.sessions = {}
                 def chat(self, *args, **kwargs):
@@ -114,13 +133,17 @@ class GatewayChecks(unittest.TestCase):
     def test_queue_and_workspace_keep_owner(self):
         from deploy.server import profiles, records
         old_root = profiles.ROOT
+        old_data_root = profiles.DATA_ROOT
         with tempfile.TemporaryDirectory() as temporary:
             profiles.ROOT = Path(temporary)
+            profiles.DATA_ROOT = Path(temporary) / 'data_ssdb'
+            profiles.DATA_ROOT.mkdir()
             try:
                 owners = [secrets.token_hex(24), secrets.token_hex(24)]
-                for owner in owners:
+                for index, owner in enumerate(owners):
+                    folder = profiles.DATA_ROOT / str(index); folder.mkdir(); info = folder.stat()
                     store = profiles.ProfileStore(owner)
-                    store.save({'results_folder': 'team'})
+                    store.save({'results_path': str(folder), 'results_dev': info.st_dev, 'results_ino': info.st_ino})
                 q = records.OwnedQueue()
                 profiles.PROFILE.set(owners[0]); q.put('first')
                 profiles.PROFILE.set(owners[1]); q.put('second')
@@ -136,8 +159,16 @@ class GatewayChecks(unittest.TestCase):
                 self.assertNotEqual(path_a, path_b)
                 self.assertFalse(workspace.busy)
                 profiles.PROFILE.set(owners[0]); self.assertTrue(workspace.busy)
+                records.install_service()
+                from sim.service import SimulationService
+                from urllib.parse import unquote
+                self.assertEqual(unquote(SimulationService._record_url(None, path_a.parent / 'run' / '关键帧.jpg')),
+                                 '/runs/run/关键帧.jpg')
+                with self.assertRaises(ValueError):
+                    SimulationService._record_url(None, path_b.parent / 'run' / 'frame.jpg')
             finally:
                 profiles.ROOT = old_root
+                profiles.DATA_ROOT = old_data_root
 
 
 if __name__ == '__main__': unittest.main()
