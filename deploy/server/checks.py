@@ -166,6 +166,21 @@ class GatewayChecks(unittest.TestCase):
                                  '/runs/run/关键帧.jpg')
                 with self.assertRaises(ValueError):
                     SimulationService._record_url(None, path_b.parent / 'run' / 'frame.jpg')
+                import numpy as np
+                from types import SimpleNamespace
+                run = path_a.parent / 'run'; run.mkdir()
+                class Env:
+                    tick = 1
+                    data = SimpleNamespace(time=0.1)
+                    def render(self, _camera): return np.zeros((2, 2, 3), dtype=np.uint8)
+                class Recorder:
+                    path = run
+                    def event(self, _event): pass
+                simulation = object.__new__(SimulationService)
+                simulation.env = Env(); simulation.keyframes = []; simulation.epoch = 'test'
+                frame = simulation._capture('测试', Recorder(), camera='head', sensor_evidence=True)
+                for url in [frame['url'], *frame['sensor_urls'].values()]:
+                    self.assertTrue((path_a.parent / unquote(url.removeprefix('/runs/'))).is_file())
             finally:
                 profiles.ROOT = old_root
                 profiles.DATA_ROOT = old_data_root
