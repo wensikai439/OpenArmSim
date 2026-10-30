@@ -11,7 +11,7 @@ document.querySelectorAll('[data-demo-prompt]').forEach(button => {
 });
 const labels = {operator:'正面观察',overview:'全景',head:'头部 · 模型相机',left:'左腕 · 模型相机',right:'右腕 · 模型相机'};
 const statusLabels = {success:'仿真任务成功',primitive_completed:'技能执行完成 · 完整目标另行复查',invalid:'物理状态异常',cancelled:'已停止',error:'执行失败',reference_exhausted:'轨迹已播完，任务未成功',budget_exhausted:'步数预算耗尽，任务未成功',truncated:'达到时长上限'};
-let state, camera='operator', imageToken='', sensorToken='', frames=[], frameIndex=0, shownRun='', toastTimer;
+let state, camera='operator', imageToken='', sensorToken='', sensorUpdatedAt=0, frames=[], frameIndex=0, shownRun='', toastTimer;
 let lastAgentEvent=0, learningId='', learningMetrics=[], calibrationRefreshKey='', pendingCommand='';
 let alignment=null, alignmentRows=[], alignmentRow=null, modelConfig=null;
 const frontView={mode:'front',azimuth:180,elevation:-24,distance:1.25,lookat:[.43,0,1.20]};
@@ -99,7 +99,11 @@ function setCamera(next) {
 function updateImages(data) {
   const token=`${data.observation_id}:${camera}:${camera==='operator'?data.viewer?.revision:''}`;
   if(token!==imageToken){imageToken=token;$('main-camera').src=`/api/frame?camera=${camera}&v=${encodeURIComponent(data.observation_id)}&view=${data.viewer?.revision??0}`;}
-  if(sensorToken!==data.observation_id){sensorToken=data.observation_id;for(const name of ['head','left','right'])$(`thumb-${name}`).src=`/api/frame?camera=${name}&v=${encodeURIComponent(data.observation_id)}`;}
+  const now=performance.now();
+  if(sensorToken!==data.observation_id && (data.state!=='running'||now-sensorUpdatedAt>=1000||!sensorToken)){
+    sensorToken=data.observation_id;sensorUpdatedAt=now;
+    for(const name of ['head','left','right'])$(`thumb-${name}`).src=`/api/frame?camera=${name}&v=${encodeURIComponent(data.observation_id)}`;
+  }
 }
 async function sendView(){
   if(viewSending)return;viewSending=true;
