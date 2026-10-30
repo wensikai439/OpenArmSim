@@ -4,7 +4,7 @@ OpenArm 仿真与 LLM 任务平台。两人通过浏览器使用实验室 4090 �
 
 ## 1. 打开平台
 
-在浏览器打开 **[OpenArm Lab](https://wensikai439.github.io/OpenArmLab-entry/)**，输入团队共享的网页登录密码。队友不需要 SSH 权限。
+在浏览器打开 **[OpenArm Lab](https://wensikai439.github.io/OpenArmLab-entry/)**，输入团队共享的网页登录密码。使用网页不需要 SSH；首次使用前需通过自己的服务器账号建好个人目录。
 
 入口会跳转到临时 HTTPS 地址。目前通道重启后，管理员需要更新入口里的跳转地址。同一浏览器会记住登录；通道地址变化、主动退出、清除 Cookie 或更换浏览器后需重新登录。
 
