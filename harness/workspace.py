@@ -797,6 +797,24 @@ class Workspace:
                 turn['trace'] = [dict(r) for r in self.db.execute('SELECT * FROM trace WHERE turn_id=? ORDER BY id', (turn['id'],))]
                 for event in turn['trace']:
                     event['detail'] = json.loads(event['detail'])
+                    detail=event['detail'];result=detail.get('result') or {}
+                    ident=result.get('execution_id') if event['kind']=='tool' else detail.get('execution_id') if event['kind']=='execution' else None
+                    if not isinstance(ident,str):continue
+                    # Human-facing projection only. Preserve the original
+                    # dispatch event; a returned call is not physical success.
+                    row=self.db.execute('''SELECT e.id,e.tool,e.status,e.run_id,e.created,
+                        x.feedback,x.evidence_kind,x.created AS finished
+                        FROM episodes e LEFT JOIN experiences x ON x.id=e.id AND x.role=e.role
+                        WHERE e.id=? AND e.role=? AND e.root_execution_id=?''',
+                        (ident,role,turn.get('parent') or turn['id'])).fetchone()
+                    if not row or (event['kind']=='tool' and row['tool']!=event['name']):continue
+                    feedback=json.loads(row['feedback']) if row['feedback'] else {}
+                    detail['execution']={'execution_id':ident,'status':row['status'],'run_id':row['run_id'],
+                        'evidence_kind':row['evidence_kind'],
+                        'feedback':{key:feedback[key] for key in ('primitive_success','failure_code','message','verification_source') if key in feedback},
+                        'native_commands':feedback.get('planning_timing',{}).get('native_commands'),
+                        'wall_seconds':max(0,row['finished']-row['created']) if row['finished'] is not None else None,
+                        'scope':'display-only bound execution receipt; call completion is not skill or task success'}
             memory=self.memory(role, epoch, public=True, context=context)
             memory={**memory,'notes':[n for n in memory['notes'] if n['scope']=='preference' and n['source']=='user'],
                     'episodes':[],'experiences':[],'objects':[],'working':{}}

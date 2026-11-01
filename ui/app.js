@@ -1,7 +1,7 @@
-import {createAgentUI} from './agent.js?v=records-2';
+import {createAgentUI} from './agent.js?v=execution-1';
 import {createSceneUI} from './scene.js?v=platform-25';
 import {createWorkspaceUI} from './workspace.js?v=records-2';
-import {createRecordsUI} from './records.js?v=records-1';
+import {createRecordsUI} from './records.js?v=execution-1';
 const $ = (id) => document.getElementById(id);
 document.querySelectorAll('[data-demo-prompt]').forEach(button => {
   button.addEventListener('click', () => {

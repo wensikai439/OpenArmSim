@@ -1,6 +1,6 @@
 const $ = id => document.getElementById(id);
-import {toolNames as names, groupTurns} from './activity.js?v=records-1';
-const statuses = {running:'进行中',waiting:'等待执行',completed:'已结束',error:'失败',interrupted:'已中断',cancelled:'已停止',budget_exhausted:'预算耗尽',unknown:'历史片段'};
+import {toolNames as names, groupTurns, traceState} from './activity.js?v=execution-1';
+const statuses = {running:'进行中',waiting:'等待执行',completed:'已结束',error:'失败',failure:'未完成',interrupted:'已中断',cancelled:'已停止',budget_exhausted:'预算耗尽',unknown:'历史片段'};
 const marks = {done:'✓',running:'·',blocked:'!',uncertain:'?',failure:'!'};
 const outcomes = {success:'技能成功',failure:'执行失败',rejected:'调用被拒绝',cancelled:'已取消',unverified:'结果未验证'};
 const checks = {observation:'已读取观测',right_grasp:'右手夹持证据',right_lift:'右手抬起证据',handover:'双手交接证据',left_grasp:'右手打开后左手独立持瓶',left_release_at_basket:'左手在篮中释放瓶子',basket:'稳定入篮证据',tool_completed:'工具完成，不代表完整任务成功',visual_review:'模型视觉复查，与物理评分分开'};
@@ -11,6 +11,10 @@ skillHelp.resolve_scene_target='按物体原点、外形中心或顶部，以及
 skillHelp.resolve_placement_transit='根据当前持物与夹爪关系，计算原放置目标上方的末端位姿。只生成目标，不启动动作；规划运动并得到新反馈后，仍须执行放置和稳定检查。';
 skillHelp.select_manipulation_object='任务开始先选择已注册对象，再观察和规划。选择只改变任务身份，不移动物体；夹爪接触物体或已开始动作后不能更换。';
 function node(tag,cls,text){const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n;}
+function icon(name,cls='') {
+  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg'),use=document.createElementNS(svg.namespaceURI,'use');
+  svg.setAttribute('class',cls);svg.setAttribute('aria-hidden','true');use.setAttribute('href','#icon-'+name);svg.append(use);return svg;
+}
 
 // Render a small, safe Markdown subset using text nodes, never model HTML.
 export function richText(text){
@@ -62,12 +66,16 @@ export function createAgentUI({api,toast,message}){
       const key=String(event.id);let row=old.get(key);
       if(!row){row=node('details','trace-item');row.dataset.event=key;row.append(node('summary'),node('pre','trace-json'));group.append(row);}
       const label=names[event.name]||event.name;
-      const icon=node('span',`trace-icon ${event.status}`,event.status==='completed'?'✓':event.status==='running'?'·':'!');
-      const body=node('span','trace-description');body.append(node('strong','',label),node('small','',shortDetail(event)));
-      const elapsed=event.ended?`${Math.max(0,event.ended-event.started).toFixed(1)}s`:'进行中';
-      row.querySelector('summary').replaceChildren(icon,body,node('span','trace-time',elapsed));
+      const state=traceState(event),mark=node('span',`trace-icon ${state.status} ${state.tone}`);mark.append(icon(state.icon));
+      mark.title=state.label;
+      const description=event.detail.execution?[state.label,state.description].filter(Boolean).join(' · '):
+        event.detail.result?.state==='started'?state.label:shortDetail(event);
+      const body=node('span','trace-description');body.append(node('strong','',label),node('small','',description));
+      const seconds=event.detail.execution?.wall_seconds;
+      const elapsed=Number.isFinite(seconds)?`${seconds.toFixed(1)}s`:event.detail.execution?.status==='accepted'?'执行中':event.ended?`${Math.max(0,event.ended-event.started).toFixed(1)}s`:'进行中';
+      row.querySelector('summary').replaceChildren(mark,body,node('span','trace-time',elapsed));
       row.querySelector('pre').textContent=JSON.stringify(event.detail,null,2);
-      row.dataset.status=event.status;
+      row.dataset.status=state.status;
     }
   }
   function renderTurns(){
@@ -81,7 +89,7 @@ export function createAgentUI({api,toast,message}){
       if(!card){
         card=node('article','agent-turn');card.dataset.turn=turn.id;
         const user=node('div','turn-user');user.append(node('span','message-label','你'),node('p','turn-prompt'));
-        const head=node('div','turn-heading');head.append(node('span','agent-avatar','◈'),node('strong','turn-model'),node('span','turn-status'));
+        const head=node('div','turn-heading');head.append(icon('openarm','agent-avatar'),node('strong','turn-model'),node('span','turn-status'));
         const trace=node('details','trace-group');trace.append(node('summary','trace-summary'),node('div','trace-list'));
         trace.querySelector('summary').addEventListener('click',()=>{trace.dataset.touched='1';});
         card.append(user,head,trace,node('div','turn-answer'));
@@ -181,6 +189,14 @@ export function createAgentUI({api,toast,message}){
     $('agent-activity').hidden=false;$('agent-activity').textContent='发送中…';
     try{const result=await api('/api/chat',{message:text,role:role()});if(result.mode==='not_configured'){if(!$('chat-input').value)$('chat-input').value=text;$('planner-mode').click();}}
     catch(e){if(!$('chat-input').value)$('chat-input').value=text;toast(e.message);}finally{submitting=false;await refresh(true);$('send-button').disabled=modelBusy;$('agent-role').disabled=modelBusy;$('agent-activity').hidden=!modelBusy;}
+  });
+  let composing=false;
+  $('chat-input').addEventListener('compositionstart',()=>{composing=true;});
+  $('chat-input').addEventListener('compositionend',()=>{composing=false;});
+  $('chat-input').addEventListener('keydown',event=>{
+    if(event.key!=='Enter'||event.shiftKey||event.ctrlKey||event.altKey||event.metaKey||event.isComposing||composing||event.keyCode===229)return;
+    event.preventDefault();
+    if(!event.repeat)$('chat-form').requestSubmit();
   });
   $('agent-role').addEventListener('change',()=>{revision='';$('memory-note').value='';delete $('memory-note').dataset.replaces;for(const card of cards.values())card.remove();cards.clear();refresh(true);});
   $('memory-button').addEventListener('click',async()=>{await refresh(true);renderMemory();$('memory-dialog').showModal();});

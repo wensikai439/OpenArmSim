@@ -4,7 +4,7 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="color-scheme" content="light"><title>OpenArm Lab</title>
   <link rel="stylesheet" href="/ui/styles.css?v=platform-24">
-  <link rel="stylesheet" href="/ui/workspace.css?v=records-2">
+  <link rel="stylesheet" href="/ui/workspace.css?v=execution-1">
   <link rel="stylesheet" href="/ui/records.css?v=records-1">
 </head>
 <body>
@@ -17,6 +17,12 @@
     <symbol id="icon-settings" viewBox="0 0 24 24"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="3"/><circle cx="15" cy="17" r="3"/></symbol>
     <symbol id="icon-expand" viewBox="0 0 24 24"><path d="M9 3H3v6M15 3h6v6M21 15v6h-6M3 15v6h6"/></symbol>
     <symbol id="icon-camera" viewBox="0 0 24 24"><path d="m8 5 2-2h4l2 2h3a2 2 0 0 1 2 2v12H3V7a2 2 0 0 1 2-2Z"/><circle cx="12" cy="12" r="4"/></symbol>
+    <symbol id="icon-send" viewBox="0 0 24 24"><path d="M12 19V5M6.5 10.5 12 5l5.5 5.5"/></symbol>
+    <symbol id="icon-check" viewBox="0 0 24 24"><path d="m6 12 4 4 8-8"/></symbol>
+    <symbol id="icon-pending" viewBox="0 0 24 24"><path d="M7 12h10"/></symbol>
+    <symbol id="icon-stop" viewBox="0 0 24 24"><path d="M9 7v10M15 7v10"/></symbol>
+    <symbol id="icon-error" viewBox="0 0 24 24"><path d="M12 6v7M12 17h.01"/></symbol>
+    <symbol id="icon-spinner" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-8-8"/></symbol>
   </defs></svg>
   <nav class="app-rail" aria-label="工作台导航">
     <a class="rail-brand" href="/" aria-label="OpenArm Lab 首页"><svg viewBox="0 0 40 40" aria-hidden="true"><use href="#icon-openarm"/></svg></a>
@@ -45,7 +51,7 @@
         </div>
         <label class="sr-only" for="chat-input">向智能体描述任务</label>
         <textarea id="chat-input" rows="3" placeholder="描述一个任务，让智能体开始…"></textarea>
-        <div class="composer-bottom"><span id="agent-activity" role="status" hidden></span><button id="send-button" class="send" type="submit" aria-label="发送消息">↑</button></div>
+        <div class="composer-bottom"><span id="agent-activity" role="status" hidden></span><button id="send-button" class="send" type="submit" aria-label="发送消息" title="Enter 发送 · Shift+Enter 换行"><svg aria-hidden="true"><use href="#icon-send"/></svg></button></div>
       </form>
     </aside>
     <div class="right-column">
@@ -133,6 +139,6 @@
     </div>
   </dialog>
   <div id="toast" class="toast" role="alert" hidden></div>
-  <script type="module" src="/ui/app.js?v=records-2"></script>
+  <script type="module" src="/ui/app.js?v=execution-1"></script>
 </body>
 </html>

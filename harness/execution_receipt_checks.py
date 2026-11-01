@@ -1,5 +1,6 @@
 """Durable execution contracts retain task identity and never resume after restart."""
 import tempfile
+import json
 import unittest
 from pathlib import Path
 
@@ -101,6 +102,46 @@ class ExecutionReceiptChecks(unittest.TestCase):
         self.assertEqual(execution_lifecycle('tamp','cancelled',
             {'tamp':{'primitive_success':True}}),'cancelled')
         self.assertEqual(execution_lifecycle('policy','success',{}),'unverified')
+
+    def test_public_trace_joins_bound_native_outcome_without_rewriting_dispatch(self):
+        work=Workspace();self.addCleanup(work.db.close)
+        root=work.start('execute','epoch-a','右手放入篮子',{'model':'test','vision':True})
+        work.bind(root,'place-1','execute','右手放入篮子','place','place','test',context=self.context)
+        detail={'result':{'state':'started','execution_id':'place-1'}}
+        event=work.event(root,'tool','place',detail,'completed')
+        before=work.public('execute','epoch-a',self.context)['turns'][0]['trace'][0]
+        self.assertEqual(before['status'],'completed')
+        self.assertEqual(before['detail']['execution']['status'],'accepted')
+        work.complete('place-1','run-place')
+        work.record_feedback('place-1','execute','epoch-a','右手放入篮子','place',{},
+            {'failure_code':'placement_unreachable','primitive_success':False,'message':'无可达方案',
+             'private_geometry':'not-for-this-summary','planning_timing':{'native_commands':0}},
+            self.context,'simulator_oracle')
+        revision=work.revision
+        projected=work.public('execute','new-scene',self.context)['turns'][0]['trace'][0]
+        self.assertEqual(projected['status'],'completed')
+        receipt=projected['detail']['execution']
+        self.assertEqual(receipt['status'],'failed');self.assertEqual(receipt['native_commands'],0)
+        self.assertFalse(receipt['feedback']['primitive_success'])
+        self.assertEqual(receipt['feedback']['failure_code'],'placement_unreachable')
+        self.assertNotIn('private_geometry',json.dumps(receipt))
+        self.assertGreaterEqual(receipt['wall_seconds'],0)
+        self.assertEqual(json.loads(work.db.execute('SELECT detail FROM trace WHERE id=?',(event,)).fetchone()[0]),detail)
+        self.assertEqual(work.revision,revision)
+
+    def test_trace_receipt_cannot_attach_another_task_role_or_tool(self):
+        work=Workspace();self.addCleanup(work.db.close)
+        root=work.start('execute','epoch-a','move',{'model':'test','vision':False})
+        work.bind(root,'exec-1','execute','move','move_relative','move_relative','test')
+        other=work.start('execute','epoch-a','other',{'model':'test','vision':False})
+        research=work.start('research','epoch-a','other',{'model':'test','vision':False},parent=root)
+        detail={'result':{'state':'started','execution_id':'exec-1'}}
+        work.event(root,'tool','place',detail,'completed')
+        work.event(other,'tool','move_relative',detail,'completed')
+        work.event(research,'tool','move_relative',detail,'completed')
+        for role in ('execute','research'):
+            for turn in work.public(role,'epoch-a')['turns']:
+                for event in turn['trace']:self.assertNotIn('execution',event['detail'])
 
     def test_planner_receipt_names_selected_factory_and_concrete_implementation(self):
         class Router: pass

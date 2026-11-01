@@ -1,5 +1,5 @@
-import {groupTurns, toolNames, outcome, runTitle, movement, duration, archiveURL, mediaURL} from './activity.js?v=records-1';
-import {richText} from './agent.js?v=records-2';
+import {groupTurns, toolNames, outcome, traceState, runTitle, movement, duration, archiveURL, mediaURL} from './activity.js?v=execution-1';
+import {richText} from './agent.js?v=execution-1';
 
 const node = (tag, cls, text) => {
   const el = document.createElement(tag);
@@ -127,11 +127,11 @@ export function createRecordsUI({api, getRole, onImage}) {
       const detail = event.detail || {}, result = detail.result || {};
       const row = node('li'), block = node('details', 'record-action'), summary = node('summary');
       const name = toolNames[event.name] || (event.kind === 'execution' ? '执行反馈' : event.name);
-      const state = outcome(event.status);
+      const state = traceState(event);
       summary.append(node('span', `record-action-dot ${state.tone}`), node('strong', '', name || '工具调用'),
-        node('span', 'record-action-time', event.ended ? duration(Math.max(0,event.ended - event.started)) : state.label));
+        node('span', 'record-action-time', Number.isFinite(detail.execution?.wall_seconds) ? duration(detail.execution.wall_seconds) : event.ended ? duration(Math.max(0,event.ended - event.started)) : state.label));
       block.append(summary);
-      const description = result.error || result.feedback?.message || movement(detail.arguments) ||
+      const description = detail.execution || result.state==='started' ? [state.label,state.description].filter(Boolean).join(' · ') : result.error || result.feedback?.message || movement(detail.arguments) ||
         (result.reported_verdict ? `模型复查：${({success:'成功',failure:'失败',uncertain:'证据不足'})[result.reported_verdict] || result.reported_verdict}` : '');
       if (description) block.append(node('p', 'record-action-note', String(description)));
       block.append(node('pre', '', JSON.stringify(detail,null,2)));

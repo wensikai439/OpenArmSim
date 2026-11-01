@@ -127,8 +127,10 @@ h2 { font-size: 13px; font-weight: 600; }
 .message.note .message-label { display: none; }
 .message.note .message-body { font-size: 12px; color: #708995; }
 .small-dot { background: #6da48f; }
-.send { border: 0; border-radius: 7px; width: 30px; height: 30px; background: #227d6d; color: white; font-size: 21px; box-shadow: none; }
-.send:hover { background: #17695c; }
+.send { display: inline-flex; align-items: center; justify-content: center; padding: 0; border: 1px solid #176e60; border-radius: 10px; width: 34px; height: 34px; background: #227d6d; color: #fff; box-shadow: 0 1px 2px #173f2f16; transition: background .15s, box-shadow .15s; }
+.send svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.send:hover:not(:disabled) { background: #17695c; box-shadow: 0 2px 5px #173f2f25; }
+.send:focus-visible { outline: 2px solid #448c7d; outline-offset: 3px; }
 .right-column { display: flex; flex-direction: column; gap: 16px; min-width: 0; min-height: 0; }
 .simulation { flex: 1; min-height: 300px; display: flex; flex-direction: column; }
 .simulation .title-row > .icon { color: #6b828e; width: 16px; height: 16px; }
@@ -202,7 +204,7 @@ h2 { font-size: 13px; font-weight: 600; }
 /* Agent evidence keeps its existing safe renderer and disclosure behavior. */
 .turn-model { color: #355564; }
 .turn-status { color: #8297a1; }
-.agent-avatar { color: #358878; }
+.agent-avatar { width: 20px; height: 20px; flex-shrink: 0; fill: none; stroke: #358878; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 .trace-group { border-color: #dfe8eb; background: #f8fafb; border-radius: 8px; }
 .trace-summary { color: #617e8c; }
 .trace-item { border-color: #e4ecef; }
@@ -210,9 +212,12 @@ h2 { font-size: 13px; font-weight: 600; }
 .trace-description small { color: #7f95a0; }
 .trace-time { color: #95a8b2; }
 .trace-json { background: #eef3f5; color: #536e7a; }
-.trace-icon { background: #e4f1e9; color: #47876b; }
+.trace-icon { display: inline-flex; align-items: center; justify-content: center; background: #edf1f3; color: #80919b; }
+.trace-icon svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.trace-icon.positive { background: #e4f1e9; color: #47876b; }
 .trace-icon.running { background: #e4f4ef; color: #2c8a70; }
 .trace-icon.error, .trace-icon.interrupted { background: #f5e6e3; color: #ab6359; }
+.trace-item[data-status=error] .trace-description small, .agent-turn[data-status=failure] .turn-status { color: #aa6156; }
 .rich-text code { background: #edf3f5; }
 .answer-expand > summary { color: #426879; }
 

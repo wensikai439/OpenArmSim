@@ -10,6 +10,32 @@ export function duration(value) {
   return `${Math.floor(value / 60)}分 ${Math.floor(value % 60)}秒`;
 }
 
+// A call returning "started" only accepted an asynchronous job. Use its
+// independently recorded receipt for the actual skill outcome, including history.
+export function traceState(event) {
+  const detail=event.detail || {}, result=detail.result || {}, execution=detail.execution;
+  const value=(status,tone,label,description='',icon='pending')=>({status,tone,label,description,icon});
+  if (execution) {
+    const feedback=execution.feedback || {}, status=execution.status;
+    if (status==='cancelled') return value('cancelled','neutral','已停止','','stop');
+    if (status==='interrupted') return value('interrupted','neutral','已中断','','stop');
+    if (['failed','rejected','failure'].includes(status) || feedback.failure_code || feedback.primitive_success===false) {
+      const reason=feedback.failure_code==='placement_unreachable'?'未找到满足姿态约束的可达放置方案':feedback.message || feedback.failure_code || '执行未通过验证';
+      return value('error','negative','执行失败',reason+(execution.native_commands===0?' · 未下发新动作':''),'error');
+    }
+    if (status==='succeeded' && feedback.primitive_success===true && ['simulator_oracle','sensor_execution'].includes(execution.evidence_kind))
+      return value('completed','positive','技能完成','原生执行反馈已确认','check');
+    if (status==='accepted' || status==='running') return value('running','active','正在规划／执行','已启动，等待执行反馈','spinner');
+    return value('unverified','neutral','已结束，结果未验证','','pending');
+  }
+  if (result.state==='started' && result.execution_id)
+    return value('unverified','neutral','已启动，结果未验证','尚无绑定的完成反馈','pending');
+  if (event.status==='running') return value('running','active','调用中','','spinner');
+  if (event.status==='error' || result.tool_failed) return value('error','negative','调用失败',result.message || result.error || '','error');
+  // Model self-assessment and generic tool completion stay neutral.
+  return value(event.status,'neutral',event.kind==='execution'?'执行已结束，结果未验证':'调用已返回','','pending');
+}
+
 export function outcome(status) {
   const labels = {success:'任务成功',primitive_completed:'技能完成',completed:'已结束',
     running:'运行中',starting:'启动中',waiting:'等待中',stopping:'正在停止',cancelled:'已停止',
@@ -80,8 +106,10 @@ export function groupTurns(turns = []) {
     });
     group.runIds = [...new Set(group.trace.flatMap(event => {
       const detail = event.detail || {}, result = detail.result || {};
-      return [detail.run_id,result.run_id,result.evidence?.run_id].filter(id => archiveURL(id,'manifest.json'));
+      return [detail.run_id,result.run_id,result.evidence?.run_id,detail.execution?.run_id].filter(id => archiveURL(id,'manifest.json'));
     }))];
+    const finish=[...group.trace].reverse().find(event=>event.kind==='tool' && event.name==='finish');
+    if (group.status==='completed' && finish?.detail?.result?.reported_verdict==='failure') group.status='failure';
   }
   return [...groups.values()];
 }

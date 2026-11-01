@@ -1,6 +1,6 @@
 // Semantic and path checks; independent of CSS and page structure.
 import assert from 'node:assert/strict';
-import {groupTurns,outcome,archiveURL,mediaURL,duration} from '../ui/activity.js';
+import {groupTurns,outcome,traceState,archiveURL,mediaURL,duration} from '../ui/activity.js';
 const root={id:'root',created:1,prompt:'放入篮子',status:'completed',answer:'',trace:[]};
 const child={id:'child',parent:'root',created:2,status:'error',answer:'放置失败',trace:[{id:7,started:2,kind:'execution',detail:{run_id:'run-1'}}]};
 const grouped=groupTurns([child,root]);
@@ -23,4 +23,22 @@ assert.equal(mediaURL('/runs/run-1/keyframes/000100-01.jpg','run-1'),'/runs/run-
 for (const url of ['/runs/other/keyframes/000100-01.jpg','https://example.com/x.jpg','/runs/run-1/keyframes/../x.jpg','/runs/run-1/keyframes/%2e%2e.jpg']) assert.equal(mediaURL(url,'run-1'),null);
 assert.equal(duration(NaN),'—');
 assert.equal(duration(-1),'—');
+const dispatched={kind:'tool',name:'place',status:'completed',detail:{result:{state:'started',execution_id:'e1'}}};
+assert.equal(traceState(dispatched).tone,'neutral');
+assert.match(traceState(dispatched).label,/未验证/);
+function receipt(status,feedback={},extra={}) {
+  return {...dispatched,detail:{...dispatched.detail,execution:{status,feedback,evidence_kind:'simulator_oracle',...extra}}};
+}
+assert.equal(traceState(receipt('accepted')).tone,'active');
+const failed=traceState(receipt('failed',{failure_code:'placement_unreachable',primitive_success:false},{native_commands:0}));
+assert.equal(failed.tone,'negative');assert.match(failed.description,/未下发新动作/);
+assert.equal(traceState(receipt('succeeded',{primitive_success:true})).label,'技能完成');
+assert.equal(traceState(receipt('succeeded',{primitive_success:true},{evidence_kind:'model_report'})).tone,'neutral');
+assert.equal(traceState(receipt('cancelled',{primitive_success:true})).tone,'neutral');
+assert.equal(traceState(receipt('failed',{primitive_success:true})).tone,'negative');
+assert.equal(traceState({kind:'tool',name:'finish',status:'completed',detail:{result:{reported_verdict:'success'}}}).tone,'neutral');
+assert.equal(traceState({kind:'execution',status:'completed',detail:{}}).tone,'neutral');
+const finish={kind:'tool',name:'finish',detail:{result:{reported_verdict:'failure'}}};
+assert.equal(groupTurns([{...root,trace:[finish]}])[0].status,'failure');
+assert.equal(groupTurns([{...root,trace:[{...finish,detail:{result:{reported_verdict:'success'}}}]}])[0].status,'completed');
 console.log('Record grouping, outcome boundaries, missing history, and scoped artifact paths: passed');
