@@ -4,51 +4,67 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="color-scheme" content="light"><title>OpenArm Lab</title>
   <link rel="stylesheet" href="/ui/styles.css?v=platform-24">
+  <link rel="stylesheet" href="/ui/workspace.css?v=workspace-1">
 </head>
 <body>
+  <svg class="icon-defs" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs>
+    <symbol id="icon-workspace" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16M9 15h12"/></symbol>
+    <symbol id="icon-skills" viewBox="0 0 24 24"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9Zm0 9 8-4.5M12 12 4 7.5M12 12v9"/></symbol>
+    <symbol id="icon-memory" viewBox="0 0 24 24"><path d="M5 4h11a3 3 0 0 1 3 3v14H7a3 3 0 0 1-3-3V5a1 1 0 0 1 1-1ZM4 17h15M9 8h6M9 12h4"/></symbol>
+    <symbol id="icon-records" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3M13 3h8v8M21 3l-9 9M7 13v4h4"/></symbol>
+    <symbol id="icon-settings" viewBox="0 0 24 24"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="3"/><circle cx="15" cy="17" r="3"/></symbol>
+    <symbol id="icon-expand" viewBox="0 0 24 24"><path d="M9 3H3v6M15 3h6v6M21 15v6h-6M3 15v6h6"/></symbol>
+    <symbol id="icon-camera" viewBox="0 0 24 24"><path d="m8 5 2-2h4l2 2h3a2 2 0 0 1 2 2v12H3V7a2 2 0 0 1 2-2Z"/><circle cx="12" cy="12" r="4"/></symbol>
+  </defs></svg>
+  <nav class="app-rail" aria-label="工作台导航">
+    <a class="rail-brand" href="/" aria-label="OpenArm Lab 首页">oa<span></span></a>
+    <div class="rail-items">
+      <button class="rail-button current" id="workspace-home" type="button" aria-label="仿真工作台" aria-current="page" title="仿真工作台"><svg aria-hidden="true"><use href="#icon-workspace"/></svg><span>工作台</span></button>
+      <button class="rail-button" id="skills-button" type="button" aria-label="打开技能" title="技能与执行后端"><svg aria-hidden="true"><use href="#icon-skills"/></svg><span>技能</span></button>
+      <button class="rail-button" id="memory-button" type="button" aria-label="打开记忆" title="任务记忆"><svg aria-hidden="true"><use href="#icon-memory"/></svg><span>记忆 <span id="memory-count">0</span></span></button>
+      <button class="rail-button" data-open="experiment-button" type="button" aria-label="打开实验记录" title="实验记录与标定"><svg aria-hidden="true"><use href="#icon-records"/></svg><span>记录</span></button>
+    </div>
+    <button class="rail-button rail-settings" data-open="planner-mode" type="button" aria-label="打开模型配置" title="模型配置"><svg aria-hidden="true"><use href="#icon-settings"/></svg><span>模型</span></button>
+    <span class="rail-environment" title="本机仿真环境">SIM</span>
+  </nav>
   <header class="topbar">
-    <a class="brand" href="/" aria-label="OpenArm Lab 首页"><span class="brand-mark">◈</span><strong>OpenArm Lab</strong></a>
-    <div class="header-meta"><span id="connection" class="status">连接中</span><button id="calibration-button" class="quiet">实验详情 <span>↗</span></button></div>
+    <div class="workspace-path"><a class="brand" href="/"><strong>OpenArm Lab</strong></a><span class="path-divider">/</span><span>仿真工作台</span></div>
+    <div class="header-meta"><span id="robot-identity" class="robot-identity">OpenArm</span><span id="connection" class="status" role="status">连接中</span><button id="calibration-button" class="quiet" title="标定、回放与实验设置">实验设置 <svg class="icon" aria-hidden="true"><use href="#icon-settings"/></svg></button></div>
   </header>
-  <main class="workspace">
-    <aside class="conversation panel">
-      <div class="panel-heading"><div><h1>和智能体对话</h1></div><button id="planner-mode" class="badge" title="查看或修改已保存的 API 配置">接入模型</button></div>
-      <div class="task-context"><span class="small-dot"></span><span>目标由你指定 · 观察 → 规划 → 执行 → 验证</span></div>
-      <div class="agent-mode"><label for="agent-role">智能体职责</label><select id="agent-role"><option value="execute">执行与观察</option><option value="research">实验与训练</option></select></div>
-
-      <div class="agent-toolbar"><span id="agent-activity">读取 API 状态…</span><button id="skills-button" class="memory-button">技能</button><button id="memory-button" class="memory-button">记忆 <span id="memory-count">0</span></button></div>
-      <section id="messages" class="messages" aria-live="polite"></section>
+  <main class="workspace" id="workspace">
+    <aside class="conversation panel" aria-labelledby="conversation-title">
+      <div class="panel-heading conversation-heading"><div class="title-row"><span class="agent-symbol" aria-hidden="true">✳</span><h1 id="conversation-title">任务对话</h1></div><button id="planner-mode" class="badge" title="查看或修改已保存的 API 配置">接入模型</button></div>
+      <div class="agent-mode"><label for="agent-role">工作模式</label><select id="agent-role"><option value="execute">执行与观察</option><option value="research">实验与训练</option></select></div>
+      <div class="agent-toolbar"><span id="agent-activity">读取 API 状态…</span></div>
+      <section id="messages" class="messages" aria-label="任务对话记录" aria-live="polite"></section>
       <form id="chat-form" class="composer">
         <div class="demo-prompts" aria-label="示例任务">
-          <button type="button" data-demo-prompt="让右手末端向上移动3厘米，再让左手末端向前移动4厘米，保持各自朝向。">移动手臂</button>
-          <button type="button" data-demo-prompt="用右手把黑瓶子向机器人正前方移动8厘米，放回桌面，松手并撤离。">搬运瓶子</button>
-          <button type="button" data-demo-prompt="把桌上的黑瓶子放进篮子，放好后松手并撤离。">放入篮子</button>
+          <button type="button" data-demo-prompt="让右手末端向上移动3厘米，再让左手末端向前移动4厘米，保持各自朝向。">移动手臂 <span>↗</span></button>
+          <button type="button" data-demo-prompt="用右手把黑瓶子向机器人正前方移动8厘米，放回桌面，松手并撤离。">搬运瓶子 <span>↗</span></button>
+          <button type="button" data-demo-prompt="把桌上的黑瓶子放进篮子，放好后松手并撤离。">放入篮子 <span>↗</span></button>
         </div>
         <label class="sr-only" for="chat-input">向智能体描述任务</label>
-        <textarea id="chat-input" rows="3" placeholder="描述任务，或询问本次实验…"></textarea>
-        <div class="composer-bottom"><span>仅仿真 · 真机未连接</span><button id="send-button" class="send" type="submit" aria-label="发送消息">↑</button></div>
+        <textarea id="chat-input" rows="3" placeholder="描述一个任务，让智能体开始…"></textarea>
+        <div class="composer-bottom"><span><i class="small-dot"></i>仅仿真 · 真机未连接</span><button id="send-button" class="send" type="submit" aria-label="发送消息">↑</button></div>
       </form>
     </aside>
     <div class="right-column">
-      <section class="simulation panel">
-        <div class="panel-heading compact"><div class="title-row"><h2>场景视图</h2><span id="view-kind" class="muted">操作者视角</span></div><div class="actions"><label class="sr-only" for="view-select">切换观察视角</label><select id="view-select"><optgroup label="操作者视角"><option value="front">正面观察</option><option value="free">自由视角</option><option value="overview">全景</option></optgroup><optgroup label="模型相机"><option value="head">头部相机</option><option value="left">左腕相机</option><option value="right">右腕相机</option></optgroup></select><button id="scene-library-button" class="quiet scene-library-button" aria-label="选择场景物品" title="场景物品" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9Zm0 9 8-4.5M12 12 4 7.5M12 12v9"/></svg></button><button id="capture-button" class="quiet">留帧</button><button id="reset-button" class="quiet">重置</button></div></div>
+      <section class="simulation panel" aria-labelledby="scene-heading">
+        <div class="panel-heading compact"><div class="title-row"><svg class="icon" aria-hidden="true"><use href="#icon-workspace"/></svg><h2 id="scene-heading">实时场景</h2><span id="view-kind" class="muted">操作者视角</span></div><div class="actions"><label class="sr-only" for="view-select">切换观察视角</label><select id="view-select"><optgroup label="操作者视角"><option value="front">正面观察</option><option value="free">自由视角</option><option value="overview">全景</option></optgroup><optgroup label="模型相机"><option value="head">头部相机</option><option value="left">左腕相机</option><option value="right">右腕相机</option></optgroup></select><button id="scene-library-button" class="quiet scene-library-button" aria-label="选择场景物品" title="场景物品" hidden><svg aria-hidden="true"><use href="#icon-skills"/></svg></button><button id="capture-button" class="quiet" title="保存当前关键帧"><svg class="icon" aria-hidden="true"><use href="#icon-camera"/></svg><span>留帧</span></button><button id="reset-button" class="quiet">重置</button><button id="focus-scene" class="quiet icon-button" type="button" aria-label="展开场景" aria-pressed="false" title="展开场景"><svg class="icon" aria-hidden="true"><use href="#icon-expand"/></svg></button></div></div>
         <div class="camera-workspace">
           <div class="main-view"><div id="scene-viewport" class="image-button" role="group" tabindex="0" aria-label="场景画面，自由视角可拖动"><img id="main-camera" alt="OpenArm 仿真相机画面"></div><div id="loading" class="loading">正在连接原生 MuJoCo…</div><div class="view-label"><span id="camera-label">正面观察</span><span id="sim-clock">0.00 s</span></div><button id="overview-button" class="overview-button" title="恢复正面观察">复位视角</button><div id="orbit-tools" class="orbit-tools" hidden><button data-orbit="left" aria-label="向左旋转视角">↶</button><button data-orbit="right" aria-label="向右旋转视角">↷</button><button data-orbit="in" aria-label="拉近视角">＋</button><button data-orbit="out" aria-label="拉远视角">−</button></div><span id="orbit-hint" class="orbit-hint" hidden>拖动旋转 · 滚轮缩放 · Shift + 拖动平移</span></div>
-          <div class="camera-rail" aria-label="模型的固定三路相机"><span class="rail-label">模型视角</span>
-            <button class="camera-card" data-camera="head"><img id="thumb-head" alt="头部相机"><span>头部 <em>固定相机</em></span></button>
-            <button class="camera-card" data-camera="left"><img id="thumb-left" alt="左腕相机"><span>左腕 <em>固定相机</em></span></button>
-            <button class="camera-card" data-camera="right"><img id="thumb-right" alt="右腕相机"><span>右腕 <em>固定相机</em></span></button>
+          <div class="camera-rail" aria-label="模型的固定三路相机"><span class="rail-label">模型观测 <span>3 路</span></span>
+            <button class="camera-card" data-camera="head" aria-pressed="false"><img id="thumb-head" alt="头部相机"><span>头部 <em>HEAD</em></span></button>
+            <button class="camera-card" data-camera="left" aria-pressed="false"><img id="thumb-left" alt="左腕相机"><span>左腕 <em>LEFT</em></span></button>
+            <button class="camera-card" data-camera="right" aria-pressed="false"><img id="thumb-right" alt="右腕相机"><span>右腕 <em>RIGHT</em></span></button>
           </div>
         </div>
         <div class="view-footer"><span><i class="small-dot"></i><span id="physics-status">原生物理引擎</span></span><span class="muted">观察视角不改变模型输入</span></div>
       </section>
-      <section class="stages panel">
-        <div class="panel-heading compact"><div class="title-row"><h2>运行阶段</h2><span id="stage-source" class="stage-source">物理检查</span><span id="stage-count" class="badge">0 / 7</span></div><div class="actions"><button id="stop-button" class="danger" disabled>停止</button><button id="experiment-button" class="quiet" aria-label="实验设置与记录">记录与设置</button></div></div>
-        <div class="progress-track"><div id="progress-bar"></div></div>
-        <ol id="stage-list" class="stage-list"></ol>
-        <div id="result-line" class="result-line" role="status">阶段由接触与稳定性证据确认，播放到某个时间点不会自动判定完成。</div>
-        <div class="frames-heading"><h3>关键帧</h3><span class="muted">点击放大 · 记录随实验自动保存</span></div>
-        <div id="keyframes" class="keyframes"><div class="empty"><span>▧</span><p>开始一轮实验，留下可核验的过程。</p></div></div>
+      <section class="stages panel" aria-label="执行记录">
+        <div class="panel-heading compact evidence-heading"><div class="evidence-tabs" role="tablist" aria-label="执行记录视图"><button id="execution-tab" class="evidence-tab" role="tab" aria-selected="true" aria-controls="execution-panel" tabindex="0">执行过程</button><button id="frames-tab" class="evidence-tab" role="tab" aria-selected="false" aria-controls="frames-panel" tabindex="-1">关键帧 <span id="frame-count">0</span></button></div><div class="actions"><span id="stage-count" class="badge">待规划</span><button id="stop-button" class="danger" disabled>■ 停止</button><button id="experiment-button" class="quiet" aria-label="实验设置与记录">实验记录 <span>↗</span></button></div></div>
+        <div id="execution-panel" class="evidence-panel" role="tabpanel" aria-labelledby="execution-tab" tabindex="0"><div class="execution-caption"><span id="stage-source" class="stage-source">等待模型计划</span></div><div class="progress-track"><div id="progress-bar"></div></div><ol id="stage-list" class="stage-list"></ol><div id="result-line" class="result-line" role="status">阶段由接触与稳定性证据确认，播放到某个时间点不会自动判定完成。</div></div>
+        <div id="frames-panel" class="evidence-panel" role="tabpanel" aria-labelledby="frames-tab" tabindex="0" hidden><div id="keyframes" class="keyframes"><div class="empty"><span>▧</span><p>开始一轮实验，留下可核验的过程。</p></div></div></div>
       </section>
     </div>
   </main>
@@ -112,6 +128,6 @@
     </div>
   </dialog>
   <div id="toast" class="toast" role="alert" hidden></div>
-  <script type="module" src="/ui/app.js?v=platform-25"></script>
+  <script type="module" src="/ui/app.js?v=workspace-1"></script>
 </body>
 </html>

@@ -1,5 +1,6 @@
 import {createAgentUI} from './agent.js?v=platform-24';
 import {createSceneUI} from './scene.js?v=platform-25';
+import {createWorkspaceUI} from './workspace.js?v=workspace-1';
 const $ = (id) => document.getElementById(id);
 document.querySelectorAll('[data-demo-prompt]').forEach(button => {
   button.addEventListener('click', () => {
@@ -30,6 +31,7 @@ function message(text, role='assistant') {
   element.append(label,body);$('messages').append(element);$('messages').scrollTop=$('messages').scrollHeight;
 }
 message('描述任务后，模型会制定阶段、调用工具，并在运行后复查。过程与记忆都会保留。');
+const workspaceUI=createWorkspaceUI();
 const agentUI=createAgentUI({api,toast,message});
 const sceneUI=createSceneUI({api,toast});
 function renderModel(config, editing=false){
@@ -346,11 +348,12 @@ function render(data) {
   if(feedback?.primitive_success&&feedback.verification_source==='robot_gripper_encoder_settling')
     displayFrames=displayFrames.map(f=>({...f,label:f.label.startsWith('结束')?'夹爪已调整':f.label}));
   updateImages(data);updateFrames(displayFrames);
+  workspaceUI.render(data,displayFrames);
   renderLearning(data.learning_job);
   const completedCalibration=['calibrate','wrist'].includes(data.learning_job?.kind)&&data.learning_job.status==='completed'?data.learning_job.job_id:'';
   if($('details-dialog').open&&completedCalibration&&completedCalibration!==calibrationRefreshKey){calibrationRefreshKey=completedCalibration;loadCalibration().catch(error=>toast(error.message));}
   $('calibration-gaps').replaceChildren(...data.calibration_gaps.map(text=>{const li=document.createElement('li');li.textContent=text;return li;}));
   $('run-list').replaceChildren(...data.runs.map(name=>{const a=document.createElement('a');a.className='run-item';a.textContent=name;a.href=`/runs/${encodeURIComponent(name)}/${name.startsWith('handover-')?'episode':'summary'}.json`;a.target='_blank';a.rel='noopener';return a;}));
 }
-async function poll(){try{render(await api('/api/status'));}catch(error){$('connection').textContent='连接中断';$('loading').hidden=false;$('loading').textContent='连接中断；页面重连不会重新启动实验';}finally{setTimeout(poll,document.hidden?2000:camera==='operator'&&operatorView.mode==='free'?150:500);}}
+async function poll(){try{render(await api('/api/status'));}catch(error){workspaceUI.disconnected();$('loading').hidden=false;$('loading').textContent='连接中断；页面重连不会重新启动实验';}finally{setTimeout(poll,document.hidden?2000:camera==='operator'&&operatorView.mode==='free'?150:500);}}
 poll();
