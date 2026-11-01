@@ -24,6 +24,7 @@ from sim.tamp import TampPlanner
 from sim.decision_timing import rebind_observation
 from .failures import CallFailures
 from .llm import ModelSettings
+from .provider import http_error_reason
 from .workspace import Workspace, CHECKPOINTS, validate_plan
 from .goals import PLACEMENT_SCHEMA,resolve_placement,bind_place,preserve_completed,assess_placement,object_state_from_feedback
 from .skills import (SKILL_TOOLS, MOTION_TOOLS, LEGACY_MOTION_TOOLS, SPATIAL_LANGUAGE_RULES,
@@ -655,7 +656,7 @@ class Harness:
                     msg = self._model_reply(request, deadline=deadline, turn=turn, settings=settings,
                                             request_number=index + 1, vision=vision, session=session)
                 except Exception as exc:
-                    reason = f'HTTP {exc.code}' if isinstance(exc, urllib.error.HTTPError) else '请求超时或响应格式错误' if isinstance(exc, (TimeoutError,ValueError,KeyError)) else '网络连接失败'
+                    reason = http_error_reason(exc,settings.get('api_key','')) if isinstance(exc, urllib.error.HTTPError) else '请求超时或响应格式错误' if isinstance(exc, (TimeoutError,ValueError,KeyError)) else '网络连接失败'
                     raise RuntimeError('模型 API 请求失败（'+reason+'）；没有切换为脚本执行。') from None
                 finally:
                     if wait_started:
@@ -874,7 +875,7 @@ class Harness:
                     'tool_names': [c.get('function',{}).get('name') for c in msg.get('tool_calls',[])]})
                 return msg
             except Exception as exc:
-                reason = f'HTTP {exc.code}' if isinstance(exc, urllib.error.HTTPError) else type(exc).__name__
+                reason = http_error_reason(exc,settings.get('api_key','')) if isinstance(exc, urllib.error.HTTPError) else type(exc).__name__
                 self.workspace.end_event(event, {'model': settings['model'], 'error': reason,
                                                 'attempt': attempt + 1}, 'error')
                 retry = (isinstance(exc, urllib.error.HTTPError) and exc.code in {429, 502, 503, 504}

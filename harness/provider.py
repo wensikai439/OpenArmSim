@@ -1,10 +1,6 @@
-"""Process-local provider adapter for the experimental bounded tool loop.
-
-DeepSeek's current default thinking mode needs reasoning replay. This harness
-does not retain private reasoning, so use its documented non-thinking mode.
-No new endpoint, key storage, token budget, retry or robot command is added.
-"""
+"""Instance-scoped provider compatibility and bounded, redacted API errors."""
 import json
+import re
 import urllib.request
 import urllib.error
 from urllib.parse import urlsplit
@@ -14,9 +10,19 @@ DOCUMENTATION='https://api-docs.deepseek.com/guides/thinking_mode/'
 
 def adapt_request(request):
     url=urlsplit(request.full_url)
-    if (url.scheme!='https' or url.hostname!='api.deepseek.com'
+    if (url.scheme!='https' or url.hostname not in ('api.deepseek.com','zzq.si')
             or not url.path.rstrip('/').endswith('/chat/completions') or request.data is None):return request,None
     payload=json.loads(request.data)
+    if url.hostname=='zzq.si':
+        # Verified gateway rejection: this model only accepts its default
+        # temperature. Keep images, tools, history and all budgets unchanged.
+        if payload.get('model')!='claude-haiku-5-5' or 'temperature' not in payload:return request,None
+        del payload['temperature']
+        adapted=urllib.request.Request(request.full_url,data=json.dumps(payload).encode(),
+            headers=dict(request.header_items()),method=request.get_method())
+        return adapted,{'provider':'zzq.si','temperature':'provider_default',
+            'reason':'claude-haiku-5-5 rejects non-default temperature',
+            'source':'verified gateway HTTP 400 response'}
     if payload.get('model') not in ('deepseek-flash','deepseek-v4-pro'):return request,None
     payload['thinking']={'type':'disabled'}
     payload.pop('reasoning_effort',None)
@@ -24,6 +30,32 @@ def adapt_request(request):
         headers=dict(request.header_items()),method=request.get_method())
     return adapted,{'provider':'api.deepseek.com','thinking':'disabled','output_token_cap':payload.get('max_tokens'),
         'reason':'bounded tool loop does not persist private reasoning','source':DOCUMENTATION}
+
+
+def http_error_reason(error, api_key=''):
+    """Read only a gateway's JSON error message, never headers or raw bodies.
+
+    Cache the safe text because both the request event and its caller report
+    the same HTTPError, whose response stream can only be consumed once.
+    """
+    cached=getattr(error,'_openarm_reason',None)
+    if cached is not None:return cached
+    reason=f'HTTP {error.code}'
+    try:
+        body=json.loads(error.read(64*1024))
+        detail=body.get('error') if isinstance(body,dict) else None
+        message=detail.get('message') if isinstance(detail,dict) else None
+        if isinstance(message,str) and message.strip():
+            if api_key:message=message.replace(api_key,'[credential omitted]')
+            message=re.sub(r'(?i)(?:sk-|bearer\s+)[a-z0-9_.-]+','[credential omitted]',message)
+            message=re.sub(r'(?i)\b(api[_ -]?key|authorization|access[_ -]?token)\s*[:=]\s*[^\s,;]+',
+                           r'\1=[credential omitted]',message)
+            message=' '.join(message.split())
+            reason+='：'+message[:240]
+    except Exception:
+        pass
+    error._openarm_reason=reason
+    return reason
 
 
 def response_metadata(body):

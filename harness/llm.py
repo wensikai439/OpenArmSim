@@ -6,6 +6,7 @@ import time
 import urllib.request
 import urllib.error
 from urllib.parse import urlsplit
+from .provider import http_error_reason
 
 
 class ModelSettings:
@@ -93,7 +94,7 @@ class ModelSettings:
             if not data.get('choices') or not data['choices'][0].get('message'):
                 raise ValueError('invalid response')
         except urllib.error.HTTPError as exc:
-            raise RuntimeError(f'模型连接测试失败（HTTP {exc.code}），请检查地址、模型名和密钥') from None
+            raise RuntimeError('模型连接测试失败（'+http_error_reason(exc,values['api_key'])+'）') from None
         except Exception:
             raise RuntimeError('模型连接测试失败，请检查 API 是否兼容 Chat Completions') from None
         return {'connected':True,'model':values['model'],'latency_seconds':round(time.monotonic()-started,2),
