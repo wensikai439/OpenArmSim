@@ -1,0 +1,96 @@
+/* Searchable archive browser, separate from calibration and live execution. */
+.records-dialog { width: min(1100px, 95vw); max-width: none; height: min(780px, 88dvh); max-height: 92dvh; padding: 0; overflow: hidden; }
+.records-heading { height: 65px; display: flex; justify-content: space-between; align-items: center; padding: 0 22px; border-bottom: 1px solid var(--border); gap: 20px; }
+.records-heading > div { display: flex; gap: 12px; align-items: center; }
+.records-heading h2 { font-size: 16px; }
+.records-heading .icon { color: #688492; }
+.records-count { color: #82949e; font: 11px ui-monospace, monospace; }
+.records-workspace { height: calc(100% - 65px); display: grid; grid-template-columns: 320px minmax(0,1fr); }
+.records-sidebar { min-width: 0; min-height: 0; display: flex; flex-direction: column; background: #f8fafb; border-right: 1px solid var(--border); }
+.records-search { padding: 16px 14px; display: flex; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid #e5ecef; }
+.records-search input { width: 100%; min-width: 0; border: 1px solid #dfe7eb; border-radius: 7px; padding: 10px 12px; background: white; color: #345563; font: inherit; font-size: 13px; }
+.records-search input::placeholder { color: #93a3ab; }
+.records-search input:focus-visible { outline: 2px solid #75ac99; outline-offset: 1px; }
+.records-search select { width: 100%; border: none; padding: 3px 0; background: transparent; color: #687f8a; font-size: 12px; }
+.records-notice { padding: 10px 16px; color: #97763c; background: #fff9eb; line-height: 1.7; font-size: 12px; }
+.records-list { overflow-y: auto; flex: 1; min-height: 0; padding: 8px; scrollbar-width: thin; scrollbar-color: #d3dfe3 transparent; }
+.record-list-item + .record-list-item { margin-top: 3px; }
+.record-row { width: 100%; padding: 14px 12px; border: 1px solid transparent; border-radius: 8px; background: transparent; display: flex; align-items: flex-start; gap: 10px; text-align: left; }
+.record-row:hover { background: #eff4f5; }
+.record-row[aria-current="true"] { background: #fff; border-color: #dce7e9; box-shadow: 0 2px 6px #21384604; }
+.record-row-icon { flex-shrink: 0; width: 23px; height: 23px; border-radius: 6px; font-size: 16px; line-height: 23px; text-align: center; background: #edf2f4; color: #718b98; }
+.record-row-icon.positive { color: #35846b; background: #e9f3ee; }
+.record-row-icon.negative { color: #b66860; background: #f8edeb; }
+.record-row-icon.active { color: #388794; background: #e7f3f6; }
+.record-row-body { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.record-row-body strong { color: #3e5a68; font-size: 13px; font-weight: 550; line-height: 1.65; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; }
+.record-row[aria-current="true"] .record-row-body strong { color: #286c5e; }
+.record-row-meta { font-size: 11px; color: #8a9ca6; line-height: 1.5; }
+.record-detail { min-width: 0; min-height: 0; overflow: auto; padding: 26px 30px; scrollbar-width: thin; scrollbar-color: #d3dfe3 transparent; }
+.record-detail-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; margin-bottom: 24px; }
+.record-detail-heading h3 { font-size: 19px; font-weight: 550; line-height: 1.55; color: #294b5a; overflow-wrap: anywhere; }
+.record-detail-heading p { font-size: 11px; color: #8b9da6; line-height: 1.6; margin-top: 8px; max-width: 400px; }
+.record-outcome { font-size: 11px; line-height: 1.5; padding: 4px 8px; border-radius: 5px; color: #758e9b; background: #f0f5f7; white-space: nowrap; margin-top: 4px; }
+.record-outcome.positive { color: #2d8266; background: #e9f5ed; }
+.record-outcome.negative { color: #b36057; background: #fcf0ed; }
+.record-outcome.active { color: #2f8291; background: #e9f6f8; }
+.record-metrics { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 18px; margin: 0 0 24px; padding: 18px 0; border-top: 1px solid #edf1f3; border-bottom: 1px solid #edf1f3; }
+.record-metrics dt { font-size: 11px; color: #8b9ca5; margin-bottom: 8px; }
+.record-metrics dd { margin: 0; font-size: 18px; line-height: 1.3; font-weight: 500; color: #3b606f; font-variant-numeric: tabular-nums; }
+.record-intent { padding: 10px 12px; background: #f3f8f6; color: #5f897c; border-radius: 6px; font-size: 12px; margin-bottom: 22px; }
+.record-error { background: #fff5f2; color: #ad6156; border: 1px solid #f2e0d9; border-radius: 7px; padding: 12px 14px; margin-bottom: 20px; line-height: 1.8; overflow-wrap: anywhere; }
+.record-empty { color: #8ea1ab; font-size: 12px; line-height: 1.8; padding: 28px 18px; margin: 0; }
+.record-detail > .record-empty { padding: 0; }
+.record-section-title { font-size: 12px; font-weight: 550; color: #6e8794; margin: 22px 0 13px; }
+.record-frames { display: flex; gap: 12px; overflow-x: auto; padding: 2px 1px 8px; scrollbar-width: thin; }
+.record-frame { flex: 0 0 172px; background: #f8fafb; padding: 0; border: 1px solid #dfe8eb; border-radius: 8px; text-align: left; overflow: hidden; }
+.record-frame:hover { border-color: #92b5a7; }
+.record-frame img { width: 100%; aspect-ratio: 16/10; object-fit: cover; display: block; }
+.record-frame span { display: block; padding: 9px 10px; color: #6b8591; font-size: 11px; }
+.record-milestones { padding: 0; margin: 0; list-style: none; }
+.record-milestones li { border-left: 1px solid #dce8e5; margin-left: 5px; padding: 0 0 13px 18px; font-size: 12px; color: #6c8793; position: relative; }
+.record-milestones li:before { content: ''; width: 5px; height: 5px; position: absolute; left: -3px; top: 5px; background: #7fa999; border-radius: 50%; }
+.record-timeline { list-style: none; padding: 0; margin: 0; }
+.record-timeline li { border-bottom: 1px solid #edf1f3; }
+.record-action summary { display: flex; align-items: center; gap: 9px; padding: 13px 0; cursor: pointer; list-style: none; }
+.record-action summary strong { font-size: 12px; font-weight: 500; color: #4b6d7d; flex: 1; }
+.record-action summary:after { content: '›'; color: #9fb0b8; font-size: 15px; }
+.record-action[open] summary:after { transform: rotate(90deg); }
+.record-action-dot { width: 5px; height: 5px; border-radius: 50%; background: #a3b4bd; margin: 0 5px; }
+.record-action-dot.active { background: #52a3b2; }
+.record-action-dot.negative { background: #c77e72; }
+.record-action-time { font-size: 11px; font-variant-numeric: tabular-nums; color: #95a8b2; }
+.record-action-note { font-size: 12px; line-height: 1.8; color: #5f7c8b; padding: 0 15px 12px; }
+.record-action pre, .record-raw pre { color: #637f8d; padding: 14px; margin: 0 0 12px; background: #f6f9fa; border-radius: 6px; max-height: 290px; overflow: auto; font: 11px/1.8 ui-monospace, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+.record-answer { margin: 20px 0 26px; }
+.record-answer .rich-text { font-size: 13px; }
+.record-inline-note { font-size: 12px; line-height: 1.8; color: #8b9da7; margin: 16px 0; }
+.record-files { display: flex; flex-wrap: wrap; gap: 8px 20px; padding: 22px 0; margin-top: 16px; border-top: 1px solid #edf1f3; }
+.record-file { color: #558977; font-size: 12px; text-decoration: none; line-height: 1.7; }
+.record-file:hover { text-decoration: underline; text-underline-offset: 4px; }
+.record-raw { margin: 16px 0; }
+.record-raw > summary { color: #8ca0aa; font-size: 12px; cursor: pointer; padding: 5px 0 12px; }
+.record-linked-run { padding: 10px 12px; margin: 0 8px 8px 0; border: 1px solid #deebe5; background: #f4f9f6; color: #578b77; border-radius: 6px; font-size: 12px; }
+@media (max-width: 850px) {
+  .records-workspace { grid-template-columns: 250px minmax(0,1fr); }
+  .record-detail { padding: 22px 20px; }
+  .record-detail-heading { flex-direction: column; gap: 10px; }
+  .record-metrics { gap: 10px; }
+  .record-metrics dd { font-size: 15px; }
+}
+@media (max-width: 620px) {
+  .records-dialog { width: calc(100vw - 20px); height: 90dvh; max-height: 94dvh; }
+  .records-heading { height: 58px; padding: 0 14px; }
+  .records-workspace { height: calc(100% - 58px); grid-template-columns: 1fr; grid-template-rows: 210px minmax(0,1fr); }
+  .records-sidebar { border-right: 0; border-bottom: 1px solid var(--border); }
+  .records-search { flex-wrap: nowrap; padding: 11px 12px; gap: 8px; }
+  .records-search select { width: 88px; flex-shrink: 0; }
+  .records-search input { font-size: 12px; padding: 8px 10px; }
+  .records-list { padding: 4px 8px; }
+  .record-row { padding: 8px; }
+  .record-row-body { gap: 2px; }
+  .record-detail-heading { flex-direction: row; gap: 12px; }
+  .record-detail-heading h3 { font-size: 16px; }
+  .record-detail { padding: 20px 18px; }
+  .record-frame { flex-basis: 145px; }
+}

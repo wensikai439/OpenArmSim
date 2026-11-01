@@ -167,6 +167,7 @@ class LearningJobs:
         return result
 
     def catalogue(self):
+        from harness.records import archive_overview
         rows = []
         for path in sorted((ROOT / "runs").glob("*"), reverse=True):
             if not path.is_dir() or path.is_symlink():
@@ -178,8 +179,8 @@ class LearningJobs:
                 elif (path / "manifest.json").is_file():
                     manifest = json.loads((path / "manifest.json").read_text())
                     summary = json.loads((path / "summary.json").read_text()) if (path / "summary.json").exists() else {}
-                    rows.append({"run_id": path.name, "kind": manifest.get("kind", manifest.get("schema")), "status": summary.get("status", "incomplete"),
-                                 "dataset_available": (path / "lerobot/validation.json").is_file(), "scope": manifest.get("scope", "simulation")})
+                    rows.append({**archive_overview(path.name, manifest, summary),
+                                 "dataset_available": (path / "lerobot/validation.json").is_file()})
             except (OSError, ValueError, KeyError):
                 continue
             if len(rows) >= 60:

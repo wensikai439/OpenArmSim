@@ -52,10 +52,16 @@ export function createWorkspaceUI() {
   const welcome = byId('messages').querySelector('.message');
   if (welcome) {
     welcome.classList.add('welcome-message');
-    welcome.querySelector('.message-label').textContent = '从一个任务开始';
+    const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+    svg.setAttribute('class','welcome-logo'); svg.setAttribute('aria-hidden','true');
+    const use = document.createElementNS('http://www.w3.org/2000/svg','use');
+    use.setAttribute('href','#icon-openarm'); svg.append(use); welcome.prepend(svg);
+    welcome.querySelector('.message-label').textContent = '开始一个任务';
     welcome.querySelector('.message-body').textContent =
-      '说出目标，我会观察场景、调用技能，并根据执行反馈复查结果。';
+      '描述目标，或选择下方示例。';
   }
+  const advanced = byId('agent-role').closest('.model-advanced');
+  if (advanced) advanced.hidden = byId('agent-role').options.length < 2;
 
   return {
     render(data, frames) {
@@ -66,6 +72,8 @@ export function createWorkspaceUI() {
       connection.dataset.state = stale ? 'warning' : busy ? 'running' : 'ready';
       byId('robot-identity').textContent = `OpenArm ${data.robot_model || ''}`.trim();
       byId('frame-count').textContent = String(frames.length);
+      byId('memory-count').hidden = byId('memory-count').textContent === '0';
+      byId('stage-count').hidden = !data.job && !data.last_run && !data.agent?.plan;
       document.querySelectorAll('[data-camera]').forEach(card => {
         card.setAttribute('aria-pressed', String(card.classList.contains('selected')));
       });

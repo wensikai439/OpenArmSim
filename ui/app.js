@@ -1,6 +1,7 @@
-import {createAgentUI} from './agent.js?v=platform-24';
+import {createAgentUI} from './agent.js?v=records-2';
 import {createSceneUI} from './scene.js?v=platform-25';
-import {createWorkspaceUI} from './workspace.js?v=workspace-1';
+import {createWorkspaceUI} from './workspace.js?v=records-2';
+import {createRecordsUI} from './records.js?v=records-1';
 const $ = (id) => document.getElementById(id);
 document.querySelectorAll('[data-demo-prompt]').forEach(button => {
   button.addEventListener('click', () => {
@@ -11,7 +12,7 @@ document.querySelectorAll('[data-demo-prompt]').forEach(button => {
   });
 });
 const labels = {operator:'正面观察',overview:'全景',head:'头部 · 模型相机',left:'左腕 · 模型相机',right:'右腕 · 模型相机'};
-const statusLabels = {success:'仿真任务成功',primitive_completed:'技能执行完成 · 完整目标另行复查',invalid:'物理状态异常',cancelled:'已停止',error:'执行失败',reference_exhausted:'轨迹已播完，任务未成功',budget_exhausted:'步数预算耗尽，任务未成功',truncated:'达到时长上限'};
+const statusLabels = {success:'仿真任务成功',primitive_completed:'技能完成',invalid:'物理状态异常',cancelled:'已停止',error:'执行失败',reference_exhausted:'轨迹已播完，任务未成功',budget_exhausted:'步数预算耗尽，任务未成功',truncated:'达到时长上限'};
 let state, camera='operator', imageToken='', sensorToken='', frames=[], frameIndex=0, shownRun='', toastTimer;
 let lastAgentEvent=0, learningId='', learningMetrics=[], calibrationRefreshKey='';
 let alignment=null, alignmentRows=[], alignmentRow=null, modelConfig=null;
@@ -34,6 +35,7 @@ message('描述任务后，模型会制定阶段、调用工具，并在运行�
 const workspaceUI=createWorkspaceUI();
 const agentUI=createAgentUI({api,toast,message});
 const sceneUI=createSceneUI({api,toast});
+const recordsUI=createRecordsUI({api,getRole:()=>$('agent-role').value,onImage:(...args)=>{showImage(...args);$('frame-prev').disabled=true;$('frame-next').disabled=true;}});
 function renderModel(config, editing=false){
   modelConfig=config;
   $('model-summary').hidden=!config.configured||editing;
@@ -217,7 +219,7 @@ $('frame-prev').addEventListener('click',()=>showFrame(frameIndex-1));$('frame-n
 $('frame-scale').addEventListener('click',()=>{const img=$('frame-large'),width=img.getBoundingClientRect().width,on=img.classList.toggle('zoomed');img.style.width=on?`${width*2}px`:'';$('frame-scale').textContent=on?'适应窗口':'放大 2×';});
 document.querySelectorAll('.close-dialog').forEach(button=>button.addEventListener('click',()=>button.closest('dialog').close()));
 $('frame-dialog').addEventListener('keydown',event=>{if(event.key==='ArrowLeft'&&!$('frame-prev').disabled){event.preventDefault();showFrame(frameIndex-1);}if(event.key==='ArrowRight'&&!$('frame-next').disabled){event.preventDefault();showFrame(frameIndex+1);}});
-for(const id of ['calibration-button','experiment-button'])$(id).addEventListener('click',()=>{$('details-dialog').showModal();loadCalibration().catch(error=>toast(error.message));});
+$('calibration-button').addEventListener('click',()=>{$('details-dialog').showModal();loadCalibration().catch(error=>toast(error.message));});
 async function loadCalibration(){
   const data=await api('/api/calibration');
   const clocks=data.acquisition?.episodes;
@@ -300,7 +302,8 @@ function render(data) {
   $('fit-controller').disabled=running||['starting','running','stopping','unknown'].includes(data.learning_job?.status);
   $('timing-study').disabled=$('fit-controller').disabled;
   $('fit-wrist').disabled=$('fit-controller').disabled;
-  $('planner-mode').textContent=data.llm?'API 配置':'接入模型';
+  $('planner-mode').textContent=data.llm?(data.llm_model||'模型设置'):'选择模型';
+  $('planner-mode').title=data.llm?`${data.llm_model} · 模型设置`:'选择模型';
   $('tamp-button').disabled=running||data.agent?.busy||['starting','running','stopping','unknown'].includes(data.learning_job?.status);
   $('tamp-task').disabled=$('tamp-button').disabled;
   $('sim-clock').textContent=`${data.observation.sim_time.toFixed(2)} s`;
@@ -318,8 +321,8 @@ function render(data) {
   $('stage-list').replaceChildren(...data.stages.map((name,index)=>{const li=document.createElement('li');li.className=events.has(index)?'done':'';const dot=document.createElement('span');dot.className='stage-dot';dot.textContent=events.has(index)?'✓':index+1;li.append(dot,document.createTextNode(name));if(events.has(index))li.title=events.get(index).evidence;return li;}));}
   }
   if(running){$('result-line').textContent=!data.job?`模型决策等待 · 保持上一控制目标 · ${data.observation.sim_time.toFixed(1)} s`:data.job.kind==='tamp'?`运动规划 · ${data.job.phase||'准备规划'} · 使用仿真场景信息 · ${data.observation.sim_time.toFixed(1)} s`:`${data.job.kind==='replay'?'真机指令回放 · 原始时间':data.job.timing_mode==='measured_delay'?'VLA 执行 · 计入推理等待':'VLA 执行 · 离线暂停'} · ${(data.job.progress*100).toFixed(0)}% · 结果尚未判定`;$('result-line').classList.remove('error');}
-  else if(data.last_run){const run=data.last_run;$('result-line').textContent=`${statusLabels[run.status]||run.status}${run.error?' · '+run.error:''}`;$('result-line').classList.toggle('error',!['success','primitive_completed'].includes(run.status));if((run.run_id||run.error)!==shownRun){shownRun=run.run_id||run.error;const feedback=run.metrics?.tamp;const diagnostic=feedback?.planning_diagnostics;const extra=diagnostic?`\n规划阶段：${diagnostic.arm==='left'?'左手':'右手'} / ${diagnostic.phase}。${diagnostic.blocked_pairs?.length?'碰撞对象：'+diagnostic.blocked_pairs[0].geoms.join(' ↔ '):'最小位置误差：'+((diagnostic.best_ik?.position_error_m||0)*1000).toFixed(1)+' mm'}。`:'';if(!run.initiator||run.initiator.type!=='llm')message($('result-line').textContent+'。'+extra+(run.run_id?'状态、动作及结果已保存到本次实验目录。':''),'note');}}
-  else{$('result-line').textContent='阶段由接触与稳定性证据确认，播放到某个时间点不会自动判定完成。';}
+  else if(data.last_run){const run=data.last_run;$('result-line').textContent=`${statusLabels[run.status]||run.status}${run.error?' · '+run.error:''}`;$('result-line').classList.toggle('error',!['success','primitive_completed'].includes(run.status));if((run.run_id||run.error)!==shownRun){shownRun=run.run_id||run.error;const feedback=run.metrics?.tamp;const diagnostic=feedback?.planning_diagnostics;const extra=diagnostic?`\n规划阶段：${diagnostic.arm==='left'?'左手':'右手'} / ${diagnostic.phase}。${diagnostic.blocked_pairs?.length?'碰撞对象：'+diagnostic.blocked_pairs[0].geoms.join(' ↔ '):'最小位置误差：'+((diagnostic.best_ik?.position_error_m||0)*1000).toFixed(1)+' mm'}。`:'';if(!run.initiator||run.initiator.type!=='llm')message($('result-line').textContent+'。'+extra,'note');}}
+  else{$('result-line').textContent='';}
   const assessment=data.agent?.plan;
   if(!running&&data.last_run&&assessment?.execution_id===data.last_run.execution_id){
     const verdict={success:'成功',failure:'失败',uncertain:'证据不足'}[assessment.verdict]||(data.agent.busy?'复查中':'尚未提交');
@@ -349,11 +352,11 @@ function render(data) {
     displayFrames=displayFrames.map(f=>({...f,label:f.label.startsWith('结束')?'夹爪已调整':f.label}));
   updateImages(data);updateFrames(displayFrames);
   workspaceUI.render(data,displayFrames);
+  recordsUI.render(data);
   renderLearning(data.learning_job);
   const completedCalibration=['calibrate','wrist'].includes(data.learning_job?.kind)&&data.learning_job.status==='completed'?data.learning_job.job_id:'';
   if($('details-dialog').open&&completedCalibration&&completedCalibration!==calibrationRefreshKey){calibrationRefreshKey=completedCalibration;loadCalibration().catch(error=>toast(error.message));}
   $('calibration-gaps').replaceChildren(...data.calibration_gaps.map(text=>{const li=document.createElement('li');li.textContent=text;return li;}));
-  $('run-list').replaceChildren(...data.runs.map(name=>{const a=document.createElement('a');a.className='run-item';a.textContent=name;a.href=`/runs/${encodeURIComponent(name)}/${name.startsWith('handover-')?'episode':'summary'}.json`;a.target='_blank';a.rel='noopener';return a;}));
 }
 async function poll(){try{render(await api('/api/status'));}catch(error){workspaceUI.disconnected();$('loading').hidden=false;$('loading').textContent='连接中断；页面重连不会重新启动实验';}finally{setTimeout(poll,document.hidden?2000:camera==='operator'&&operatorView.mode==='free'?150:500);}}
 poll();

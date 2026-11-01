@@ -1,0 +1,26 @@
+// Semantic and path checks; independent of CSS and page structure.
+import assert from 'node:assert/strict';
+import {groupTurns,outcome,archiveURL,mediaURL,duration} from '../ui/activity.js';
+const root={id:'root',created:1,prompt:'放入篮子',status:'completed',answer:'',trace:[]};
+const child={id:'child',parent:'root',created:2,status:'error',answer:'放置失败',trace:[{id:7,started:2,kind:'execution',detail:{run_id:'run-1'}}]};
+const grouped=groupTurns([child,root]);
+assert.equal(grouped.length,1);
+assert.equal(grouped[0].prompt,'放入篮子');
+assert.equal(grouped[0].status,'error');
+assert.deepEqual(grouped[0].runIds,['run-1']);
+const partial=groupTurns([{...child,parent:'not-in-page'}]);
+assert.equal(partial.length,1);
+assert.equal(partial[0].truncated,true);
+assert.equal(partial[0].status,'unknown');
+assert.ok(groupTurns([{...child,id:'a',parent:'b'},{...child,id:'b',parent:'a'}]).every(row=>row.status==='unknown'));
+assert.equal(outcome('completed').tone,'neutral');
+assert.equal(outcome('primitive_completed').label,'技能完成');
+assert.equal(outcome('unknown').terminal,false);
+assert.equal(outcome('mystery').label,'结果未知');
+for (const id of ['../other','/etc','%2e%2e','a/b','','..']) assert.equal(archiveURL(id,'manifest.json'),null);
+assert.equal(archiveURL('run-1','private.json'),null);
+assert.equal(mediaURL('/runs/run-1/keyframes/000100-01.jpg','run-1'),'/runs/run-1/keyframes/000100-01.jpg');
+for (const url of ['/runs/other/keyframes/000100-01.jpg','https://example.com/x.jpg','/runs/run-1/keyframes/../x.jpg','/runs/run-1/keyframes/%2e%2e.jpg']) assert.equal(mediaURL(url,'run-1'),null);
+assert.equal(duration(NaN),'—');
+assert.equal(duration(-1),'—');
+console.log('Record grouping, outcome boundaries, missing history, and scoped artifact paths: passed');

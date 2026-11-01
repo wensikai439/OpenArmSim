@@ -1,9 +1,6 @@
 const $ = id => document.getElementById(id);
-const names = {set_gripper:'夹爪开合',observe:'观察场景',inspect_manipulation:'检查操作条件',prepare_simulation:'准备新仿真任务',set_plan:'制定阶段计划',pick:'抓取',handover:'双手交接',place:'放置',relocate:'连续搬到目标',move_to_pose:'移动到目标位姿',move_relative:'末端相对移动',run_policy:'调用学习策略',list_skills:'读取技能能力',run_tamp:'TAMP 基线',run_pi05_vla:'VLA 基线',get_run_status:'读取执行反馈',finish:'提交模型复查',recall_memory:'检索相关经验',remember_scene:'更新场景记忆'};
-names.inspect_scene='读取场景目录';names.resolve_scene_target='解析相对物体目标';
-names.resolve_placement_transit='计算运输位姿';
-names.select_manipulation_object='选择操作对象';
-const statuses = {running:'进行中',waiting:'等待执行',completed:'已结束',error:'失败',interrupted:'已中断',cancelled:'已停止',budget_exhausted:'预算耗尽'};
+import {toolNames as names, groupTurns} from './activity.js?v=records-1';
+const statuses = {running:'进行中',waiting:'等待执行',completed:'已结束',error:'失败',interrupted:'已中断',cancelled:'已停止',budget_exhausted:'预算耗尽',unknown:'历史片段'};
 const marks = {done:'✓',running:'·',blocked:'!',uncertain:'?',failure:'!'};
 const outcomes = {success:'技能成功',failure:'执行失败',rejected:'调用被拒绝',cancelled:'已取消',unverified:'结果未验证'};
 const checks = {observation:'已读取观测',right_grasp:'右手夹持证据',right_lift:'右手抬起证据',handover:'双手交接证据',left_grasp:'右手打开后左手独立持瓶',left_release_at_basket:'左手在篮中释放瓶子',basket:'稳定入篮证据',tool_completed:'工具完成，不代表完整任务成功',visual_review:'模型视觉复查，与物理评分分开'};
@@ -61,7 +58,7 @@ export function createAgentUI({api,toast,message}){
   }
   function renderTrace(group,turn){
     const old=new Map([...group.querySelectorAll('.trace-item')].map(el=>[el.dataset.event,el]));
-    for(const event of turn.trace){
+    for(const event of turn.trace.filter(event=>['tool','execution'].includes(event.kind)||['error','interrupted'].includes(event.status))){
       const key=String(event.id);let row=old.get(key);
       if(!row){row=node('details','trace-item');row.dataset.event=key;row.append(node('summary'),node('pre','trace-json'));group.append(row);}
       const label=names[event.name]||event.name;
@@ -78,18 +75,8 @@ export function createAgentUI({api,toast,message}){
     const seen=new Set();
     // A user goal is one conversation card. Automatic skill continuations
     // append to its public tool trace; they are not new human messages.
-    const groups=new Map(),all=new Map(local.turns.map(t=>[t.id,t]));
-    for(const item of local.turns){
-      let root=item;const visited=new Set();
-      while(root.parent&&all.has(root.parent)&&!visited.has(root.id)){
-        visited.add(root.id);root=all.get(root.parent);
-      }
-      if(root.parent&&!all.has(root.parent))continue; // truncated archive child has no visible user-goal context
-      if(!groups.has(root.id))groups.set(root.id,{...root,trace:[]});
-      const group=groups.get(root.id);group.trace.push(...item.trace);
-      group.answer=item.answer;group.status=item.status;
-    }
-    for(const turn of groups.values()){
+    const groups=groupTurns(local.turns);
+    for(const turn of groups){
       seen.add(turn.id);let card=cards.get(turn.id);
       if(!card){
         card=node('article','agent-turn');card.dataset.turn=turn.id;
@@ -107,7 +94,8 @@ export function createAgentUI({api,toast,message}){
       card.dataset.status=turn.status;
       const trace=card.querySelector('.trace-group'),count=turn.trace.filter(e=>e.kind==='api').length;
       const tools=turn.trace.filter(e=>e.kind==='tool').length;
-      trace.querySelector('.trace-summary').textContent=`${turn.status==='running'?'正在处理':'调用记录'} · ${count} 次 API · ${tools} 次工具`;
+      trace.querySelector('.trace-summary').textContent=tools?`${tools} 次工具调用`:turn.status==='running'?'正在规划…':'查看调用记录';
+      trace.querySelector('.trace-summary').title=`${count} 次模型调用 · ${tools} 次工具调用`;
       if(!trace.dataset.initialized){trace.open=turn.status==='running';trace.dataset.initialized='1';}
       if(turn.status!=='running'&&!trace.dataset.touched)trace.open=false;
       renderTrace(trace.querySelector('.trace-list'),turn);
@@ -190,9 +178,9 @@ export function createAgentUI({api,toast,message}){
   $('chat-form').addEventListener('submit',async event=>{
     event.preventDefault();const text=$('chat-input').value.trim();if(!text||submitting||modelBusy)return;
     submitting=true;$('send-button').disabled=true;$('agent-role').disabled=true;$('chat-input').value='';
-    $('agent-activity').textContent='正在提交给模型…';
-    try{const result=await api('/api/chat',{message:text,role:role()});if(result.mode==='not_configured')message(result.message,'note');}
-    catch(e){toast(e.message);}finally{submitting=false;await refresh(true);$('send-button').disabled=modelBusy;$('agent-role').disabled=modelBusy;}
+    $('agent-activity').hidden=false;$('agent-activity').textContent='发送中…';
+    try{const result=await api('/api/chat',{message:text,role:role()});if(result.mode==='not_configured'){if(!$('chat-input').value)$('chat-input').value=text;$('planner-mode').click();}}
+    catch(e){if(!$('chat-input').value)$('chat-input').value=text;toast(e.message);}finally{submitting=false;await refresh(true);$('send-button').disabled=modelBusy;$('agent-role').disabled=modelBusy;$('agent-activity').hidden=!modelBusy;}
   });
   $('agent-role').addEventListener('change',()=>{revision='';$('memory-note').value='';delete $('memory-note').dataset.replaces;for(const card of cards.values())card.remove();cards.clear();refresh(true);});
   $('memory-button').addEventListener('click',async()=>{await refresh(true);renderMemory();$('memory-dialog').showModal();});
@@ -236,7 +224,7 @@ export function createAgentUI({api,toast,message}){
   });
   $('motion-form').addEventListener('submit',async event=>{
     event.preventDefault();const button=$('motion-run');button.disabled=true;
-    try{const delta=['motion-x','motion-y','motion-z'].map(id=>Number($(id).value)/100);if(!delta.every(Number.isFinite)||Math.hypot(...delta)>.15)throw new Error('位移总长度须在 15 cm 内');const obs=await api('/api/tools',{name:'observe',arguments:{}});const result=await api('/api/tools',{name:'move_relative',arguments:{observation_id:obs.observation_id,arm:$('motion-arm').value,delta_m:delta,frame:'world',speed_scale:.5,planner:selectedBackend}});$('motion-result').textContent='已提交规划 · 执行反馈见场景与运行阶段';message('已提交末端相对移动，执行编号 '+result.execution_id,'note');}
+    try{const delta=['motion-x','motion-y','motion-z'].map(id=>Number($(id).value)/100);if(!delta.every(Number.isFinite)||Math.hypot(...delta)>.15)throw new Error('位移总长度须在 15 cm 内');const obs=await api('/api/tools',{name:'observe',arguments:{}});await api('/api/tools',{name:'move_relative',arguments:{observation_id:obs.observation_id,arm:$('motion-arm').value,delta_m:delta,frame:'world',speed_scale:.5,planner:selectedBackend}});$('motion-result').textContent='已提交规划';message('开始末端移动','note');}
     catch(e){$('motion-result').textContent=e.message;}finally{button.disabled=!skillCatalogue.adapters.find(b=>b.id===selectedBackend).ready;}
   });
   $('memory-form').addEventListener('submit',async event=>{
@@ -254,8 +242,10 @@ export function createAgentUI({api,toast,message}){
       if(selected!==memoryObject){memoryObject=selected;$('memory-context').options[0].textContent=selected?`当前对象：${({bottle:'瓶子',block:'长方体',can:'圆柱'})[selected]||selected}`:'当前任务';if($('memory-dialog').open)renderMemory();}
       modelBusy=!!data.agent?.busy;
       $('send-button').disabled=submitting||modelBusy;$('agent-role').disabled=submitting||modelBusy;
-      $('agent-activity').textContent=modelBusy?'模型正在处理 · 调用过程见下方':data.llm?`${data.llm_model} · API 已配置`:'尚未接入 API';
-      $('agent-activity').classList.toggle('active',modelBusy);
+      const activeTool=[...local.turns].reverse().flatMap(turn=>[...turn.trace].reverse()).find(event=>event.status==='running'&&event.kind==='tool');
+      $('agent-activity').textContent=submitting&&!modelBusy?'发送中…':modelBusy?(names[activeTool?.name]||'思考中…'):'';
+      $('agent-activity').hidden=!submitting&&!modelBusy;
+      $('agent-activity').classList.toggle('active',submitting||modelBusy);
       if(data.agent&&data.agent.revision!==revision)refresh();
       const plan=data.agent?.plan,token=JSON.stringify(plan);
       if(token!==planToken){planToken=token;if(plan){
@@ -268,9 +258,10 @@ export function createAgentUI({api,toast,message}){
       const run=data.job||data.last_run;
       $('stage-source').textContent=plan?`模型计划 · ${plan.model}${plan.timing_mode==='measured_delay'?' · 计入等待时间':''}${plan.object_goals?` · ${plan.object_goals.length}个目标已锁定`:plan.placement_goal?" · 目标已锁定":""}${plan.time_budget_s>40?` · ${plan.time_budget_s}秒仿真预算`:''}`:run?.kind==='replay'?'回放 · 未调用 API':run&&run.initiator?.type!=='llm'?'技能测试 · 未调用 API':'等待模型计划';
       $('stage-source').title=$('stage-source').textContent;
+      $('stage-source').textContent=plan?'任务计划':run?(run.kind==='replay'?'轨迹回放':'技能执行'):'';
       if(plan){const done=plan.steps.filter(s=>s.status==='done').length;$('stage-count').textContent=`${done} / ${plan.steps.length}`;$('progress-bar').style.width=`${100*done/plan.steps.length}%`;}
       else if(!run){
-        $('stage-list').style.gridTemplateColumns='1fr';$('stage-list').replaceChildren(node('li','plan-placeholder',modelBusy?'模型正在处理请求…':'发送一个任务，模型会在这里制定运行阶段。'));$('stage-count').textContent='待规划';
+        $('stage-list').style.gridTemplateColumns='1fr';$('stage-list').replaceChildren(node('li','plan-placeholder',modelBusy?'正在规划…':'等待任务'));$('stage-count').textContent='待规划';
       }else $('stage-list').style.gridTemplateColumns='';
       return !!plan||!run;
     }
