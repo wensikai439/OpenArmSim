@@ -20,6 +20,7 @@ SCRIPT = Path(__file__).resolve()
 def environment():
     env = dict(os.environ)
     runtime = ROOT / '.runtime'
+    state_root = runtime.resolve().parent
     directories = {
         'XDG_CACHE_HOME': runtime / 'cache', 'XDG_CONFIG_HOME': runtime / 'config',
         'XDG_DATA_HOME': runtime / 'data', 'TMPDIR': runtime / 'cache/tmp',
@@ -35,7 +36,8 @@ def environment():
         path.mkdir(parents=True, exist_ok=True)
         env[key] = str(path)
     env.update(PYTHONDONTWRITEBYTECODE='1', PYTHONUNBUFFERED='1', OPENARM_PORT='18767',
-               OPENARM_POLICY_CONFIG=str(ROOT / 'harness/policy.json'),
+               OPENARM_SERVER_DATA=str(state_root),
+               OPENARM_POLICY_CONFIG=str(state_root / '.private/policy.json' if (state_root / '.private/policy.json').is_file() else ROOT / 'harness/policy.json'),
                OPENARM_SCENE_OBJECTS='[]',
                OMP_NUM_THREADS='4', OPENBLAS_NUM_THREADS='4', MKL_NUM_THREADS='4',
                NUMEXPR_NUM_THREADS='4', LP_NUM_THREADS='4', CUDA_VISIBLE_DEVICES='1', MUJOCO_GL='osmesa',
@@ -131,6 +133,12 @@ def supervise():
 
 
 def main():
+    current = ROOT / '.runtime/update/current'
+    if not os.environ.get('OPENARM_MANAGER_DIRECT') and current.is_symlink():
+        active = current.resolve()
+        releases = (ROOT / '.runtime/update/releases').resolve()
+        if active != ROOT and active.parent == releases and (active / 'deploy/server/manage.py').is_file():
+            os.execv(sys.executable, [sys.executable, '-B', str(active / 'deploy/server/manage.py'), *sys.argv[1:]])
     parser = argparse.ArgumentParser()
     parser.add_argument('command', choices=['start', 'stop', 'status', 'supervise'])
     args = parser.parse_args()

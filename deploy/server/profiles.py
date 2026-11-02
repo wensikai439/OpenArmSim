@@ -9,7 +9,7 @@ import tempfile
 import threading
 import time
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(os.environ.get('OPENARM_SERVER_DATA') or Path(__file__).resolve().parents[2])
 PROFILE = ContextVar('openarm_api_profile', default=None)
 
 

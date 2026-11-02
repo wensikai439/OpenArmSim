@@ -50,7 +50,7 @@ def main():
     web.ModelSettings = model_settings(web.ModelSettings)
     original_file = web.Handler._file
     def serve_file(self, path, root):
-        relative = path.resolve().relative_to(ROOT)
+        relative = path.relative_to(ROOT) if path.is_relative_to(ROOT / 'runs') else path.resolve().relative_to(ROOT)
         if relative.parts and relative.parts[0] == 'runs':
             try:
                 own = results_dir()

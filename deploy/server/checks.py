@@ -73,7 +73,7 @@ class GatewayChecks(unittest.TestCase):
             result = importlib.util.module_from_spec(spec); spec.loader.exec_module(result)
             return result
         profiles = module('profiles_test', Path(__file__).with_name('profiles.py'))
-        llm = module('llm_test', Path(__file__).resolve().parents[2] / 'harness/llm.py')
+        llm = module('harness.llm_test', Path(__file__).resolve().parents[2] / 'harness/llm.py')
         with tempfile.TemporaryDirectory() as temporary:
             profiles.ROOT = Path(temporary)
             settings_type = profiles.model_settings(llm.ModelSettings)

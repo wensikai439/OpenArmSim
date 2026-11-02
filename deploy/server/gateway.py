@@ -1,5 +1,6 @@
 """Password gateway for the existing loopback-only simulation API."""
 from __future__ import annotations
+import fcntl
 
 import argparse
 import base64
@@ -105,11 +106,29 @@ class Gateway(BaseHTTPRequestHandler):
                 self.cookie(self.server.auth.issue(profile, name=DEVICE), name=DEVICE)]
 
     def dispatch(self):
+        root = getattr(self.server, 'root', None)
+        if root is None or self.command != 'POST' or not urlsplit(self.path).path.startswith('/api/'):
+            return self._dispatch()
+        folder = root / '.runtime/update'
+        folder.mkdir(parents=True, exist_ok=True)
+        with (folder / 'admission.lock').open('a') as admission:
+            try: fcntl.flock(admission, fcntl.LOCK_SH | fcntl.LOCK_NB)
+            except BlockingIOError:
+                return self.reply(503, b'{"error":"platform_updating_retry_later"}', 'application/json')
+            try: return self._dispatch()
+            finally: fcntl.flock(admission, fcntl.LOCK_UN)
+
+    def _dispatch(self):
         if not self.path.startswith('/') or self.path.startswith('//'):
             return self.reply(400)
         if self.command == 'POST' and not self.same_origin():
             return self.reply(403, b'{"error":"cross_origin_rejected"}', 'application/json')
         path = urlsplit(self.path).path
+        if path == '/version' and self.command in ('GET','HEAD'):
+            root = getattr(self.server, 'root', None)
+            release = json.loads((root / 'DEPLOYMENT.json').read_text()) if root and (root / 'DEPLOYMENT.json').is_file() else {}
+            value = {'source_commit':release.get('source_commit'), 'channel':'main'}
+            return self.reply(200, json.dumps(value).encode(), 'application/json')
         if path == '/login' and self.command in ('GET', 'HEAD'):
             return self.reply(200, LOGIN.replace('{error}', '').encode())
         if path == '/login' and self.command == 'POST':
@@ -172,6 +191,7 @@ def main():
     server = ThreadingHTTPServer((args.bind, args.port), Gateway)
     server.daemon_threads = True
     server.auth = Auth(args.root / '.private/auth.json')
+    server.root = args.root
     server.backend_port = args.backend_port
     try:
         server.serve_forever()
