@@ -8,6 +8,7 @@ import argparse
 from contextlib import contextmanager
 import fcntl
 import hashlib
+import importlib.util
 import io
 import json
 import os
@@ -207,6 +208,19 @@ class Updater:
         output = self.command(['nvidia-smi','--id=1','--query-gpu=memory.free','--format=csv,noheader,nounits'])
         if int(output.decode().strip()) < 4096: raise RuntimeError('GPU 1 空闲显存不足 4 GiB，等待资源')
 
+    def worker(self):
+        """Bootstrap stays stable; each poll uses the validated active updater code."""
+        active = self.active()
+        if active == self.root: return self
+        path = active / 'deploy/server/update.py'
+        marker = read_json(active/'DEPLOYMENT.json', {})
+        expected = marker.get('files',{}).get('deploy/server/update.py')
+        if not expected or path.is_symlink() or hashlib.sha256(path.read_bytes()).hexdigest()!=expected:
+            raise RuntimeError('更新器代码与发布校验记录不符')
+        spec = importlib.util.spec_from_file_location('openarm_active_updater',path)
+        module = importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+        return module.Updater(self.root)
+
     def stage(self, revision):
         modules = {}
         for line in self.git('ls-tree','-r',revision).decode().splitlines():
@@ -230,6 +244,8 @@ class Updater:
             marker=read_json(destination / 'DEPLOYMENT.json', {})
             if marker.get('source_commit') != revision or not marker.get('files'):
                 raise RuntimeError('发布目录缺少本更新器的身份记录')
+            if marker.get('submodules',{}) != modules or any(not (destination/name).is_symlink() or (destination/name).resolve() != (self.root/name).resolve() for name in modules):
+                raise RuntimeError('发布目录的机器人资源链接与核验记录不符')
             for name,digest in marker['files'].items():
                 path=PurePosixPath(name)
                 if path.is_absolute() or '..' in path.parts:raise RuntimeError('发布校验路径越界')
@@ -389,7 +405,7 @@ def main():
         signal.signal(signal.SIGINT,lambda *_:stopped.set())
         signal.signal(signal.SIGTERM,lambda *_:stopped.set())
         while not stopped.is_set():
-            try:updater.once()
+            try:updater.worker().once()
             except BlockingIOError:pass
             except Exception as error:updater.report('error',error=safe_error(error))
             stopped.wait(max(30,int(updater.config.get('poll_seconds',60))))

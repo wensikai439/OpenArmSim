@@ -2,6 +2,7 @@
 from http.client import HTTPConnection
 from http.server import ThreadingHTTPServer
 import io
+import hashlib
 import json
 from pathlib import Path
 import tarfile
@@ -114,6 +115,14 @@ class UpdateChecks(unittest.TestCase):
         call=self.updater.command.call_args
         self.assertEqual(call.kwargs['env']['OPENARM_MANAGER_DIRECT'],'1')
         self.assertIn(self.old/'deploy/server/manage.py',call.args[0])
+
+    def test_supervisor_uses_validated_active_updater_with_shared_state_root(self):
+        path=self.old/'deploy/server/update.py';path.parent.mkdir(parents=True)
+        path.write_text('class Updater:\n    def __init__(self, root): self.root=root\n')
+        atomic_json(self.old/'DEPLOYMENT.json',{'files':{'deploy/server/update.py':hashlib.sha256(path.read_bytes()).hexdigest()}})
+        self.assertEqual(self.updater.worker().root,self.root)
+        path.write_text('raise RuntimeError("must not execute modified code")')
+        with self.assertRaisesRegex(RuntimeError,'校验记录不符'):self.updater.worker()
 
     def test_archive_rejects_traversal_and_symlinks_and_cleans_its_stage(self):
         for kind in ('traversal','symlink'):
