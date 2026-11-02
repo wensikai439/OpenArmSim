@@ -184,7 +184,13 @@ class Updater:
     def wait_ready(self, release):
         expected = self.fingerprint(release)
         deadline = time.monotonic() + self.config.get('health_timeout', 180)
+        next_process_check = time.monotonic() + 5
         while time.monotonic() < deadline:
+            if time.monotonic() >= next_process_check:
+                status = json.loads(self.command([self.root / '.venv/bin/python','-B',release / 'deploy/server/manage.py','status'],
+                    env=dict(os.environ,OPENARM_MANAGER_DIRECT='1')))
+                if not status.get('running'): raise RuntimeError('平台进程启动后退出，查看 simulation.log')
+                next_process_check = time.monotonic() + 5
             try: value = self.health()
             except (RuntimeError, OSError):
                 time.sleep(.5)
@@ -244,8 +250,8 @@ class Updater:
             marker=read_json(destination / 'DEPLOYMENT.json', {})
             if marker.get('source_commit') != revision or not marker.get('files'):
                 raise RuntimeError('发布目录缺少本更新器的身份记录')
-            if marker.get('submodules',{}) != modules or any(not (destination/name).is_symlink() or (destination/name).resolve() != (self.root/name).resolve() for name in modules):
-                raise RuntimeError('发布目录的机器人资源链接与核验记录不符')
+            if marker.get('submodules',{}) != modules or any((destination/name).is_symlink() for name in modules):
+                raise RuntimeError('发布目录的机器人资源与核验记录不符')
             for name,digest in marker['files'].items():
                 path=PurePosixPath(name)
                 if path.is_absolute() or '..' in path.parts:raise RuntimeError('发布校验路径越界')
@@ -278,9 +284,11 @@ class Updater:
                 if source.exists(): (staging / name).symlink_to(source, target_is_directory=True)
             for name in modules:
                 target = staging / name
-                if target.is_dir(): target.rmdir()  # git archive may contain an empty gitlink directory
-                target.parent.mkdir(parents=True,exist_ok=True)
-                target.symlink_to(self.root / name,target_is_directory=True)
+                for relative,digest in modules[name]['files'].items():
+                    output = target / relative
+                    output.parent.mkdir(parents=True,exist_ok=True)
+                    shutil.copyfile(self.root/name/relative,output)
+                    hashes[name+'/'+relative]=digest
             # Host-specific interpreter/source paths are deployment data.
             local_runtime = self.root / 'sim/learning.json'
             if local_runtime.is_file():
@@ -318,6 +326,9 @@ class Updater:
         env = dict(os.environ, TMPDIR=str(temporary), OMP_NUM_THREADS='2', OPENBLAS_NUM_THREADS='2',
                    XDG_CACHE_HOME=str(self.root / '.runtime/cache'), PYTHONDONTWRITEBYTECODE='1')
         self.command([self.root / '.venv/bin/python','-B','-m','unittest',*CHECKS],cwd=release,timeout=90,env=env)
+        self.command([self.root / '.venv/bin/python','-B','-c',
+            'from sim.environment import OpenArmEnv; env=OpenArmEnv(images=False); env.close(); print("model compiled")'],
+            cwd=release,timeout=60,env=env)
 
     def recover(self, previous, candidate, revision, reason):
         self.manage(candidate,'stop')

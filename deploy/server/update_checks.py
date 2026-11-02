@@ -143,6 +143,19 @@ class UpdateChecks(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError,'资源缺失'):Updater.stage(self.updater,'c'*40)
         self.assertFalse((self.updater.releases/('c'*40)).exists())
 
+    def test_verified_submodule_assets_are_copied_inside_the_release(self):
+        source=self.root/'openarm_mujoco/v1/model.xml';source.parent.mkdir(parents=True);source.write_text('<mujoco/>')
+        digest=hashlib.sha256(source.read_bytes()).hexdigest()
+        self.updater.config['submodules']={'openarm_mujoco':{'revision':'d'*40,'files':{'v1/model.xml':digest}}}
+        data=io.BytesIO()
+        with tarfile.open(fileobj=data,mode='w') as archive:
+            item=tarfile.TarInfo('openarm_mujoco');item.type=tarfile.DIRTYPE;archive.addfile(item)
+        self.updater.git.side_effect=lambda *args:b'160000 commit '+b'd'*40+b'\topenarm_mujoco\n' if args[0]=='ls-tree' else data.getvalue()
+        release=Updater.stage(self.updater,'c'*40)
+        target=release/'openarm_mujoco/v1/model.xml'
+        self.assertTrue(target.resolve().is_relative_to(release));self.assertEqual(target.read_bytes(),source.read_bytes())
+        source.write_text('mutated source');self.assertEqual(target.read_text(),'<mujoco/>')
+
 
 class AdmissionChecks(unittest.TestCase):
     def test_update_lock_rejects_new_post_and_version_never_exposes_config(self):
