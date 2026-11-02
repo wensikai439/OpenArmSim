@@ -24,11 +24,18 @@ class OwnedQueue(queue.Queue):
 def install_service():
     import sim.service as service
     from sim.recording import Recorder
+    from urllib.parse import quote
     service.queue = SimpleNamespace(Queue=OwnedQueue, Empty=queue.Empty)
+
+    def record_url(_service, path):
+        relative = Path(path).relative_to(results_dir())
+        return '/runs/' + quote(relative.as_posix(), safe='/')
+    service.SimulationService._record_url = record_url
 
     class OwnedRecorder(Recorder):
         def __init__(self, *args, root=None, **kwargs):
-            super().__init__(*args, root=root or results_dir(create=True), **kwargs)
+            self.archive_root = results_dir()
+            super().__init__(*args, root=root or self.archive_root, **kwargs)
 
     base_wait = service.DecisionWait
     class OwnedDecisionWait(base_wait):
@@ -58,6 +65,9 @@ def workspace_factory(base):
             key = str(folder)
             with self._lock:
                 if key not in self._stores:
+                    for name in ('workspace.sqlite3', 'workspace.sqlite3-wal', 'workspace.sqlite3-shm'):
+                        if (folder / name).is_symlink():
+                            raise ValueError('工作区文件不能是符号链接')
                     self._stores[key] = base(folder / 'workspace.sqlite3')
                 return self._stores[key]
 

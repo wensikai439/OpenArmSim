@@ -127,6 +127,9 @@ class SimulationService:
         """Resolve an instance recorder, or the current module default for tests."""
         return getattr(self, 'recorder_class', None) or Recorder
 
+    def _record_url(self, path):
+        return '/runs/' + str(path.relative_to(ROOT / 'runs'))
+
     def snapshot(self):
         with self.lock:
             return copy.deepcopy(self.cache)
@@ -257,7 +260,7 @@ class SimulationService:
             pixels,view,_=self._render_operator();path.write_bytes(pixels)
         else:Image.fromarray(self.env.render(selected)).save(path, quality=95)
         item = {"label": label, "sim_time": float(self.env.data.time), "tick": self.env.tick,
-                "url": "/runs/" + str(path.relative_to(ROOT / "runs")), "camera": '操作者视角' if selected=='operator' else selected,
+                "url": self._record_url(path), "camera": '操作者视角' if selected=='operator' else selected,
                 'manual':own,'observation_id':f'{self.epoch}:{self.env.tick}'}
         if view:item['operator_view']=view
         if sensor_evidence:
@@ -266,7 +269,7 @@ class SimulationService:
             for camera in ('head','left','right'):
                 sensor_path = path.with_name(path.stem+'-'+camera+'.jpg')
                 Image.fromarray(self.env.render(camera)).save(sensor_path, quality=95)
-                item['sensor_urls'][camera] = '/runs/' + str(sensor_path.relative_to(ROOT/'runs'))
+                item['sensor_urls'][camera] = self._record_url(sensor_path)
         self.keyframes.append(item)
         self.keyframes = self.keyframes[-100:]
         recorder.event({"type": "keyframe", **item})

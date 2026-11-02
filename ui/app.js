@@ -1,7 +1,7 @@
-import {createAgentUI} from './agent.js?v=execution-1';
+import {createAgentUI} from './agent.js?v=deployment-1';
 import {createSceneUI} from './scene.js?v=platform-25';
 import {createWorkspaceUI} from './workspace.js?v=records-2';
-import {createRecordsUI} from './records.js?v=execution-1';
+import {createRecordsUI} from './records.js?v=deployment-1';
 const $ = (id) => document.getElementById(id);
 document.querySelectorAll('[data-demo-prompt]').forEach(button => {
   button.addEventListener('click', () => {
@@ -13,8 +13,8 @@ document.querySelectorAll('[data-demo-prompt]').forEach(button => {
 });
 const labels = {operator:'正面观察',overview:'全景',head:'头部 · 模型相机',left:'左腕 · 模型相机',right:'右腕 · 模型相机'};
 const statusLabels = {success:'仿真任务成功',primitive_completed:'技能完成',invalid:'物理状态异常',cancelled:'已停止',error:'执行失败',reference_exhausted:'轨迹已播完，任务未成功',budget_exhausted:'步数预算耗尽，任务未成功',truncated:'达到时长上限'};
-let state, camera='operator', imageToken='', sensorToken='', frames=[], frameIndex=0, shownRun='', toastTimer;
-let lastAgentEvent=0, learningId='', learningMetrics=[], calibrationRefreshKey='';
+let state, camera='operator', imageToken='', sensorToken='', sensorUpdatedAt=0, frames=[], frameIndex=0, shownRun='', toastTimer;
+let lastAgentEvent=0, learningId='', learningMetrics=[], calibrationRefreshKey='', pendingCommand='';
 let alignment=null, alignmentRows=[], alignmentRow=null, modelConfig=null;
 const frontView={mode:'front',azimuth:180,elevation:-24,distance:1.25,lookat:[.43,0,1.20]};
 let operatorView=structuredClone(frontView), viewerLoaded=false, viewSending=false, viewPending=null, drag=null, suppressClick=false;
@@ -53,7 +53,8 @@ function renderModel(config, editing=false){
 }
 function modelBusy(busy){for(const id of ['model-save','model-test','model-clear','model-edit','model-test-saved','model-cancel'])$(id).disabled=busy;}
 $('planner-mode').addEventListener('click',async()=>{
-  try{renderModel(await api('/api/model'));$('model-dialog').showModal();}catch(error){toast(error.message);}
+  toast('正在打开模型配置…');
+  try{renderModel(await api('/api/model'));$('model-dialog').showModal();$('toast').hidden=true;}catch(error){toast(error.message);}
 });
 $('model-edit').addEventListener('click',()=>{renderModel(modelConfig,true);$('model-name').focus();});
 $('model-cancel').addEventListener('click',()=>renderModel(modelConfig));
@@ -102,7 +103,11 @@ function setCamera(next) {
 function updateImages(data) {
   const token=`${data.observation_id}:${camera}:${camera==='operator'?data.viewer?.revision:''}`;
   if(token!==imageToken){imageToken=token;$('main-camera').src=`/api/frame?camera=${camera}&v=${encodeURIComponent(data.observation_id)}&view=${data.viewer?.revision??0}`;}
-  if(sensorToken!==data.observation_id){sensorToken=data.observation_id;for(const name of ['head','left','right'])$(`thumb-${name}`).src=`/api/frame?camera=${name}&v=${encodeURIComponent(data.observation_id)}`;}
+  const now=performance.now();
+  if(sensorToken!==data.observation_id && (data.state!=='running'||now-sensorUpdatedAt>=1000||!sensorToken)){
+    sensorToken=data.observation_id;sensorUpdatedAt=now;
+    for(const name of ['head','left','right'])$(`thumb-${name}`).src=`/api/frame?camera=${name}&v=${encodeURIComponent(data.observation_id)}`;
+  }
 }
 async function sendView(){
   if(viewSending)return;viewSending=true;
@@ -265,8 +270,15 @@ $('timing-study').addEventListener('click',async()=>{
   try{const job=await api('/api/tools',{role:'research',name:'evaluate_timing',arguments:{}});toast('延迟对照已启动');message('已启动延迟对照：'+job.job_id+'。三条记录轨迹 × 三种等待时长，不调用真实 VLA，不改变标定参数。','note');}
   catch(error){toast(error.message);}finally{$('timing-study').disabled=false;}
 });
-$('capture-button').addEventListener('click',()=>command('capture',{camera}).then(()=>toast('关键帧已保存')).catch(()=>{}));
-$('reset-button').addEventListener('click',()=>command('reset',{episode:Number($('episode-select').value)}).catch(()=>{}));
+async function quickCommand(name, args, waiting, done){
+  if(pendingCommand)return;
+  pendingCommand=name;
+  for(const id of ['reset-button','capture-button'])$(id).disabled=true;
+  toast(waiting);
+  try{await command(name,args);toast(done);}catch(_){}finally{pendingCommand='';}
+}
+$('capture-button').addEventListener('click',()=>quickCommand('capture',{camera},'正在保存关键帧…','关键帧已保存'));
+$('reset-button').addEventListener('click',()=>quickCommand('reset',{episode:Number($('episode-select').value)},'正在重置场景…','场景已重置'));
 $('replay-button').addEventListener('click',()=>command('replay',{episode:Number($('episode-select').value),record_images:$('record-images').checked}).then(()=>message('按原始记录时间回放真机指令，保留不等间隔。接触结果由物理引擎产生；当前仍使用候选参数。','note')).catch(()=>{}));
 $('stop-button').addEventListener('click',()=> (state?.agent?.busy?api('/api/tools',{role:'execute',name:'stop',arguments:{}}):command('stop')).then(()=>toast('已请求停止；不会应用后续模型动作')).catch(error=>toast(error.message)));
 $('stop-learning').addEventListener('click',()=>api('/api/tools',{role:'research',name:'stop_job',arguments:{job_id:learningId}}).then(()=>toast('已请求停止本次训练任务')).catch(error=>toast(error.message)));
@@ -310,7 +322,7 @@ function render(data) {
   $('physics-status').textContent=running?(data.job?(data.job.kind==='replay'?'原始记录时钟 · 1 ms 物理':'30 Hz 控制 · 服务端物理'):'模型等待 · 保持上一控制目标'):'已暂停 · 原生 MuJoCo';
   const evaluation=data.diagnostics.evaluation;
   $('contact-status').textContent=`最大穿入 ${(evaluation.max_penetration_m*1000).toFixed(1)} mm`;
-  for(const id of ['reset-button','replay-button','capture-button','episode-select'])$(id).disabled=running||data.agent?.busy;
+  for(const id of ['reset-button','replay-button','capture-button','episode-select'])$(id).disabled=running||data.agent?.busy||!!pendingCommand;
   $('stop-button').disabled=!running&&!data.agent?.busy;$('progress-bar').style.width=`${data.job?(data.job.progress||0)*100:0}%`;
   const events=new Map(data.diagnostics.events.map(e=>[e.stage,e]));
   const modelPlan=agentUI.render(data);
@@ -358,5 +370,5 @@ function render(data) {
   if($('details-dialog').open&&completedCalibration&&completedCalibration!==calibrationRefreshKey){calibrationRefreshKey=completedCalibration;loadCalibration().catch(error=>toast(error.message));}
   $('calibration-gaps').replaceChildren(...data.calibration_gaps.map(text=>{const li=document.createElement('li');li.textContent=text;return li;}));
 }
-async function poll(){try{render(await api('/api/status'));}catch(error){workspaceUI.disconnected();$('loading').hidden=false;$('loading').textContent='连接中断；页面重连不会重新启动实验';}finally{setTimeout(poll,document.hidden?2000:camera==='operator'&&operatorView.mode==='free'?150:500);}}
+async function poll(){try{render(await api('/api/status'));}catch(error){workspaceUI.disconnected();$('loading').hidden=false;$('loading').textContent='连接中断；页面重连不会重新启动实验';}finally{setTimeout(poll,document.hidden?2000:camera==='operator'&&operatorView.mode==='free'?150:state?.state==='running'||state?.agent?.busy?250:500);}}
 poll();

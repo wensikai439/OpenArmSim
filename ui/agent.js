@@ -1,5 +1,5 @@
 const $ = id => document.getElementById(id);
-import {toolNames as names, groupTurns, traceState} from './activity.js?v=execution-1';
+import {toolNames as names, groupTurns, traceState} from './activity.js?v=deployment-1';
 const statuses = {running:'进行中',waiting:'等待执行',completed:'已结束',error:'失败',failure:'未完成',interrupted:'已中断',cancelled:'已停止',budget_exhausted:'预算耗尽',unknown:'历史片段'};
 const marks = {done:'✓',running:'·',blocked:'!',uncertain:'?',failure:'!'};
 const outcomes = {success:'技能成功',failure:'执行失败',rejected:'调用被拒绝',cancelled:'已取消',unverified:'结果未验证'};
@@ -37,7 +37,7 @@ export function richText(text){
 }
 
 export function createAgentUI({api,toast,message}){
-  let revision='',fetching=false,modelBusy=false,submitting=false,local={turns:[],memory:{notes:[],episodes:[]}},planToken='',selectedBackend='tamp',skillCatalogue=null,memoryObject=null;
+  let revision='',fetching=false,modelBusy=false,submitting=false,local={turns:[],memory:{notes:[],episodes:[]}},planToken='',selectedBackend='tamp',skillCatalogue=null,memoryObject=null,skillsRequest=0;
   const cards=new Map();
   function role(){return $('agent-role').value;}
   function shortDetail(event){
@@ -180,7 +180,7 @@ export function createAgentUI({api,toast,message}){
   }
   async function refresh(force=false){
     if(fetching)return;fetching=true;const selected=role();
-    try{const data=await api('/api/agent?role='+selected);if(selected!==role())return;local=data;revision=data.revision;renderTurns();}
+    try{const data=await api('/api/agent?role='+selected);if(selected!==role())return;local=data;revision=data.revision;renderTurns();if($('memory-dialog').open)renderMemory();}
     catch(e){if(force)toast(e.message);}finally{fetching=false;}
   }
   $('chat-form').addEventListener('submit',async event=>{
@@ -199,7 +199,7 @@ export function createAgentUI({api,toast,message}){
     if(!event.repeat)$('chat-form').requestSubmit();
   });
   $('agent-role').addEventListener('change',()=>{revision='';$('memory-note').value='';delete $('memory-note').dataset.replaces;for(const card of cards.values())card.remove();cards.clear();refresh(true);});
-  $('memory-button').addEventListener('click',async()=>{await refresh(true);renderMemory();$('memory-dialog').showModal();});
+  $('memory-button').addEventListener('click',async()=>{renderMemory();$('memory-dialog').showModal();await refresh(true);if($('memory-dialog').open)renderMemory();});
   $('memory-search').addEventListener('input',renderMemory);
   $('memory-outcome').addEventListener('change',renderMemory);
   $('memory-context').addEventListener('change',renderMemory);
@@ -230,14 +230,18 @@ export function createAgentUI({api,toast,message}){
     $('tamp-demo').hidden=id!=='tamp';$('motion-form').hidden=!['tamp','curobo'].includes(id);$('motion-run').disabled=!backend.ready;$('motion-result').textContent='';
   }
   $('skills-button').addEventListener('click',async()=>{
+    const request=++skillsRequest;
+    $('skills-dialog').showModal();
+    $('backend-list').replaceChildren();$('skills-list').replaceChildren();
+    $('skills-scope').textContent='正在加载技能…';$('tamp-demo').hidden=true;$('motion-form').hidden=true;
     try{
-      const data=await api('/api/skills');$('backend-list').replaceChildren();$('skills-list').replaceChildren();
+      const data=await api('/api/skills');if(request!==skillsRequest)return;$('backend-list').replaceChildren();$('skills-list').replaceChildren();
       skillCatalogue=data;
       for(const backend of data.adapters){const ready=backend.callable??backend.ready;const item=node('button',`backend ${ready?'ready':'unavailable'}`);item.type='button';item.id='backend-'+backend.id;item.dataset.backend=backend.id;item.setAttribute('role','tab');item.setAttribute('aria-controls','backend-panel');item.append(node('strong','',backend.id==='pi05'?'π0.5':backend.id==='curobo'?'cuRobo':backend.id.toUpperCase()),node('small','',ready?'可调用':'未接入'));item.title=backend.reason||backend.validation_note||(backend.performance_verified?'任务效果已验证':'接口可用不代表任务效果已验证');item.addEventListener('click',()=>selectBackend(backend.id));item.addEventListener('keydown',e=>{const ids=data.adapters.map(b=>b.id),index=ids.indexOf(backend.id);const next=e.key==='ArrowRight'?ids[(index+1)%ids.length]:e.key==='ArrowLeft'?ids[(index+ids.length-1)%ids.length]:e.key==='Home'?ids[0]:e.key==='End'?ids.at(-1):null;if(next){e.preventDefault();selectBackend(next);$('backend-'+next).focus();}});$('backend-list').append(item);}
       selectBackend(selectedBackend);
-      $('skills-dialog').showModal();
-    }catch(e){toast(e.message);}
+    }catch(e){if(request===skillsRequest){$('skills-scope').textContent='加载失败，请关闭后重试。';toast(e.message);}}
   });
+  $('skills-dialog').addEventListener('close',()=>{skillsRequest++;});
   $('motion-form').addEventListener('submit',async event=>{
     event.preventDefault();const button=$('motion-run');button.disabled=true;
     try{const delta=['motion-x','motion-y','motion-z'].map(id=>Number($(id).value)/100);if(!delta.every(Number.isFinite)||Math.hypot(...delta)>.15)throw new Error('位移总长度须在 15 cm 内');const obs=await api('/api/tools',{name:'observe',arguments:{}});await api('/api/tools',{name:'move_relative',arguments:{observation_id:obs.observation_id,arm:$('motion-arm').value,delta_m:delta,frame:'world',speed_scale:.5,planner:selectedBackend}});$('motion-result').textContent='已提交规划';message('开始末端移动','note');}

@@ -27,7 +27,8 @@ class TracingClient(LeRobotClient):
 
 def archive_response(owner, inference, capture, *, horizon, gripper_bounds):
     folder = Path(owner.path).resolve()
-    if not folder.is_relative_to((ROOT/'runs').resolve()) or folder == (ROOT/'runs').resolve():
+    archive_root = Path(getattr(owner, 'archive_root', ROOT/'runs')).resolve()
+    if not folder.is_relative_to(archive_root) or folder == archive_root:
         raise ValueError('policy receipts require the active native recorder directory')
     body = capture.get('input')
     if not isinstance(body,bytes) or len(body)>8*1024*1024:
