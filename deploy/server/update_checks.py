@@ -98,7 +98,7 @@ class UpdateChecks(unittest.TestCase):
         with tarfile.open(fileobj=data,mode='w') as archive:
             body=b'{"python":"developer-python"}';item=tarfile.TarInfo('sim/learning.json');item.size=len(body)
             archive.addfile(item,io.BytesIO(body))
-        self.updater.git.return_value=data.getvalue()
+        self.updater.git.side_effect=lambda *args: b'' if args[0]=='ls-tree' else data.getvalue()
         release=Updater.stage(self.updater,'c'*40)
         self.assertEqual((release/'sim/learning.json').read_bytes(),(self.root/'sim/learning.json').read_bytes())
         (release/'runs/record.json').write_text('preserved')
@@ -122,10 +122,17 @@ class UpdateChecks(unittest.TestCase):
                 item=tarfile.TarInfo('../escape' if kind=='traversal' else 'link')
                 if kind=='symlink':item.type=tarfile.SYMTYPE;item.linkname='/etc'
                 archive.addfile(item)
-            self.updater.git.return_value=data.getvalue()
+            self.updater.git.side_effect=lambda *args: b'' if args[0]=='ls-tree' else data.getvalue()
             with self.assertRaises(RuntimeError):Updater.stage(self.updater,'c'*40)
             self.assertFalse((self.root/'escape').exists())
             self.assertFalse(list(self.updater.releases.glob('stage-*')))
+
+    def test_submodule_pin_and_missing_assets_block_before_staging(self):
+        self.updater.git.return_value=b'160000 commit '+b'd'*40+b'\topenarm_mujoco\n'
+        with self.assertRaisesRegex(RuntimeError,'尚未核验'):Updater.stage(self.updater,'c'*40)
+        self.updater.config['submodules']={'openarm_mujoco':{'revision':'d'*40,'files':{'v1/model.xml':'x'}}}
+        with self.assertRaisesRegex(RuntimeError,'资源缺失'):Updater.stage(self.updater,'c'*40)
+        self.assertFalse((self.updater.releases/('c'*40)).exists())
 
 
 class AdmissionChecks(unittest.TestCase):

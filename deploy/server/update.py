@@ -184,7 +184,10 @@ class Updater:
         expected = self.fingerprint(release)
         deadline = time.monotonic() + self.config.get('health_timeout', 180)
         while time.monotonic() < deadline:
-            value = self.health()
+            try: value = self.health()
+            except (RuntimeError, OSError):
+                time.sleep(.5)
+                continue
             if value and value.get('state')=='ready' and value.get('source_current') is True and value.get('policy_ready') is True and value.get('curobo_ready') is True:
                 if value.get('source_revision_sha256') != expected:
                     raise RuntimeError('运行源码指纹与发布目录不一致')
@@ -205,6 +208,23 @@ class Updater:
         if int(output.decode().strip()) < 4096: raise RuntimeError('GPU 1 空闲显存不足 4 GiB，等待资源')
 
     def stage(self, revision):
+        modules = {}
+        for line in self.git('ls-tree','-r',revision).decode().splitlines():
+            metadata, name = line.split('\t',1)
+            mode, kind, commit = metadata.split()
+            if mode != '160000': continue
+            configured = self.config.get('submodules',{}).get(name,{})
+            if configured.get('revision') != commit or not configured.get('files'):
+                raise RuntimeError('机器人资源版本尚未核验：'+name)
+            source = self.root / name
+            if not source.resolve().is_relative_to(self.root): raise RuntimeError('机器人资源路径越界')
+            for relative,digest in configured['files'].items():
+                path = PurePosixPath(relative)
+                if path.is_absolute() or '..' in path.parts: raise RuntimeError('机器人资源校验路径越界')
+                target = source.joinpath(*path.parts)
+                if not target.is_file() or not target.resolve().is_relative_to(source.resolve()) or hashlib.sha256(target.read_bytes()).hexdigest()!=digest:
+                    raise RuntimeError('机器人资源缺失或与固定版本不符：'+name+'/'+relative)
+            modules[name] = configured
         destination = self.releases / revision
         if destination.is_dir():
             marker=read_json(destination / 'DEPLOYMENT.json', {})
@@ -240,6 +260,11 @@ class Updater:
                 source = self.root / name
                 if name == 'runs': source.mkdir(exist_ok=True)
                 if source.exists(): (staging / name).symlink_to(source, target_is_directory=True)
+            for name in modules:
+                target = staging / name
+                if target.is_dir(): target.rmdir()  # git archive may contain an empty gitlink directory
+                target.parent.mkdir(parents=True,exist_ok=True)
+                target.symlink_to(self.root / name,target_is_directory=True)
             # Host-specific interpreter/source paths are deployment data.
             local_runtime = self.root / 'sim/learning.json'
             if local_runtime.is_file():
@@ -253,7 +278,7 @@ class Updater:
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.symlink_to(checkpoint, target_is_directory=True)
             atomic_json(staging / 'DEPLOYMENT.json', {'source_commit':revision,'created_at':time.time(),
-                'state_root':str(self.root),'files':hashes,
+                'state_root':str(self.root),'files':hashes,'submodules':modules,
                 'scope':'code release; environment, credentials, weights and records are shared state'})
             os.replace(staging, destination)
         return destination
