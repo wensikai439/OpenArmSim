@@ -32,6 +32,8 @@ cd /data_ssdb/wsk/OpenArmSim
 
 模型权重、虚拟环境、登录与个人 API 配置、实验记录留在原位置。服务器的 `sim/learning.json` 保留本机解释器与 LeRobot 路径，其 SHA256 写入每版 `DEPLOYMENT.json`；因此代码跟随 main，机器路径不被开发机配置覆盖。运行代码通过 `.runtime/update/current` 查看，`GET /version` 可读取当前提交。`.runtime/update/status.json` 是最新状态，`events.jsonl` 保存状态变化；状态日志只在变化时追加，检查输出保存在 `.runtime/update/checks/<提交>.log`。cuRobo 的 URDF 路径按当前发布目录解析。
 
+查看 `update.py status` 时，`running: true` 表示更新器存活，`phase: up_to_date` 表示发布已完成；`active_commit` 应与 GitHub main 和公网 `/version` 的 `source_commit` 一致。`checking`、`activating` 是检查和启动中的状态。
+
 进程独立于 SSH 连接，但容器没有 systemd/cron，且不修改系统或 `/root`。**容器重启后需运行一次上述 `start`**；没有宣称容器开机后会自行恢复。SSH 端口也需重新核对。维护平台前先 `update.py stop` 停止自动更新；它不会停止正在运行的平台，再按下面命令操作。
 
 ## 管理服务
