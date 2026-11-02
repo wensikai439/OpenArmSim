@@ -13,6 +13,7 @@ from unittest.mock import Mock
 
 from deploy.server.gateway import Gateway
 from deploy.server.update import Updater, atomic_json, exclusive
+from sim.curobo_server import planner_config
 
 
 class UpdateChecks(unittest.TestCase):
@@ -155,6 +156,15 @@ class UpdateChecks(unittest.TestCase):
         target=release/'openarm_mujoco/v1/model.xml'
         self.assertTrue(target.resolve().is_relative_to(release));self.assertEqual(target.read_bytes(),source.read_bytes())
         source.write_text('mutated source');self.assertEqual(target.read_text(),'<mujoco/>')
+
+    def test_planner_paths_follow_the_release_and_reject_outside_files(self):
+        root=self.root/'portable-release';folder=root/'task/planners';folder.mkdir(parents=True)
+        (folder/'openarm.urdf').write_text('<robot/>')
+        path=folder/'openarm.json'
+        atomic_json(path,{'robot_cfg':{'kinematics':{'urdf_path':'task/planners/openarm.urdf'}}})
+        self.assertEqual(planner_config(root)['robot_cfg']['kinematics']['urdf_path'],str(folder/'openarm.urdf'))
+        atomic_json(path,{'robot_cfg':{'kinematics':{'urdf_path':'../outside.urdf'}}})
+        with self.assertRaisesRegex(ValueError,'inside the current project'):planner_config(root)
 
 
 class AdmissionChecks(unittest.TestCase):

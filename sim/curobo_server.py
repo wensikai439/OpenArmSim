@@ -18,6 +18,17 @@ os.environ.setdefault('XDG_CACHE_HOME', str(ROOT/'.runtime/cache'))
 os.environ.setdefault('PYTHONDONTWRITEBYTECODE', '1')
 
 
+def planner_config(root=ROOT):
+    root = Path(root).resolve()
+    config = json.loads((root/'task/planners/openarm.json').read_text())
+    kinematics = config['robot_cfg']['kinematics']
+    path = (root/kinematics['urdf_path']).resolve()
+    if not path.is_relative_to(root) or not path.is_file():
+        raise ValueError('cuRobo URDF must be a file inside the current project')
+    kinematics['urdf_path'] = str(path)
+    return config
+
+
 def validate_scene(scene):
     if type(scene) is not dict or set(scene)!={'cuboid'} or type(scene['cuboid']) is not dict or len(scene['cuboid'])>32:
         raise ValueError('unsupported scene')
@@ -38,7 +49,7 @@ class Planner:
         if not torch.cuda.is_available():
             raise RuntimeError('CUDA unavailable; no CPU or TAMP substitution')
         self.torch = torch
-        self.config = json.loads((ROOT/'task/planners/openarm.json').read_text())
+        self.config = planner_config()
         self.names = self.config['robot_cfg']['kinematics']['cspace']['joint_names']
         self.kin = Kinematics(KinematicsCfg.from_robot_yaml_file(copy.deepcopy(self.config['robot_cfg']),
                              tool_frames=['left_candidate_tcp','right_candidate_tcp']))

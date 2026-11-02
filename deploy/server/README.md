@@ -28,9 +28,9 @@ cd /data_ssdb/wsk/OpenArmSim
 
 更新器使用只读部署密钥从 `wensikai439/OpenArmSim` 拉取 GitHub `main`，每 60 秒检查一次。密钥和 GitHub 公钥钉在 `.private/update/`，不会使用或上传个人 OAuth 凭据。源码仓库、状态、日志和版本目录都在 `.runtime/update/`。
 
-每版从提交归档生成独立目录，校验代码和依赖清单，运行本地软件检查。正在执行任务、调用模型或训练时等待；切换期间用网关共享锁拒绝新动作请求，避免检查空闲后又有人启动任务。新版本必须通过源码指纹、ACT 和 cuRobo 就绪检查才保留；启动失败恢复上一版，并暂停重试该提交，直到出现新提交或管理员运行 `update.py retry`。只保留当前和上一版代码。机器人模型子模块复用服务器已有资源，并按 main 固定的子模块提交与 166 个资源文件 SHA256 核验；版本变化或文件缺失时阻止发布。依赖变化不会自动安装，需先在个人环境验证。
+每版从提交归档生成独立目录，校验代码和依赖清单，运行本地软件检查，并在切换前用 MuJoCo 编译机器人模型。正在执行任务、调用模型或训练时等待；切换期间用网关共享锁拒绝新动作请求，避免检查空闲后又有人启动任务。新版本必须通过源码指纹、ACT 和 cuRobo 就绪检查才保留；启动失败恢复上一版，并暂停重试该提交，直到出现新提交或管理员运行 `update.py retry`。只保留当前和上一版代码。机器人模型子模块复用服务器已有资源，并按 main 固定的子模块提交与 166 个资源文件 SHA256 核验；版本变化或文件缺失时阻止发布。依赖变化不会自动安装，需先在个人环境验证。
 
-模型权重、虚拟环境、登录与个人 API 配置、实验记录留在原位置。服务器的 `sim/learning.json` 保留本机解释器与 LeRobot 路径，其 SHA256 写入每版 `DEPLOYMENT.json`；因此代码跟随 main，机器路径不被开发机配置覆盖。运行代码通过 `.runtime/update/current` 查看，`GET /version` 可读取当前提交。`.runtime/update/status.json` 是最新状态，`events.jsonl` 保存状态变化；日志只在状态变化时追加。
+模型权重、虚拟环境、登录与个人 API 配置、实验记录留在原位置。服务器的 `sim/learning.json` 保留本机解释器与 LeRobot 路径，其 SHA256 写入每版 `DEPLOYMENT.json`；因此代码跟随 main，机器路径不被开发机配置覆盖。运行代码通过 `.runtime/update/current` 查看，`GET /version` 可读取当前提交。`.runtime/update/status.json` 是最新状态，`events.jsonl` 保存状态变化；状态日志只在变化时追加，检查输出保存在 `.runtime/update/checks/<提交>.log`。cuRobo 的 URDF 路径按当前发布目录解析。
 
 进程独立于 SSH 连接，但容器没有 systemd/cron，且不修改系统或 `/root`。**容器重启后需运行一次上述 `start`**；没有宣称容器开机后会自行恢复。SSH 端口也需重新核对。维护平台前先 `update.py stop` 停止自动更新；它不会停止正在运行的平台，再按下面命令操作。
 

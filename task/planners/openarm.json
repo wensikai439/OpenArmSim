@@ -2,7 +2,7 @@
   "robot_cfg": {
     "kinematics": {
       "format_version": 2.0,
-      "urdf_path": "/home/wsk/gpt+vla/OpenArmSim/task/planners/openarm.urdf",
+      "urdf_path": "task/planners/openarm.urdf",
       "base_link": "world",
       "tool_frames": [
         "right_candidate_tcp"

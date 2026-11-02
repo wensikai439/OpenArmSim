@@ -99,9 +99,13 @@ class Updater:
             with history.open('a') as stream:stream.write(json.dumps(result,ensure_ascii=False)+'\n')
         return result
 
-    def command(self, args, *, cwd=None, timeout=120, env=None):
+    def command(self, args, *, cwd=None, timeout=120, env=None, log=None):
         result = subprocess.run([str(x) for x in args], cwd=cwd or self.root, env=env,
                                 capture_output=True, timeout=timeout)
+        if log:
+            log.parent.mkdir(parents=True,exist_ok=True)
+            with log.open('ab') as stream:
+                stream.write(result.stdout);stream.write(result.stderr)
         if result.returncode:
             raise RuntimeError(safe_error(result.stderr.decode(errors='replace') or result.stdout.decode(errors='replace')))
         return result.stdout
@@ -325,10 +329,11 @@ class Updater:
         temporary.mkdir(parents=True, exist_ok=True)
         env = dict(os.environ, TMPDIR=str(temporary), OMP_NUM_THREADS='2', OPENBLAS_NUM_THREADS='2',
                    XDG_CACHE_HOME=str(self.root / '.runtime/cache'), PYTHONDONTWRITEBYTECODE='1')
-        self.command([self.root / '.venv/bin/python','-B','-m','unittest',*CHECKS],cwd=release,timeout=90,env=env)
+        log = self.home/'checks'/f'{release.name}.log'
+        self.command([self.root / '.venv/bin/python','-B','-m','unittest',*CHECKS],cwd=release,timeout=90,env=env,log=log)
         self.command([self.root / '.venv/bin/python','-B','-c',
             'from sim.environment import OpenArmEnv; env=OpenArmEnv(images=False); env.close(); print("model compiled")'],
-            cwd=release,timeout=60,env=env)
+            cwd=release,timeout=60,env=env,log=log)
 
     def recover(self, previous, candidate, revision, reason):
         self.manage(candidate,'stop')
@@ -359,6 +364,7 @@ class Updater:
             self.resources()
             if active != self.root:
                 self.git('merge-base','--is-ancestor',active.name,revision)
+            self.report('checking',target_commit=revision,error=None)
             candidate = self.stage(revision)
             try:self.preflight(candidate,active)
             except Exception as error:
