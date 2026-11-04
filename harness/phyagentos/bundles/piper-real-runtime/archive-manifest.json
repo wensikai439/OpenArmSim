@@ -1,0 +1,140 @@
+{
+  "schema_version": 1,
+  "files": [
+    {
+      "path": "SKILL.md",
+      "sha256": "51fd383510c15ff64e7e1c22e351746e5e6db5f88453d9338daec0d81f474de4",
+      "size": 8620
+    },
+    {
+      "path": "profiles/runtime/FORGE_LICENSE",
+      "sha256": "5c9817c129b98e7bb966bca028c43c19107102ef8e03fe799bffb4354f4ef015",
+      "size": 11356
+    },
+    {
+      "path": "profiles/runtime/FORGE_NOTICE",
+      "sha256": "440d36a8a0b15fa9e6cf7564b8e3100f77cd0be1a60f1c11d66a1d91443587d2",
+      "size": 245
+    },
+    {
+      "path": "profiles/runtime/dataflow.yaml",
+      "sha256": "8468e2112d048c14d62273096e9d48a0a1cdc1185414758c7ed0671a7ff57c4b",
+      "size": 936
+    },
+    {
+      "path": "profiles/runtime/endpoint_lease.py",
+      "sha256": "01c86fff8593163b58b88269fde8b0a98a75dac1a0a3db9362c6dddfcd433fa8",
+      "size": 2668
+    },
+    {
+      "path": "profiles/runtime/gateway.yaml",
+      "sha256": "81363bb688e4929eac5abd66d6086e6fe4926a7a33136de3a0cc191539852a99",
+      "size": 7464
+    },
+    {
+      "path": "profiles/runtime/native_replay_bridge.py",
+      "sha256": "e6dc6ba9bf78468e34d2dbfc18c9dbc5d3831aff705b13742958b95cf3b88ca4",
+      "size": 13202
+    },
+    {
+      "path": "profiles/runtime/provider.py",
+      "sha256": "0bd3d672800cad4f5f87160a8fb67c2c76dd8aa0dd2a153c2000adceb03af25d",
+      "size": 9121
+    },
+    {
+      "path": "profiles/runtime/run_provider.sh",
+      "sha256": "cff2b6f918eb52a3f1571aef718e9fc269af68b3ce42c20f85c8004cef838e67",
+      "size": 186
+    },
+    {
+      "path": "profiles/runtime/runtime_bridge.py",
+      "sha256": "6a79c9a6880000fb5adadc6fd5c2e7f3b30a16bfe1af1a2260dbbfd70f9fb6bf",
+      "size": 35943
+    },
+    {
+      "path": "profiles/runtime/vendor/forge_tool/__init__.py",
+      "sha256": "06c9c6b830c3771046a14b8d2f4b0dfa7d0b287e3c41cc3ae6ba4f4054dbac91",
+      "size": 5580
+    },
+    {
+      "path": "profiles/runtime/vendor/forge_tool/_tool_message.py",
+      "sha256": "afd99c1061cc9cfaa35386c2c954aafa00ccb22c5eac42222e5ffb1dcbf70e50",
+      "size": 14854
+    },
+    {
+      "path": "profiles/runtime/vendor/forge_tool/dora.py",
+      "sha256": "c55b413aea18340a53dd21ef713f229aaad9d90a3e6e7d5212ec625ed7d7b339",
+      "size": 16645
+    },
+    {
+      "path": "profiles/runtime/vendor/forge_tool/endpoint/__init__.py",
+      "sha256": "2a46324051783e729e508536d43066414dbe866865e2fc4c37d44c8aa2b46f46",
+      "size": 1603
+    },
+    {
+      "path": "profiles/runtime/vendor/forge_tool/endpoint/exceptions.py",
+      "sha256": "2dd2d6fe793a5308979d623a4e2e9f90de7861cef365091249526f16646e1408",
+      "size": 724
+    },
+    {
+      "path": "profiles/runtime/vendor/forge_tool/endpoint/models.py",
+      "sha256": "1aecb9967eb7bd889f100c76073291555f12e356df0bc0fe7c2a42939f0e82ac",
+      "size": 20623
+    },
+    {
+      "path": "profiles/runtime/vendor/forge_tool/endpoint/protocol.py",
+      "sha256": "5243819dc9eadd561c719fea357c97dba1581eacf29de1bd99613923fbe93329",
+      "size": 2981
+    },
+    {
+      "path": "profiles/runtime/vendor/forge_tool/handler.py",
+      "sha256": "630da2f16563932c7d67a59527ad32acb9c738934d7517901c3c78d2cb69b4d8",
+      "size": 34069
+    },
+    {
+      "path": "profiles/runtime/vendor/forge_tool/py.typed",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    {
+      "path": "profiles/runtime/vendor/forge_tool/wire/__init__.py",
+      "sha256": "033d32a508ea857433bb9b4f9f75e4aa5d5ea57b0092b1f182c9c0500bdd0501",
+      "size": 3960
+    },
+    {
+      "path": "profiles/runtime/vendor/forge_tool/wire/codec.py",
+      "sha256": "4e80832a524355478ade051ac6dd1931ff374fea4514c29075ba49fafd53bd7d",
+      "size": 7820
+    },
+    {
+      "path": "profiles/runtime/vendor/forge_tool/wire/descriptor.py",
+      "sha256": "f65b1dd4f0b7689d5b833bc5894d4cf2096c254ade99b49afb281ee4e1b1f506",
+      "size": 6317
+    },
+    {
+      "path": "profiles/runtime/vendor/forge_tool/wire/envelope.py",
+      "sha256": "2f1bbb3679a9024910a2cdf356c23cc52f72db24a9d0b9c9343070fbf0356c3e",
+      "size": 9579
+    },
+    {
+      "path": "profiles/runtime/vendor/forge_tool/wire/errors.py",
+      "sha256": "96c938ec1f1084d7128bdeebf3f782c68899af6f4298cb685df6549873a2fd67",
+      "size": 507
+    },
+    {
+      "path": "profiles/runtime/vendor/forge_tool/wire/factories.py",
+      "sha256": "24da5817bab5c97316f040b8456170d8eedee25875447cb4831e277d43898f8e",
+      "size": 14031
+    },
+    {
+      "path": "profiles/runtime/vendor/forge_tool/wire/messages.py",
+      "sha256": "ee44c6533468728e9b0e0ea661ad7b45dcd62593d1461654a9c7a6e9992c4809",
+      "size": 19591
+    },
+    {
+      "path": "skill.yaml",
+      "sha256": "72d5cc8aa4149892827111c0a1d0d1516333695d881877af886dcd27153e9dca",
+      "size": 1406
+    }
+  ]
+}

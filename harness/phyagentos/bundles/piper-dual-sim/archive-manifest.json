@@ -1,0 +1,170 @@
+{
+  "schema_version": 1,
+  "files": [
+    {
+      "path": "SKILL.md",
+      "sha256": "14208582ac2da7fed97089212155c6d23cc2fcd793c76026a6f87b5740085e7e",
+      "size": 15637
+    },
+    {
+      "path": "profiles/piper/FORGE_LICENSE",
+      "sha256": "5c9817c129b98e7bb966bca028c43c19107102ef8e03fe799bffb4354f4ef015",
+      "size": 11356
+    },
+    {
+      "path": "profiles/piper/FORGE_NOTICE",
+      "sha256": "440d36a8a0b15fa9e6cf7564b8e3100f77cd0be1a60f1c11d66a1d91443587d2",
+      "size": 245
+    },
+    {
+      "path": "profiles/piper/RPC_APACHE_LICENSE",
+      "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+      "size": 11357
+    },
+    {
+      "path": "profiles/piper/RPC_NOTICE.md",
+      "sha256": "6b49b8df67a2c99013aca74a435f4f684ca60a8e410d5c1a3cf32a66255a3f87",
+      "size": 340
+    },
+    {
+      "path": "profiles/piper/dataflow.yaml",
+      "sha256": "4861e5622bd702f20eebcbdf2eeb376c62e6e04f7aa666066c5cc71fb2e55ec3",
+      "size": 637
+    },
+    {
+      "path": "profiles/piper/endpoint_lease.py",
+      "sha256": "01c86fff8593163b58b88269fde8b0a98a75dac1a0a3db9362c6dddfcd433fa8",
+      "size": 2668
+    },
+    {
+      "path": "profiles/piper/gateway.yaml",
+      "sha256": "2be965b354bdff2c7589dfaaec0f9c0ca99735e36371816e2f3f092ebedc7d88",
+      "size": 8310
+    },
+    {
+      "path": "profiles/piper/joint_collection_timing.py",
+      "sha256": "ea623067db29ac81c935061159b5a99482dff62b7c6b600ec552aea72da71dda",
+      "size": 8426
+    },
+    {
+      "path": "profiles/piper/joint_expert_adapter.py",
+      "sha256": "f31e55dd380ea26841643ca9cdea13c292ecd16d1182bfb7dea562c4d6dae293",
+      "size": 10305
+    },
+    {
+      "path": "profiles/piper/live_overview.py",
+      "sha256": "595a967379c64ac181ff816f6af9463fbf9d4287e0320b5aa9f9521728b7fb32",
+      "size": 2095
+    },
+    {
+      "path": "profiles/piper/native_shim.py",
+      "sha256": "05fac8112646643a3d5aed070b3813dfbbd966af4b4289c305cbd3acd5b40619",
+      "size": 21487
+    },
+    {
+      "path": "profiles/piper/provider.py",
+      "sha256": "d4988638dea5eb956be41dd564f4226f499b877950ed2e006a1d68876e03880f",
+      "size": 18842
+    },
+    {
+      "path": "profiles/piper/run_provider.sh",
+      "sha256": "cff2b6f918eb52a3f1571aef718e9fc269af68b3ce42c20f85c8004cef838e67",
+      "size": 186
+    },
+    {
+      "path": "profiles/piper/session_handler.py",
+      "sha256": "608bbb482acb25686e03fce949df003b3cd29e40013853729e86617a81be9dab",
+      "size": 2294
+    },
+    {
+      "path": "profiles/piper/sim_rpc.py",
+      "sha256": "de7a4a977ce301fc7439ffde1cf72a936f14cfa314be6a93e85a430e9a8a2a21",
+      "size": 15190
+    },
+    {
+      "path": "profiles/piper/vendor/forge_tool/__init__.py",
+      "sha256": "06c9c6b830c3771046a14b8d2f4b0dfa7d0b287e3c41cc3ae6ba4f4054dbac91",
+      "size": 5580
+    },
+    {
+      "path": "profiles/piper/vendor/forge_tool/_tool_message.py",
+      "sha256": "afd99c1061cc9cfaa35386c2c954aafa00ccb22c5eac42222e5ffb1dcbf70e50",
+      "size": 14854
+    },
+    {
+      "path": "profiles/piper/vendor/forge_tool/dora.py",
+      "sha256": "c55b413aea18340a53dd21ef713f229aaad9d90a3e6e7d5212ec625ed7d7b339",
+      "size": 16645
+    },
+    {
+      "path": "profiles/piper/vendor/forge_tool/endpoint/__init__.py",
+      "sha256": "2a46324051783e729e508536d43066414dbe866865e2fc4c37d44c8aa2b46f46",
+      "size": 1603
+    },
+    {
+      "path": "profiles/piper/vendor/forge_tool/endpoint/exceptions.py",
+      "sha256": "2dd2d6fe793a5308979d623a4e2e9f90de7861cef365091249526f16646e1408",
+      "size": 724
+    },
+    {
+      "path": "profiles/piper/vendor/forge_tool/endpoint/models.py",
+      "sha256": "1aecb9967eb7bd889f100c76073291555f12e356df0bc0fe7c2a42939f0e82ac",
+      "size": 20623
+    },
+    {
+      "path": "profiles/piper/vendor/forge_tool/endpoint/protocol.py",
+      "sha256": "5243819dc9eadd561c719fea357c97dba1581eacf29de1bd99613923fbe93329",
+      "size": 2981
+    },
+    {
+      "path": "profiles/piper/vendor/forge_tool/handler.py",
+      "sha256": "630da2f16563932c7d67a59527ad32acb9c738934d7517901c3c78d2cb69b4d8",
+      "size": 34069
+    },
+    {
+      "path": "profiles/piper/vendor/forge_tool/py.typed",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    {
+      "path": "profiles/piper/vendor/forge_tool/wire/__init__.py",
+      "sha256": "033d32a508ea857433bb9b4f9f75e4aa5d5ea57b0092b1f182c9c0500bdd0501",
+      "size": 3960
+    },
+    {
+      "path": "profiles/piper/vendor/forge_tool/wire/codec.py",
+      "sha256": "4e80832a524355478ade051ac6dd1931ff374fea4514c29075ba49fafd53bd7d",
+      "size": 7820
+    },
+    {
+      "path": "profiles/piper/vendor/forge_tool/wire/descriptor.py",
+      "sha256": "f65b1dd4f0b7689d5b833bc5894d4cf2096c254ade99b49afb281ee4e1b1f506",
+      "size": 6317
+    },
+    {
+      "path": "profiles/piper/vendor/forge_tool/wire/envelope.py",
+      "sha256": "2f1bbb3679a9024910a2cdf356c23cc52f72db24a9d0b9c9343070fbf0356c3e",
+      "size": 9579
+    },
+    {
+      "path": "profiles/piper/vendor/forge_tool/wire/errors.py",
+      "sha256": "96c938ec1f1084d7128bdeebf3f782c68899af6f4298cb685df6549873a2fd67",
+      "size": 507
+    },
+    {
+      "path": "profiles/piper/vendor/forge_tool/wire/factories.py",
+      "sha256": "24da5817bab5c97316f040b8456170d8eedee25875447cb4831e277d43898f8e",
+      "size": 14031
+    },
+    {
+      "path": "profiles/piper/vendor/forge_tool/wire/messages.py",
+      "sha256": "ee44c6533468728e9b0e0ea661ad7b45dcd62593d1461654a9c7a6e9992c4809",
+      "size": 19591
+    },
+    {
+      "path": "skill.yaml",
+      "sha256": "3ceb87b4090d70bc8c7b07c50cf24e83cc2a37d04b89cbfcecee2123f0bf4e4f",
+      "size": 1848
+    }
+  ]
+}

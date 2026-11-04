@@ -1,0 +1,15 @@
+{
+  "agents": {
+    "defaults": {
+      "workspace": "/absolute/path/to/phyagentos/.runtime/workspace",
+      "provider": "custom",
+      "model": "YOUR_VISION_MODEL"
+    }
+  },
+  "providers": {
+    "custom": {
+      "api_base": "https://YOUR_PROVIDER/v1",
+      "api_key": ""
+    }
+  }
+}

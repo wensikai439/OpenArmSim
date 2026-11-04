@@ -1,5 +1,14 @@
 # Harness
 
+## Additional framework: PhyAgentOS
+
+[`phyagentos/`](phyagentos/README.md) contains the independently packaged
+PhyAgentOS Core/Forge, console and PiPER Skill adapters. It does not replace
+this Harness or ASPIRE, and is not yet wired to OpenArm simulation or hardware.
+Its external assets, control runtime, credentials and recordings are not included.
+See its README for setup and the distinction between validated capabilities and
+unfinished action-model integration. Existing entry points remain unchanged.
+
 LLM API → typed skill gateway → TAMP / learned-policy adapter → native MuJoCo
 → synchronized cameras and robot feedback → verification → next LLM decision.
 

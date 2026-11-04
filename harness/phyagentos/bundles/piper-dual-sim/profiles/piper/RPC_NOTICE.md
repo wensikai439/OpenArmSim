@@ -1,0 +1,1 @@
+RPC observation/reset adaptation and live preview contain code from The RPent Authors (2026), Apache-2.0. The original copyright headers are preserved. The HTTP transport is implemented here; no RPent checkout or package is imported at runtime. The physics task/controller/model remain shared piper_robocasa assets. See RPC_APACHE_LICENSE.

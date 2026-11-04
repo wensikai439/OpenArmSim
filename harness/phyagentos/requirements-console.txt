@@ -1,0 +1,7 @@
+# Console dependencies used for the export checks, in addition to PhyAgentOS-core.
+starlette==1.7.0
+uvicorn==0.54.0
+# Skill provider dependencies; simulator and control interpreters stay separate.
+dora-rs==0.4.1
+pyarrow==23.0.1
+forge-msgs==1.0.1
