@@ -1,0 +1,47 @@
+{
+  "manifest_version": 2,
+  "name": "piper-real-runtime",
+  "version": "0.2.3+openarmsim.1",
+  "description": "Task Skill for the registered native four-CAN replay chain; exact artifacts, owned cancellation, defaults offline. Legacy UDS contracts retained separately.",
+  "skill_document": "SKILL.md",
+  "gateway_url": "http://127.0.0.1:19014",
+  "required_tools": [
+    "piper_real.capabilities",
+    "piper_real.state",
+    "piper_real.observe",
+    "piper_real.prepare_task",
+    "piper_real.recover",
+    "piper_real.run_task",
+    "piper_real.cancel_task"
+  ],
+  "profiles": {
+    "staged": {
+      "dataflow": "profiles/runtime/dataflow.yaml",
+      "startup_timeout_s": 30,
+      "required_binaries": [
+        "gateway"
+      ],
+      "required_assets": [
+        "profiles/runtime/provider.py",
+        "profiles/runtime/runtime_bridge.py",
+        "profiles/runtime/run_provider.sh",
+        "profiles/runtime/endpoint_lease.py",
+        "profiles/runtime/gateway.yaml"
+      ]
+    }
+  },
+  "artifacts": {
+    "resolver": "registry",
+    "nodes": {
+      "gateway": {
+        "artifact_id": "gateway-1.1.1-linux-x86_64-tar-gz",
+        "version": "1.1.1",
+        "platform": "linux",
+        "arch": "x86_64",
+        "artifact_type": "executable_tar_gz",
+        "entrypoint": "gateway",
+        "sha256": "dcf6a7a6e4136c9c203d6ede191db161c34ee0d6955a618a3bc752769359673f"
+      }
+    }
+  }
+}

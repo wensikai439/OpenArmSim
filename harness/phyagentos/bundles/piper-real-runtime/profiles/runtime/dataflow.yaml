@@ -1,0 +1,40 @@
+{
+  "nodes": [
+    {
+      "id": "gateway",
+      "path": "${FORGE_RUNTIME_BIN}/gateway",
+      "args": "--config gateway.yaml",
+      "inputs": {
+        "tick": "dora/timer/millis/50",
+        "real_tool_in": {
+          "source": "real/tool_out",
+          "queue_size": 64
+        },
+        "image/cam_left": "real/image/cam_left",
+        "image/cam_middle": "real/image/cam_middle",
+        "image/cam_right": "real/image/cam_right"
+      },
+      "outputs": [
+        "tool_response",
+        "real_tool_out"
+      ]
+    },
+    {
+      "id": "real",
+      "path": "${PAOS_SKILL_ROOT}/profiles/runtime/run_provider.sh",
+      "inputs": {
+        "tick": "dora/timer/millis/50",
+        "tool_in": {
+          "source": "gateway/real_tool_out",
+          "queue_size": 64
+        }
+      },
+      "outputs": [
+        "tool_out",
+        "image/cam_left",
+        "image/cam_middle",
+        "image/cam_right"
+      ]
+    }
+  ]
+}

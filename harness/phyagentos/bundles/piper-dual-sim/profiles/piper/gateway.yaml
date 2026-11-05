@@ -1,0 +1,282 @@
+host: 127.0.0.1
+port: 19013
+joint_order: []
+image_input_ids:
+- image/cam_right
+- image/overview
+readiness:
+  require_proprio_state: false
+  require_images: true
+tools:
+  enabled: true
+  lease_ttl_ms: 3000
+  invoke_timeout_ms: 30000
+  request_input_id: tool_request
+  response_output_id: tool_response
+  specs:
+  - tool_id: piper.observe
+    implementation_id: piper.dual_sim.native
+    endpoint_id: piper.dual_sim
+    operation: observe
+    semantics: query
+    description: Capture native cam_right and overview plus measured dual-arm TCP,
+      rotation, arm joint positions (rad), named finger slide joint positions (m),
+      physics steps, simulator identity and contact state; no physics step. Joint-based
+      gripper opening is the sum of absolute finger slide coordinates.
+    input_schema:
+      type: object
+      properties: {}
+      additionalProperties: false
+    output_schema:
+      type: object
+    readiness: []
+    robot_frame_profile: &id001
+      robot_id: piper_dual
+      base_frame: world
+      tool_frame: piper_tcp
+      frames: {}
+      directions:
+        up:
+          frame: world
+          axis: z
+          sign: 1
+  - tool_id: piper.check_pose
+    implementation_id: piper.dual_sim.native
+    endpoint_id: piper.dual_sim
+    operation: check_pose
+    semantics: query
+    description: 'Read-only native joint-limited IK/FK path check for one proposed
+      move_arm with identical arguments, preserving live qpos/qvel/time/steps. Query
+      completion is not motion success: inspect outputs.verification.accepted. A rejected
+      check does not dispatch an Action; revise position/orientation or shorten the
+      segment and recheck. Configured pose priors and suggested_sample_pose are candidates,
+      not trajectories. Requires no active Action. Does not guarantee actual dynamics,
+      grasp contact or task success.'
+    input_schema:
+      type: object
+      properties:
+        side:
+          type: string
+          enum:
+          - left
+          - right
+        target_rotation_rad:
+          type: array
+          items:
+            type: number
+          minItems: 3
+          maxItems: 3
+        target_world_m:
+          type: array
+          items:
+            type: number
+          minItems: 3
+          maxItems: 3
+      required:
+      - side
+      - target_world_m
+      additionalProperties: false
+    output_schema:
+      type: object
+    readiness: []
+    robot_frame_profile:
+      robot_id: piper_dual
+      base_frame: world
+      tool_frame: piper_tcp
+      frames: {}
+      directions:
+        up:
+          frame: world
+          axis: z
+          sign: 1
+  - tool_id: piper.set_gripper
+    implementation_id: piper.dual_sim.native
+    endpoint_id: piper.dual_sim
+    operation: set_gripper
+    semantics: action
+    description: Open or close one simulated gripper independently. Closing enables
+      labelled assistance only with current contact on both fingers. Closing on an
+      object held by the other arm prepares reception; opening the donor transfers
+      assistance after rechecking contact, otherwise releases under gravity.
+    input_schema:
+      type: object
+      properties:
+        side:
+          type: string
+          enum:
+          - left
+          - right
+        open_or_close:
+          type: string
+          enum:
+          - open
+          - close
+      required:
+      - side
+      - open_or_close
+      additionalProperties: false
+    output_schema:
+      type: object
+    readiness: []
+    robot_frame_profile: *id001
+  - tool_id: piper.move_arm
+    implementation_id: piper.dual_sim.native
+    endpoint_id: piper.dual_sim
+    operation: move_arm
+    semantics: action
+    description: Move one arm to an explicit world XYZ target. Each move is limited
+      to 0.20 m; coordinates must stay inside the workstation workspace. Optional
+      target_rotation_rad is the absolute world rotation vector (axis times angle
+      in radians); omit to hold orientation.
+    input_schema:
+      type: object
+      properties:
+        side:
+          type: string
+          enum:
+          - left
+          - right
+        target_rotation_rad:
+          type: array
+          items:
+            type: number
+          minItems: 3
+          maxItems: 3
+        target_world_m:
+          type: array
+          items:
+            type: number
+          minItems: 3
+          maxItems: 3
+      required:
+      - side
+      - target_world_m
+      additionalProperties: false
+    output_schema:
+      type: object
+    readiness: []
+    robot_frame_profile: *id001
+  - tool_id: piper.return_arm_to_initial
+    implementation_id: piper.dual_sim.native
+    endpoint_id: piper.dual_sim
+    operation: return_arm_to_initial
+    semantics: action
+    description: Return one arm to the pose measured for that arm when this simulator
+      scene started. The bottle must not be held; the return path is segmented into
+      moves no longer than 0.20 m.
+    input_schema:
+      type: object
+      properties:
+        side:
+          type: string
+          enum:
+          - left
+          - right
+      required:
+      - side
+      additionalProperties: false
+    output_schema:
+      type: object
+    readiness: []
+    robot_frame_profile: *id001
+  - tool_id: piper.grasp_bottle
+    implementation_id: piper.dual_sim.native
+    endpoint_id: piper.dual_sim
+    operation: grasp_bottle
+    semantics: action
+    description: Close one arm on the bottle at the current pose. For a free upright
+      tabletop bottle, first use move_arm to establish a horizontal side-grasp pose.
+      This action does not move or rotate the arm. Bilateral finger contact is required
+      for assisted holding or airborne reception.
+    input_schema:
+      type: object
+      properties:
+        side:
+          type: string
+          enum:
+          - left
+          - right
+      required:
+      - side
+      additionalProperties: false
+    output_schema:
+      type: object
+    readiness: []
+    robot_frame_profile: *id001
+  - tool_id: piper.release_bottle
+    implementation_id: piper.dual_sim.native
+    endpoint_id: piper.dual_sim
+    operation: release_bottle
+    semantics: action
+    description: Physically release the bottle from the named arm, disable its grasp-assistance
+      constraint, open the fingers, and let gravity act.
+    input_schema:
+      type: object
+      properties:
+        side:
+          type: string
+          enum:
+          - left
+          - right
+      required:
+      - side
+      additionalProperties: false
+    output_schema:
+      type: object
+    readiness: []
+    robot_frame_profile: *id001
+  - tool_id: piper.place_bottle_at_origin
+    implementation_id: piper.dual_sim.native
+    endpoint_id: piper.dual_sim
+    operation: place_bottle_at_origin
+    semantics: action
+    description: If the named arm holds the bottle, carry it back to its measured
+      original scene position, physically release it, and verify stable table settling.
+    input_schema:
+      type: object
+      properties:
+        side:
+          type: string
+          enum:
+          - left
+          - right
+      required:
+      - side
+      additionalProperties: false
+    output_schema:
+      type: object
+    readiness: []
+    robot_frame_profile: *id001
+  - tool_id: piper.observe_stream
+    implementation_id: piper.dual_sim.native
+    endpoint_id: piper.dual_sim
+    operation: observe_stream
+    semantics: session
+    description: Continuously capture real native dual-camera frames and measured
+      robot/task state into an invocation-bound JSONL manifest. Physics is paused
+      between native actions and sampling pauses while a synchronous native action
+      owns the simulator. Stop returns actual sample count, frame references and manifest
+      SHA; it does not cancel motion.
+    input_schema:
+      type: object
+      properties:
+        interval_ms:
+          type: integer
+          minimum: 500
+          maximum: 5000
+          default: 500
+        max_duration_s:
+          type: number
+          minimum: 1
+          maximum: 60
+          default: 30
+      additionalProperties: false
+    output_schema:
+      type: object
+    readiness: []
+    robot_frame_profile: *id001
+  providers:
+  - endpoint_id: piper.dual_sim
+    input_id: piper_tool_in
+    output_id: piper_tool_out
+  retention_sec: 3600

@@ -1,0 +1,237 @@
+{
+  "host": "127.0.0.1",
+  "port": 19014,
+  "joint_order": [],
+  "image_input_ids": [
+    "image/cam_left",
+    "image/cam_middle",
+    "image/cam_right"
+  ],
+  "readiness": {
+    "require_proprio_state": false,
+    "require_images": false
+  },
+  "tools": {
+    "enabled": true,
+    "lease_ttl_ms": 3000,
+    "invoke_timeout_ms": 150000,
+    "request_input_id": "tool_request",
+    "response_output_id": "tool_response",
+    "specs": [
+      {
+        "tool_id": "piper_real.capabilities",
+        "implementation_id": "piper.real_runtime.native",
+        "endpoint_id": "piper.real_runtime",
+        "operation": "capabilities",
+        "semantics": "query",
+        "description": "Report offline configuration or capabilities of the explicitly bound existing Runtime. Offline output is not a robot observation.",
+        "input_schema": {
+          "type": "object",
+          "properties": {},
+          "required": [],
+          "additionalProperties": false
+        },
+        "output_schema": {
+          "type": "object"
+        },
+        "readiness": []
+      },
+      {
+        "tool_id": "piper_real.state",
+        "implementation_id": "piper.real_runtime.native",
+        "endpoint_id": "piper.real_runtime",
+        "operation": "state",
+        "semantics": "query",
+        "description": "Read the connected native task worker status. On the four-CAN route, inactive/cached status is never labeled fresh robot joint feedback.",
+        "input_schema": {
+          "type": "object",
+          "properties": {},
+          "required": [],
+          "additionalProperties": false
+        },
+        "output_schema": {
+          "type": "object"
+        },
+        "readiness": []
+      },
+      {
+        "tool_id": "piper_real.observe",
+        "implementation_id": "piper.real_runtime.native",
+        "endpoint_id": "piper.real_runtime",
+        "operation": "observe",
+        "semantics": "query",
+        "description": "Read fresh native dual-arm state and three RGB cameras from the existing Runtime. Never starts cameras, ROS, CAN or a Runtime.",
+        "input_schema": {
+          "type": "object",
+          "properties": {},
+          "required": [],
+          "additionalProperties": false
+        },
+        "output_schema": {
+          "type": "object"
+        },
+        "readiness": []
+      },
+      {
+        "tool_id": "piper_real.prepare_task",
+        "implementation_id": "piper.real_runtime.native",
+        "endpoint_id": "piper.real_runtime",
+        "operation": "prepare_task",
+        "semantics": "query",
+        "description": "Prepare an immutable candidate only. Current native-four-CAN backend accepts task_type=four_can_replay and program={registered_replay_id: ID}; the operator registers the exact native trajectory first. No raw joints/TCP targets or field approval are accepted from the Agent. Legacy UDS schemas remain offline contracts only; query capabilities for this connection.",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "prepared_id": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,79}$"
+            },
+            "task_type": {
+              "type": "string",
+              "enum": [
+                "single_arm_program",
+                "bimanual_program",
+                "visual_servo_step",
+                "four_can_replay"
+              ]
+            },
+            "program": {
+              "type": "object"
+            },
+            "step": {
+              "type": "object"
+            }
+          },
+          "required": [
+            "prepared_id",
+            "task_type"
+          ],
+          "additionalProperties": false,
+          "oneOf": [
+            {
+              "properties": {
+                "task_type": {
+                  "enum": [
+                    "single_arm_program",
+                    "bimanual_program",
+                    "four_can_replay"
+                  ]
+                }
+              },
+              "required": [
+                "program"
+              ],
+              "not": {
+                "required": [
+                  "step"
+                ]
+              }
+            },
+            {
+              "properties": {
+                "task_type": {
+                  "const": "visual_servo_step"
+                }
+              },
+              "required": [
+                "step"
+              ],
+              "not": {
+                "required": [
+                  "program"
+                ]
+              }
+            }
+          ]
+        },
+        "output_schema": {
+          "type": "object"
+        },
+        "readiness": []
+      },
+      {
+        "tool_id": "piper_real.recover",
+        "implementation_id": "piper.real_runtime.native",
+        "endpoint_id": "piper.real_runtime",
+        "operation": "recover",
+        "semantics": "query",
+        "description": "Read status of a previously journaled owned task; never replay a submit.",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "receipt_reference": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          },
+          "required": [
+            "receipt_reference"
+          ],
+          "additionalProperties": false
+        },
+        "output_schema": {
+          "type": "object"
+        },
+        "readiness": []
+      },
+      {
+        "tool_id": "piper_real.run_task",
+        "implementation_id": "piper.real_runtime.native",
+        "endpoint_id": "piper.real_runtime",
+        "operation": "run_task",
+        "semantics": "action",
+        "description": "Submit an exactly released prepared task once through the selected native control chain. The four-CAN route uses the unmodified native managed replay Worker, the same control lock and cleanup. No implicit retry or physical-success verdict.",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "prepared_id": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,79}$"
+            }
+          },
+          "required": [
+            "prepared_id"
+          ],
+          "additionalProperties": false
+        },
+        "output_schema": {
+          "type": "object"
+        },
+        "readiness": []
+      },
+      {
+        "tool_id": "piper_real.cancel_task",
+        "implementation_id": "piper.real_runtime.native",
+        "endpoint_id": "piper.real_runtime",
+        "operation": "cancel_task",
+        "semantics": "action",
+        "description": "Request cancellation of the owned task named by its recorded receipt, including after a provider restart. Preserves original Runtime and client ownership; no global stop, hardware lifecycle or replay. Cancellation accepted is not physical stop.",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "receipt_reference": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          },
+          "required": [
+            "receipt_reference"
+          ],
+          "additionalProperties": false
+        },
+        "output_schema": {
+          "type": "object"
+        },
+        "readiness": []
+      }
+    ],
+    "providers": [
+      {
+        "endpoint_id": "piper.real_runtime",
+        "input_id": "real_tool_in",
+        "output_id": "real_tool_out"
+      }
+    ],
+    "retention_sec": 3600
+  }
+}

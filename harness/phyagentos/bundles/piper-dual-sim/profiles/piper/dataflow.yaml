@@ -1,0 +1,27 @@
+nodes:
+- id: gateway
+  path: ${FORGE_RUNTIME_BIN}/gateway
+  args: --config gateway.yaml
+  inputs:
+    tick: dora/timer/millis/50
+    piper_tool_in:
+      source: piper/tool_out
+      queue_size: 128
+    runtime_status: piper/runtime_status
+    image/cam_right: piper/image/cam_right
+    image/overview: piper/image/overview
+  outputs:
+  - tool_response
+  - piper_tool_out
+- id: piper
+  path: ${PAOS_SKILL_ROOT}/profiles/piper/run_provider.sh
+  inputs:
+    tick: dora/timer/millis/50
+    tool_in:
+      source: gateway/piper_tool_out
+      queue_size: 128
+  outputs:
+  - tool_out
+  - runtime_status
+  - image/cam_right
+  - image/overview

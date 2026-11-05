@@ -1,0 +1,118 @@
+{
+  "framework": "PhyAgentOS local adapter",
+  "export_date": "2026-11-05",
+  "upstream_repository": "https://github.com/PhyAgentOS/PhyAgentOS-core",
+  "upstream_commit": "99314a454d1c64cbff5c938d6f121276c10a4dc2",
+  "upstream_version": "1.1.0",
+  "upstream_archive_sha256": "e86dea690b3c767208b59ac5665f44366a713fa703fdd83bedc39b01d067e855",
+  "target_base": "00cc04973b2a76edc66ff7c1e62c08133cca3c84",
+  "local_core_changes": [
+    {
+      "path": "PhyAgentOS/agent/experience/activation.py",
+      "kind": "modified"
+    },
+    {
+      "path": "PhyAgentOS/agent/experience/analyzer.py",
+      "kind": "modified"
+    },
+    {
+      "path": "PhyAgentOS/agent/experience/coordinator.py",
+      "kind": "modified"
+    },
+    {
+      "path": "PhyAgentOS/agent/experience/evolution.py",
+      "kind": "modified"
+    },
+    {
+      "path": "PhyAgentOS/agent/session_verifier.py",
+      "kind": "modified"
+    },
+    {
+      "path": "PhyAgentOS/agent/tools/agent.py",
+      "kind": "modified"
+    },
+    {
+      "path": "PhyAgentOS/agent/tools/forge_tool_api.py",
+      "kind": "modified"
+    },
+    {
+      "path": "PhyAgentOS/cli/commands.py",
+      "kind": "modified"
+    },
+    {
+      "path": "PhyAgentOS/config/loader.py",
+      "kind": "modified"
+    },
+    {
+      "path": "PhyAgentOS/forge/task.py",
+      "kind": "modified"
+    },
+    {
+      "path": "PhyAgentOS/forge/tool_client.py",
+      "kind": "modified"
+    },
+    {
+      "path": "PhyAgentOS/providers/custom_provider.py",
+      "kind": "modified"
+    },
+    {
+      "path": "PhyAgentOS/skill_runtime/integration.py",
+      "kind": "modified"
+    },
+    {
+      "path": "PhyAgentOS/skill_runtime/manager.py",
+      "kind": "modified"
+    },
+    {
+      "path": "PhyAgentOS/verification/engine.py",
+      "kind": "modified"
+    },
+    {
+      "path": "PhyAgentOS/verification/request_builder.py",
+      "kind": "modified"
+    },
+    {
+      "path": "PhyAgentOS/verification/service.py",
+      "kind": "modified"
+    },
+    {
+      "path": "tests/test_agent_evolution.py",
+      "kind": "modified"
+    },
+    {
+      "path": "tests/test_forge_action_admission.py",
+      "kind": "added"
+    },
+    {
+      "path": "tests/test_forge_workflow_overlay.py",
+      "kind": "added"
+    },
+    {
+      "path": "tests/test_skill_runtime_status_poll.py",
+      "kind": "added"
+    },
+    {
+      "path": "tests/test_verification_diagnostics_transport.py",
+      "kind": "added"
+    },
+    {
+      "path": "tests/test_verification_engine_diagnostics.py",
+      "kind": "added"
+    }
+  ],
+  "skills": {
+    "piper-dual-sim": "0.4.2+openarmsim.1",
+    "piper-real-runtime": "0.2.3+openarmsim.1"
+  },
+  "gateway": "1.1.1",
+  "dora": "0.4.1",
+  "frontend": {
+    "react": "19.2.0",
+    "vite": "6.4.1",
+    "typescript": "5.9.3"
+  },
+  "notes": [
+    "Core source snapshot with local adaptations; not an unmodified official release.",
+    "No private deployments, datasets, credentials, recordings or control projects included."
+  ]
+}

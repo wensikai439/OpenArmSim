@@ -1,0 +1,31 @@
+x-common-config: &common-config
+  build:
+    context: .
+    dockerfile: Dockerfile
+  volumes:
+    - ~/.PhyAgentOS:/root/.PhyAgentOS
+
+services:
+  phyagentos-gateway:
+    container_name: phyagentos-gateway
+    <<: *common-config
+    command: ["gateway"]
+    restart: unless-stopped
+    # No host port mapping: the gateway is a message-bus service that makes
+    # outbound connections only (it does not bind an inbound port).
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+  
+  phyagentos-cli:
+    <<: *common-config
+    profiles:
+      - cli
+    command: ["agent"]
+    stdin_open: true
+    tty: true

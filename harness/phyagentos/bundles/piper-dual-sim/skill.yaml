@@ -1,0 +1,63 @@
+manifest_version: 2
+name: piper-dual-sim
+version: 0.4.2+openarmsim.1
+description: Independent shared PiPER dual-arm asset via a PhyAgentOS-owned RPC adapter
+  and official Forge.
+skill_document: SKILL.md
+gateway_url: http://127.0.0.1:19013
+required_tools:
+- piper.observe
+- piper.check_pose
+- piper.set_gripper
+- piper.move_arm
+- piper.return_arm_to_initial
+- piper.grasp_bottle
+- piper.release_bottle
+- piper.place_bottle_at_origin
+- piper.observe_stream
+profiles:
+  joint:
+    dataflow: profiles/piper/dataflow.yaml
+    startup_timeout_s: 75
+    required_binaries:
+    - gateway
+    required_assets:
+    - profiles/piper/provider.py
+    - profiles/piper/run_provider.sh
+    - profiles/piper/native_shim.py
+    - profiles/piper/joint_expert_adapter.py
+    - profiles/piper/joint_collection_timing.py
+    - profiles/piper/session_handler.py
+    - profiles/piper/sim_rpc.py
+    - profiles/piper/live_overview.py
+    - profiles/piper/RPC_APACHE_LICENSE
+    - profiles/piper/RPC_NOTICE.md
+    environment:
+      PAOS_EXPERT_CONTROLLER: joint_position
+      PAOS_GRIPPER_MODE: binary_endpoints
+  osc:
+    dataflow: profiles/piper/dataflow.yaml
+    startup_timeout_s: 75
+    required_binaries:
+    - gateway
+    required_assets:
+    - profiles/piper/provider.py
+    - profiles/piper/run_provider.sh
+    - profiles/piper/native_shim.py
+    - profiles/piper/session_handler.py
+    - profiles/piper/sim_rpc.py
+    - profiles/piper/live_overview.py
+    - profiles/piper/RPC_APACHE_LICENSE
+    - profiles/piper/RPC_NOTICE.md
+    environment: {}
+artifacts:
+  resolver: registry
+  nodes:
+    gateway:
+      artifact_id: gateway-1.1.1-linux-x86_64-tar-gz
+      version: 1.1.1
+      platform: linux
+      arch: x86_64
+      artifact_type: executable_tar_gz
+      entrypoint: gateway
+      sha256: dcf6a7a6e4136c9c203d6ede191db161c34ee0d6955a618a3bc752769359673f
