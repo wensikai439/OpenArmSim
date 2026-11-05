@@ -1,6 +1,0 @@
-{
-  "source_hashes_verified_before_and_after_evaluation": true,
-  "native_trials": 32,
-  "admitted": false,
-  "reason": "combined stress regressed4/8 to2/8, and dense waypoint timing approached120s; retain all outcomes and diagnose stale planning grasp relation"
-}

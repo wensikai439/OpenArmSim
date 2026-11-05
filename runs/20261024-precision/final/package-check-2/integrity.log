@@ -1,9 +1,0 @@
-{
-  "status": "ok",
-  "manifest_files_verified": 845,
-  "reference_image_samples": 33,
-  "replay_steps": 1,
-  "state_dimension": 16,
-  "physics_time_seconds": 0.03400000000000002,
-  "scope": "offline package integrity and MuJoCo smoke only; not physical calibration or sim-to-real validation"
-}

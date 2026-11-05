@@ -1,7 +1,0 @@
-{
-  "root": "63a8c6f0c71c496b8f635577430c6bbf",
-  "prompt": "左手拿起杯子",
-  "scope": "observed UI request; no agent resubmission",
-  "native_dispatches": 0,
-  "answer": "场景中注册对象只有 bottle、block、can，没有“杯子”。请确认：是否用左手抓取场景中的瓶子（bottle）？"
-}

@@ -1,5 +1,0 @@
-{
-  "reason": "CLI regression-test registration edited sim/cli.py while evaluation processes had loaded older source hashes. Source guard rejected affected trials. Stop incomplete campaign; repeat ALL methods and SAME preregistered cases after source freeze. No policy or case selection tuned from heldout outcomes.",
-  "program_changed": false,
-  "case_changed": false
-}

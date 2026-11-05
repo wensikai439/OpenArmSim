@@ -1,8 +1,0 @@
-{
-  "seed": 1009,
-  "bottle_xy_m": [
-    0.542365,
-    -0.275746
-  ],
-  "fault": "receiver_close_loss"
-}

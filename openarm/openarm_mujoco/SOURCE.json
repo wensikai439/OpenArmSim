@@ -1,0 +1,5 @@
+{
+  "repository": "https://github.com/enactic/openarm_mujoco",
+  "commit": "c69cad6e51db68296cd5ebfd482caf54dc3cc9dd",
+  "distribution": "Source snapshot with upstream LICENSE; vendored to keep the repository root limited to the two robot directories."
+}
